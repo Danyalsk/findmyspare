@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8f8f5;
+  --foreground: #1c1917;
+  --primary: #f9d006;
+  --on-primary: #1c1917;
+  --surface: #ffffff;
+  --surface-dim: #f8f8f5;
+  --surface-container: #f8f8f5;
+  --surface-container-high: #f1f1ee;
+  --surface-container-highest: #e7e7e2;
+  --outline: #d6d3d1;
+  --outline-variant: #e7e5e4;
+  --secondary: #57534e;
+  --on-surface: #1c1917;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-on-surface: var(--on-surface);
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-secondary: var(--secondary);
+  --font-sans: "Inter", var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+.bg-dot-pattern {
+  background-image: radial-gradient(var(--outline-variant) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
