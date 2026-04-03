@@ -30,6 +30,11 @@
   --color-outline: var(--outline);
   --color-outline-variant: var(--outline-variant);
   --color-secondary: var(--secondary);
+  --color-tertiary: #006875;
+  --color-tertiary-container: #40e7ff;
+  --color-on-tertiary-container: #006571;
+  --color-on-tertiary-fixed-variant: #004f58;
+  --color-error: #ba1a1a;
   --font-sans: "Inter", var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 

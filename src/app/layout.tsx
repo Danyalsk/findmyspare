@@ -7,6 +7,8 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+import DesktopNav from "@/components/DesktopNav";
+
 export const metadata: Metadata = {
   title: {
     default: "FindMySpare",
@@ -31,6 +33,7 @@ export default function RootLayout({
 
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
+        <DesktopNav />
         {children}
       </body>
     </html>

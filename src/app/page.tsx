@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -34,7 +35,7 @@ import {
   GitMerge,
   Droplet,
   Settings,
-  X,
+  X
 } from "lucide-react";
 
 /* ── animation variants ─────────────────────────────── */
@@ -314,6 +315,8 @@ function FloatingAccent({
 /* ── page component ─────────────────────────────────── */
 
 export default function HomePage() {
+  const router = useRouter();
+
   // — split locator state
   const [selectedParts, setSelectedParts] = useState<string[]>([]);
   const [partInput, setPartInput] = useState("");
@@ -802,6 +805,7 @@ export default function HomePage() {
 
                         {/* CTA */}
                         <motion.button
+                          onClick={() => router.push('/product')}
                           className={`w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-sm tracking-wide transition-all shadow-lg ${
                             canSearch || selectedParts.length > 0
                               ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-900 shadow-amber-500/25 relative overflow-hidden group border border-amber-400/50"
@@ -998,6 +1002,7 @@ export default function HomePage() {
 
                   {/* Find My Part CTA */}
                   <motion.button
+                    onClick={() => router.push('/product')}
                     className={`w-full flex items-center justify-center gap-2 py-5 rounded-xl font-black text-lg tracking-wide transition-all shadow-lg ${
                       canSearch || selectedParts.length > 0
                         ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-900 shadow-amber-500/25 hover:shadow-amber-500/40 relative overflow-hidden group border border-amber-400/50"
@@ -1190,6 +1195,7 @@ export default function HomePage() {
                 className="group cursor-pointer bg-white rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-stone-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
                 variants={staggerItem}
               >
+                <Link href="/product" className="absolute inset-0 z-20" />
                 <div className="aspect-square bg-stone-50 rounded-lg sm:rounded-xl mb-3 sm:mb-4 overflow-hidden relative">
                   <img
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1256,15 +1262,52 @@ export default function HomePage() {
               Submit a request and our sourcing team will locate it from our
               network of verified suppliers nationwide.
             </p>
-            <motion.button
-              className="group relative overflow-hidden bg-stone-900 text-white px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl font-bold text-sm sm:text-base shadow-lg flex items-center justify-center gap-2 mx-auto transition-transform"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              <FileText className="w-4 h-4 text-amber-400" />
-              <span className="relative z-10">Submit Part Request</span>
-              <div className="absolute inset-0 bg-stone-800 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-            </motion.button>
+            <Link href="/requests" className="mx-auto block w-fit">
+              <motion.div
+                className="group relative overflow-hidden bg-stone-900 text-white px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl font-bold text-sm sm:text-base shadow-lg flex items-center justify-center gap-2 transition-transform"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                <FileText className="w-4 h-4 text-amber-400" />
+                <span className="relative z-10">Submit Part Request</span>
+                <div className="absolute inset-0 bg-stone-800 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+              </motion.div>
+            </Link>
+          </div>
+        </motion.section>
+
+        {/* ─── B2B Supplier Pitch ────────────────────── */}
+        <motion.section 
+          className="mt-6 sm:mt-12 bg-stone-900 mx-4 sm:mx-6 md:mx-auto max-w-4xl rounded-[2rem] p-8 sm:p-12 relative overflow-hidden"
+          variants={scaleIn}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+        >
+          <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/20 rounded-bl-full pointer-events-none blur-2xl" />
+          
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+            <div className="text-center md:text-left flex-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-black uppercase tracking-widest mb-4">
+                <Zap className="w-3 h-3 fill-amber-500" />
+                Partner Program
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight mb-3 tracking-tight">
+                Are you an Industrial Parts Supplier?
+              </h2>
+              <p className="text-stone-400 font-medium text-sm leading-relaxed max-w-sm mx-auto md:mx-0">
+                Tap into a massive network of buyers. Access our guaranteed Escrow system and zero chargebacks.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
+              <Link href="/supplier" className="bg-amber-400 hover:bg-amber-500 text-stone-950 font-black px-6 py-4 rounded-xl text-center active:scale-95 transition-all w-full sm:w-auto shadow-lg shadow-amber-500/20">
+                Become a Supplier
+              </Link>
+              <Link href="/messages" className="bg-stone-800 hover:bg-stone-700 border border-stone-700 text-white font-black px-6 py-4 rounded-xl text-center active:scale-95 transition-all w-full sm:w-auto shadow-lg shadow-stone-900/40">
+                Already a Supplier?
+              </Link>
+            </div>
           </div>
         </motion.section>
       </main>
@@ -1276,27 +1319,27 @@ export default function HomePage() {
         animate={{ y: 0 }}
         transition={{ delay: 0.8, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       >
-        <button className="flex flex-col items-center gap-1 w-12 text-amber-600">
+        <Link href="/" className="flex flex-col items-center gap-1 w-12 text-amber-600 hover:text-amber-700 transition-colors">
           <Home className="w-5 h-5" strokeWidth={2.5} />
           <span className="font-bold text-[9px] tracking-wider uppercase">Home</span>
-        </button>
-        <button className="flex flex-col items-center gap-1 w-12 text-stone-400">
+        </Link>
+        <Link href="/search" className="flex flex-col items-center gap-1 w-12 text-stone-400 hover:text-amber-500 transition-colors">
           <Search className="w-5 h-5" strokeWidth={2.5} />
           <span className="font-bold text-[9px] tracking-wider uppercase">Search</span>
-        </button>
-        <button className="flex flex-col items-center -mt-7 relative z-10 outline-none">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-amber-400 to-amber-500 shadow-[0_4px_16px_rgba(245,158,11,0.45)] flex items-center justify-center text-white border-4 border-[#fafaf9] active:scale-95 transition-transform">
+        </Link>
+        <Link href="/scan" className="flex flex-col items-center -mt-7 relative z-10 outline-none hover:scale-105 active:scale-95 transition-transform">
+          <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-amber-400 to-amber-500 shadow-[0_4px_16px_rgba(245,158,11,0.45)] flex items-center justify-center text-white border-4 border-[#fafaf9]">
             <PlusCircle className="w-6 h-6" strokeWidth={2.5} />
           </div>
-        </button>
-        <button className="flex flex-col items-center gap-1 w-12 text-stone-400">
+        </Link>
+        <Link href="/orders" className="flex flex-col items-center gap-1 w-12 text-stone-400 hover:text-amber-500 transition-colors">
           <Package className="w-5 h-5" strokeWidth={2.5} />
           <span className="font-bold text-[9px] tracking-wider uppercase">Orders</span>
-        </button>
-        <button className="flex flex-col items-center gap-1 w-12 text-stone-400">
+        </Link>
+        <Link href="/profile" className="flex flex-col items-center gap-1 w-12 text-stone-400 hover:text-amber-500 transition-colors">
           <User className="w-5 h-5" strokeWidth={2.5} />
           <span className="font-bold text-[9px] tracking-wider uppercase">Profile</span>
-        </button>
+        </Link>
       </motion.nav>
 
       <style dangerouslySetInnerHTML={{__html: `
