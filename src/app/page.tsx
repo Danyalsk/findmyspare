@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -325,6 +325,10 @@ export default function HomePage() {
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
 
+  // — conversational locator state (mobile)
+  const [searchFilter, setSearchFilter] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+
   const models = useMemo(
     () => (selectedMake ? Object.keys(vehicleData[selectedMake] || {}) : []),
     [selectedMake]
@@ -337,7 +341,72 @@ export default function HomePage() {
     [selectedMake, selectedModel]
   );
 
+  // — derived: which field is active on mobile
+  const activeField: "make" | "model" | "year" | "parts" = !selectedMake
+    ? "make"
+    : !selectedModel
+    ? "model"
+    : !selectedYear
+    ? "year"
+    : "parts";
+
+  // — filtered lists for type-to-filter
+  const filteredMakes = useMemo(
+    () => makes.filter(m => m.toLowerCase().includes(searchFilter.toLowerCase())),
+    [searchFilter]
+  );
+  const filteredModels = useMemo(
+    () => models.filter(m => m.toLowerCase().includes(searchFilter.toLowerCase())),
+    [models, searchFilter]
+  );
+
   const canSearch = selectedMake && selectedModel && selectedYear;
+
+  // — year carousel state (mobile)
+  const allYears = useMemo(() => Array.from({ length: 27 }, (_, i) => String(2026 - i)), []);
+  const yearScrollRef = useRef<HTMLDivElement>(null);
+  const [centeredYear, setCenteredYear] = useState("2024");
+
+  const handleYearScroll = useCallback(() => {
+    const el = yearScrollRef.current;
+    if (!el) return;
+    const containerCenter = el.scrollLeft + el.offsetWidth / 2;
+    let closest = allYears[0];
+    let minDist = Infinity;
+    el.querySelectorAll<HTMLElement>('[data-year]').forEach((child) => {
+      const childCenter = child.offsetLeft + child.offsetWidth / 2;
+      const dist = Math.abs(containerCenter - childCenter);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = child.dataset.year || allYears[0];
+      }
+    });
+    setCenteredYear(closest);
+  }, [allYears]);
+
+  useEffect(() => {
+    if (activeField !== "year") return;
+    const el = yearScrollRef.current;
+    if (!el) return;
+    // Center on 2024 on mount
+    const target = el.querySelector<HTMLElement>('[data-year="2024"]');
+    if (target) {
+      el.scrollLeft = target.offsetLeft - el.offsetWidth / 2 + target.offsetWidth / 2;
+    }
+    handleYearScroll();
+  }, [activeField, handleYearScroll]);
+
+  // — year-based car color (changes every year)
+  const yearColorObj = useMemo(() => {
+    const y = parseInt(centeredYear) || 2024;
+    // Each year shifts the hue by 35 degrees, creating a unique rainbow transition
+    const hue = ((2026 - y) * 35) % 360;
+    return {
+      stroke: `hsl(${hue}, 85%, 50%)`,
+      fill: `hsla(${hue}, 85%, 50%, 0.1)`,
+      shadow: `hsla(${hue}, 85%, 50%, 0.35)`
+    };
+  }, [centeredYear]);
 
   return (
     <div className="bg-[#fafaf9] text-stone-900 antialiased overflow-x-hidden selection:bg-amber-200">
@@ -384,9 +453,371 @@ export default function HomePage() {
               verified quality, delivered fast.
             </motion.p>
 
-            {/* ─── Smart Locator (Split Panel) ─────────────── */}
+            {/* ─── Mobile: Conversational Locator ────────────── */}
+            <div className="block md:hidden">
+              <motion.div
+                className="relative max-w-lg mx-auto z-20"
+                variants={scaleIn}
+                initial="hidden"
+                animate="visible"
+                transition={{ delay: 0.3 }}
+              >
+                <div className="bg-gradient-to-br from-white via-white to-amber-50/40 backdrop-blur-2xl rounded-[2rem] shadow-[0_12px_48px_-8px_rgba(120,80,0,0.12),0_4px_16px_-4px_rgba(0,0,0,0.06)] border border-stone-200/60 overflow-hidden flex flex-col relative p-5">
+                  
+                  {/* Progress Bar */}
+                  <div className="flex items-center gap-1 mb-5">
+                    {["make", "model", "year", "parts"].map((step, i) => (
+                      <div
+                        key={step}
+                        className={`h-1 flex-1 rounded-full transition-all duration-500 ${
+                          step === activeField
+                            ? "bg-gradient-to-r from-amber-500 to-yellow-500"
+                            : (step === "make" && selectedMake) ||
+                              (step === "model" && selectedModel) ||
+                              (step === "year" && selectedYear) ||
+                              (step === "parts" && selectedParts.length > 0)
+                            ? "bg-amber-300"
+                            : "bg-stone-100"
+                        }`}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Locked Selection Chips */}
+                  <AnimatePresence>
+                    {(selectedMake || selectedModel || selectedYear) && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="flex flex-wrap items-center gap-2 mb-4"
+                      >
+                        {selectedMake && (
+                          <motion.button
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                            onClick={() => {
+                              setSelectedMake(""); setSelectedModel(""); setSelectedYear("");
+                              setSearchFilter(""); setShowDropdown(false);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold shadow-sm hover:bg-amber-100 transition-colors"
+                          >
+                            <Car className="w-3 h-3" />
+                            {selectedMake}
+                            <X className="w-3 h-3 text-amber-500" />
+                          </motion.button>
+                        )}
+                        {selectedModel && (
+                          <motion.button
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                            onClick={() => {
+                              setSelectedModel(""); setSelectedYear("");
+                              setSearchFilter(""); setShowDropdown(false);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-xs font-bold shadow-sm hover:bg-blue-100 transition-colors"
+                          >
+                            {selectedModel}
+                            <X className="w-3 h-3 text-blue-500" />
+                          </motion.button>
+                        )}
+                        {selectedYear && (
+                          <motion.button
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                            onClick={() => {
+                              setSelectedYear("");
+                              setSearchFilter(""); setShowDropdown(false);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold shadow-sm hover:bg-emerald-100 transition-colors"
+                          >
+                            {selectedYear}
+                            <X className="w-3 h-3 text-emerald-500" />
+                          </motion.button>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Active Field Content */}
+                  <AnimatePresence mode="wait">
+                    {/* ── Make / Model: Searchable dropdown ── */}
+                    {(activeField === "make" || activeField === "model") && (
+                      <motion.div
+                        key={activeField}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -12 }}
+                        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                      >
+                        {/* Step label */}
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-stone-400 mb-2">
+                          {activeField === "make" ? "Step 1 — Select Make" : `Step 2 — ${selectedMake} Model`}
+                        </p>
+
+                        {/* Search input */}
+                        <div className="relative mb-2">
+                          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                          <input
+                            type="text"
+                            value={searchFilter}
+                            onChange={(e) => { setSearchFilter(e.target.value); setShowDropdown(true); }}
+                            onFocus={() => setShowDropdown(true)}
+                            placeholder={activeField === "make" ? "What do you drive?" : `Search ${selectedMake} models...`}
+                            className="w-full bg-white border border-stone-200 rounded-2xl pl-10 pr-4 py-3.5 text-sm font-semibold text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 transition-all shadow-sm"
+                          />
+                        </div>
+
+                        {/* Dropdown list */}
+                        <motion.div
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="max-h-[240px] overflow-y-auto rounded-2xl border border-stone-200/80 bg-white shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08)]"
+                        >
+                          {(activeField === "make" ? filteredMakes : filteredModels).length === 0 ? (
+                            <div className="px-4 py-6 text-center text-sm text-stone-400 font-medium">No results found</div>
+                          ) : (
+                            (activeField === "make" ? filteredMakes : filteredModels).map((item) => (
+                              <button
+                                key={item}
+                                onClick={() => {
+                                  if (activeField === "make") {
+                                    setSelectedMake(item);
+                                    setSelectedModel("");
+                                    setSelectedYear("");
+                                  } else {
+                                    setSelectedModel(item);
+                                    setSelectedYear("");
+                                  }
+                                  setSearchFilter("");
+                                  setShowDropdown(false);
+                                }}
+                                className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-stone-700 hover:bg-amber-50 hover:text-amber-800 active:bg-amber-100 transition-colors border-b border-stone-50 last:border-b-0"
+                              >
+                                <span>{item}</span>
+                                <ArrowRight className="w-3.5 h-3.5 text-stone-300" />
+                              </button>
+                            ))
+                          )}
+                        </motion.div>
+                      </motion.div>
+                    )}
+
+                    {/* ── Year: Horizontal scroll-snap carousel ── */}
+                    {activeField === "year" && (
+                      <motion.div
+                        key="year"
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -12 }}
+                        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                      >
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-stone-400 mb-3">
+                          Step 3 — Scroll & Pick Year
+                        </p>
+
+                        <div className="relative" style={{ touchAction: 'pan-x' }}>
+                          {/* Fade edges */}
+                          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-white to-transparent z-10" />
+                          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white to-transparent z-10" />
+
+                          {/* Center indicator — cute car outline & glow */}
+                          <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-[90px] z-[5] flex items-center justify-center">
+                            <svg 
+                              viewBox="0 0 90 60" 
+                              className="w-[90px] h-[60px] overflow-visible" 
+                              style={{ 
+                                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                                filter: `drop-shadow(0 4px 10px ${yearColorObj.shadow})`
+                              }}
+                            >
+                              {/* Car body outline */}
+                              <path
+                                d="M 20 44 L 24 44 A 6 6 0 0 0 36 44 L 54 44 A 6 6 0 0 0 66 44 L 70 44 Q 78 44 78 36 L 78 24 Q 78 16 70 16 L 64 16 L 58 6 Q 56 2 52 2 L 38 2 Q 34 2 32 6 L 26 16 L 20 16 Q 12 16 12 24 L 12 36 Q 12 44 20 44 Z"
+                                fill={yearColorObj.fill}
+                                stroke={yearColorObj.stroke}
+                                strokeWidth="3.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                style={{ transition: 'all 0.4s ease' }}
+                              />
+                              {/* Wheels */}
+                              <circle cx="30" cy="44" r="4.5" fill="#ffffff" stroke={yearColorObj.stroke} strokeWidth="3" style={{ transition: 'all 0.4s ease' }} />
+                              <circle cx="60" cy="44" r="4.5" fill="#ffffff" stroke={yearColorObj.stroke} strokeWidth="3" style={{ transition: 'all 0.4s ease' }} />
+                            </svg>
+                          </div>
+
+                          <div
+                            ref={yearScrollRef}
+                            onScroll={handleYearScroll}
+                            className="flex gap-2 overflow-x-auto py-5 hide-scrollbar"
+                            style={{
+                              scrollSnapType: 'x mandatory',
+                              WebkitOverflowScrolling: 'touch',
+                              scrollbarWidth: 'none',
+                              msOverflowStyle: 'none',
+                              overscrollBehavior: 'contain',
+                            }}
+                          >
+                            {/* Spacer so first item (2026) can reach center */}
+                            <div className="flex-shrink-0" style={{ width: 'calc(50% - 32px)' }} />
+                            {allYears.map((year) => {
+                              const isCentered = year === centeredYear;
+                              return (
+                                <button
+                                  key={year}
+                                  data-year={year}
+                                  onClick={() => setSelectedYear(year)}
+                                  className={`flex-shrink-0 w-[64px] h-[52px] flex items-center justify-center rounded-xl text-center transition-all duration-300 ${
+                                    isCentered
+                                      ? 'text-[17px] font-black scale-100 tracking-tight'
+                                      : 'text-sm font-bold text-stone-300 scale-90 opacity-60'
+                                  }`}
+                                  style={{
+                                    scrollSnapAlign: 'center',
+                                    color: isCentered ? yearColorObj.stroke : undefined
+                                  }}
+                                >
+                                  {year}
+                                </button>
+                              );
+                            })}
+                            {/* Spacer so last item (2000) can reach center */}
+                            <div className="flex-shrink-0" style={{ width: 'calc(50% - 32px)' }} />
+                          </div>
+                        </div>
+
+                        <p className="text-center text-xs text-stone-400 mt-2 font-medium">
+                          ← Scroll to pick • Tap to confirm
+                        </p>
+                      </motion.div>
+                    )}
+
+                    {/* ── Parts: Tag input + Condition + CTA ── */}
+                    {activeField === "parts" && (
+                      <motion.div
+                        key="parts"
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -12 }}
+                        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                      >
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-stone-400 mb-2">
+                          Step 4 — What Part Do You Need?
+                        </p>
+
+                        {/* Part Tags */}
+                        <div className="mb-3">
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            <AnimatePresence>
+                              {selectedParts.map((part) => (
+                                <motion.span
+                                  key={part}
+                                  initial={{ opacity: 0, scale: 0.8 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  exit={{ opacity: 0, scale: 0.8 }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold shadow-sm"
+                                >
+                                  {part}
+                                  <button
+                                    onClick={() => setSelectedParts(p => p.filter(x => x !== part))}
+                                    className="p-0.5 hover:bg-amber-200/50 rounded-full transition-colors text-amber-600"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </motion.span>
+                              ))}
+                            </AnimatePresence>
+                          </div>
+                          <input
+                            type="text"
+                            value={partInput}
+                            onChange={(e) => setPartInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && partInput.trim()) {
+                                e.preventDefault();
+                                if (!selectedParts.includes(partInput.trim())) {
+                                  setSelectedParts([...selectedParts, partInput.trim()]);
+                                }
+                                setPartInput("");
+                              }
+                            }}
+                            placeholder={selectedParts.length === 0 ? "e.g. Brake Pads, AC Compressor..." : "+ Add another part"}
+                            className="w-full bg-stone-50/50 border-b-2 border-dashed border-stone-200 px-1 py-2.5 text-sm font-medium text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-amber-400 transition-colors bg-transparent"
+                          />
+                        </div>
+
+                        {/* Popular Tags */}
+                        <div className="mb-4 flex flex-wrap items-center gap-1.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Popular:</span>
+                          {["Brake Pads", "Oil Filter", "Clutch Plate", "Headlight"].map(tag => (
+                            <button
+                              key={tag}
+                              onClick={() => {
+                                if (!selectedParts.includes(tag)) setSelectedParts(p => [...p, tag]);
+                              }}
+                              className="px-2.5 py-1 rounded-full bg-white border border-stone-200 text-[11px] font-semibold text-stone-600 hover:text-amber-600 hover:border-amber-300 hover:bg-amber-50 transition-all shadow-sm"
+                            >
+                              {tag}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Condition */}
+                        <div className="mb-4">
+                          <label className="block text-[10px] font-bold tracking-widest uppercase text-stone-400 mb-2">
+                            Condition
+                          </label>
+                          <div className="flex gap-2">
+                            {[
+                              { id: "any", label: "Any" },
+                              { id: "new", label: "New" },
+                              { id: "used", label: "Used" }
+                            ].map(opt => (
+                              <label key={opt.id} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border cursor-pointer transition-all ${condition === opt.id ? "bg-amber-50 border-amber-300 text-amber-900 shadow-sm" : "bg-white border-stone-200 text-stone-500"}`}>
+                                <input type="radio" name="mob-condition" value={opt.id} checked={condition === opt.id} onChange={() => setCondition(opt.id as any)} className="hidden" />
+                                <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${condition === opt.id ? "border-amber-500" : "border-stone-300"}`}>
+                                  {condition === opt.id && <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
+                                </div>
+                                <span className="text-xs font-bold">{opt.label}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* CTA */}
+                        <motion.button
+                          className={`w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-sm tracking-wide transition-all shadow-lg ${
+                            canSearch || selectedParts.length > 0
+                              ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-900 shadow-amber-500/25 relative overflow-hidden group border border-amber-400/50"
+                              : "bg-stone-200 text-stone-400 cursor-not-allowed border border-transparent"
+                          }`}
+                          whileTap={canSearch || selectedParts.length > 0 ? { scale: 0.97 } : {}}
+                          disabled={(!canSearch && selectedParts.length === 0)}
+                        >
+                          {(canSearch || selectedParts.length > 0) && (
+                            <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent mix-blend-overlay pointer-events-none" />
+                          )}
+                          <Search className="w-5 h-5 z-10" />
+                          <span className="z-10">Find My Part</span>
+                        </motion.button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                </div>
+              </motion.div>
+            </div>
+
+            {/* ─── Desktop: Smart Locator (Split Panel) ─────── */}
             <motion.div
-              className="relative max-w-4xl mx-auto z-20"
+              className="relative max-w-4xl mx-auto z-20 hidden md:block"
               variants={scaleIn}
               initial="hidden"
               animate="visible"
@@ -395,7 +826,7 @@ export default function HomePage() {
               <div className="bg-white/80 backdrop-blur-2xl rounded-[2rem] shadow-[0_8px_60px_-12px_rgba(0,0,0,0.08)] border border-white/50 overflow-hidden flex flex-col relative">
                 
                 {/* 1. Global Search Bar (Top) */}
-                <div className="p-4 sm:p-6 border-b border-stone-200/50 bg-stone-50/50">
+                <div className="p-6 border-b border-stone-200/50 bg-stone-50/50">
                   <div className="relative group">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 group-focus-within:text-amber-500 transition-colors" />
                     <input
@@ -406,16 +837,16 @@ export default function HomePage() {
                       className="w-full bg-white border border-stone-200 rounded-2xl pl-12 pr-12 py-4 text-base font-medium text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400 transition-all shadow-sm"
                     />
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-50">
-                      <kbd className="hidden sm:inline-block px-2 py-1 text-[10px] font-bold text-stone-500 bg-stone-100 border border-stone-200 rounded-md">⌘/</kbd>
+                      <kbd className="px-2 py-1 text-[10px] font-bold text-stone-500 bg-stone-100 border border-stone-200 rounded-md">⌘/</kbd>
                     </div>
                   </div>
                 </div>
 
                 {/* 2. Split Panel (Middle) */}
-                <div className="grid grid-cols-1 md:grid-cols-2">
+                <div className="grid grid-cols-2">
                   
                   {/* Left: Vehicle */}
-                  <div className="p-5 sm:p-6 md:p-8 border-b md:border-b-0 md:border-r border-stone-100 bg-gradient-to-br from-white/60 to-transparent">
+                  <div className="p-8 border-r border-stone-100 bg-gradient-to-br from-white/60 to-transparent">
                     <div className="flex items-center gap-2 mb-5">
                       <div className="p-1.5 rounded-lg bg-orange-100 text-orange-600">
                         <Car className="w-4 h-4" />
@@ -455,7 +886,7 @@ export default function HomePage() {
                   </div>
 
                   {/* Right: Parts & Condition */}
-                  <div className="p-5 sm:p-6 md:p-8 bg-gradient-to-bl from-white/60 to-transparent flex flex-col">
+                  <div className="p-8 bg-gradient-to-bl from-white/60 to-transparent flex flex-col">
                     <div className="flex items-center gap-2 mb-5">
                       <div className="p-1.5 rounded-lg bg-amber-100 text-amber-600">
                         <Wrench className="w-4 h-4" />
@@ -474,7 +905,7 @@ export default function HomePage() {
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.8 }}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs sm:text-sm font-bold shadow-sm"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm font-bold shadow-sm"
                               >
                                 {part}
                                 <button
@@ -510,7 +941,7 @@ export default function HomePage() {
                         <label className="block text-[10px] font-bold tracking-widest uppercase text-stone-400 mb-3">
                           Condition Required
                         </label>
-                        <div className="flex gap-2 sm:gap-4">
+                        <div className="flex gap-4">
                           {[
                             { id: "any", label: "Any" },
                             { id: "new", label: "New" },
@@ -528,7 +959,7 @@ export default function HomePage() {
                               <div className={`w-3.5 h-3.5 rounded-full border flex flex-shrink-0 items-center justify-center ${condition === opt.id ? "border-amber-500" : "border-stone-300"}`}>
                                 {condition === opt.id && <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
                               </div>
-                              <span className="text-xs sm:text-sm font-bold">{opt.label}</span>
+                              <span className="text-sm font-bold">{opt.label}</span>
                             </label>
                           ))}
                         </div>
@@ -538,10 +969,10 @@ export default function HomePage() {
                 </div>
 
                 {/* 3. Bottom CTA & Quick Links */}
-                <div className="p-4 sm:p-6 bg-stone-50/80 border-t border-stone-100/80 mt-auto">
+                <div className="p-6 bg-stone-50/80 border-t border-stone-100/80 mt-auto">
                   
-                  {/* Popular Tags (Moved Above CTA) */}
-                  <div className="mb-4 sm:mb-5 flex flex-wrap items-center justify-center gap-2">
+                  {/* Popular Tags */}
+                  <div className="mb-5 flex flex-wrap items-center justify-center gap-2">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mr-1.5">Popular:</span>
                     {["Brake Pads", "Oil Filter", "Clutch Plate", "Headlight"].map(tag => (
                       <button 
@@ -558,7 +989,7 @@ export default function HomePage() {
 
                   {/* Find My Part CTA */}
                   <motion.button
-                    className={`w-full flex items-center justify-center gap-2 py-4 sm:py-5 rounded-xl font-black text-sm sm:text-lg tracking-wide transition-all shadow-lg ${
+                    className={`w-full flex items-center justify-center gap-2 py-5 rounded-xl font-black text-lg tracking-wide transition-all shadow-lg ${
                       canSearch || selectedParts.length > 0
                         ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-900 shadow-amber-500/25 hover:shadow-amber-500/40 relative overflow-hidden group border border-amber-400/50"
                         : "bg-stone-200 text-stone-400 cursor-not-allowed border border-transparent"
@@ -567,11 +998,9 @@ export default function HomePage() {
                     whileTap={canSearch || selectedParts.length > 0 ? { scale: 0.99 } : {}}
                     disabled={(!canSearch && selectedParts.length === 0)}
                   >
-                    {/* Shimmer effect inside enabled button */}
                     {(canSearch || selectedParts.length > 0) && (
                       <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent mix-blend-overlay pointer-events-none" />
                     )}
-                    
                     <Search className="w-5 h-5 z-10" />
                     <span className="z-10">Find My Part</span>
                   </motion.button>

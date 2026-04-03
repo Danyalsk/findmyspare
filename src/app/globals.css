@@ -43,3 +43,12 @@ body {
   background-image: radial-gradient(var(--outline-variant) 1px, transparent 1px);
   background-size: 24px 24px;
 }
+
+/* Hide scrollbar for year carousel */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
