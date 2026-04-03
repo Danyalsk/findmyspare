@@ -381,7 +381,16 @@ export default function HomePage() {
         closest = child.dataset.year || allYears[0];
       }
     });
-    setCenteredYear(closest);
+    setCenteredYear((prev) => {
+      if (prev !== closest) {
+        // Trigger a subtle haptic "tick" feeling on supported devices
+        if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
+          window.navigator.vibrate(5);
+        }
+        return closest;
+      }
+      return prev;
+    });
   }, [allYears]);
 
   useEffect(() => {
@@ -396,15 +405,15 @@ export default function HomePage() {
     handleYearScroll();
   }, [activeField, handleYearScroll]);
 
-  // — year-based car color (changes every year)
+  // — year-based car color (premium, muted industrial tones)
   const yearColorObj = useMemo(() => {
     const y = parseInt(centeredYear) || 2024;
-    // Each year shifts the hue by 35 degrees, creating a unique rainbow transition
-    const hue = ((2026 - y) * 35) % 360;
+    // Smooth transition, but with muted saturation and deep lightness
+    const hue = (210 + (2026 - y) * 15) % 360; 
     return {
-      stroke: `hsl(${hue}, 85%, 50%)`,
-      fill: `hsla(${hue}, 85%, 50%, 0.1)`,
-      shadow: `hsla(${hue}, 85%, 50%, 0.35)`
+      stroke: `hsl(${hue}, 45%, 45%)`,
+      fill: `hsla(${hue}, 45%, 45%, 0.05)`,
+      shadow: `hsla(${hue}, 45%, 45%, 0.2)`
     };
   }, [centeredYear]);
 
@@ -642,14 +651,14 @@ export default function HomePage() {
                                 d="M 20 44 L 24 44 A 6 6 0 0 0 36 44 L 54 44 A 6 6 0 0 0 66 44 L 70 44 Q 78 44 78 36 L 78 24 Q 78 16 70 16 L 64 16 L 58 6 Q 56 2 52 2 L 38 2 Q 34 2 32 6 L 26 16 L 20 16 Q 12 16 12 24 L 12 36 Q 12 44 20 44 Z"
                                 fill={yearColorObj.fill}
                                 stroke={yearColorObj.stroke}
-                                strokeWidth="3.5"
+                                strokeWidth="2.5"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 style={{ transition: 'all 0.4s ease' }}
                               />
                               {/* Wheels */}
-                              <circle cx="30" cy="44" r="4.5" fill="#ffffff" stroke={yearColorObj.stroke} strokeWidth="3" style={{ transition: 'all 0.4s ease' }} />
-                              <circle cx="60" cy="44" r="4.5" fill="#ffffff" stroke={yearColorObj.stroke} strokeWidth="3" style={{ transition: 'all 0.4s ease' }} />
+                              <circle cx="30" cy="44" r="4.5" fill="#ffffff" stroke={yearColorObj.stroke} strokeWidth="2.5" style={{ transition: 'all 0.4s ease' }} />
+                              <circle cx="60" cy="44" r="4.5" fill="#ffffff" stroke={yearColorObj.stroke} strokeWidth="2.5" style={{ transition: 'all 0.4s ease' }} />
                             </svg>
                           </div>
 
@@ -674,10 +683,10 @@ export default function HomePage() {
                                   key={year}
                                   data-year={year}
                                   onClick={() => setSelectedYear(year)}
-                                  className={`flex-shrink-0 w-[64px] h-[52px] flex items-center justify-center rounded-xl text-center transition-all duration-300 ${
+                                  className={`flex-shrink-0 w-[64px] h-[52px] flex items-center justify-center pb-2 rounded-xl text-center transition-all duration-300 ${
                                     isCentered
-                                      ? 'text-[17px] font-black scale-100 tracking-tight'
-                                      : 'text-sm font-bold text-stone-300 scale-90 opacity-60'
+                                      ? 'text-base font-bold scale-100 tracking-tight'
+                                      : 'text-sm font-medium text-stone-400 scale-90 opacity-40'
                                   }`}
                                   style={{
                                     scrollSnapAlign: 'center',
