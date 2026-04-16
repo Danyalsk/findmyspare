@@ -4,11 +4,10 @@ import { usePathname } from 'next/navigation';
 import { 
   Package, 
   Search, 
-  Truck, 
   User, 
-  Settings, 
   Zap,
-  ShoppingCart
+  ShoppingCart,
+  LayoutGrid
 } from 'lucide-react';
 
 export default function DesktopNav() {
@@ -30,8 +29,9 @@ export default function DesktopNav() {
         
         {/* Primary Links */}
         <div className="flex items-center gap-8 ml-10">
-          <Link href="/search" className={`text-sm font-bold transition-all ${pathname === '/search' ? 'text-amber-600' : 'text-stone-500 hover:text-stone-900'}`}>
-             Catalog
+          <Link href="/search" className={`flex items-center gap-1.5 text-sm font-bold transition-all ${pathname === '/search' ? 'text-amber-600' : 'text-stone-500 hover:text-stone-900'}`}>
+             <LayoutGrid className="w-4 h-4" />
+             Browse Parts
           </Link>
           <Link href="/requests" className={`text-sm font-bold transition-all ${pathname === '/requests' ? 'text-amber-600' : 'text-stone-500 hover:text-stone-900'}`}>
              File RFQ

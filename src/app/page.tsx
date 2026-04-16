@@ -4,6 +4,8 @@ import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuthStore } from "@/lib/store";
+import { fetchApi } from "@/lib/api";
 import {
   Search,
   Car,
@@ -35,6 +37,7 @@ import {
   GitMerge,
   Droplet,
   Settings,
+  LayoutGrid,
   X
 } from "lucide-react";
 
@@ -316,6 +319,36 @@ function FloatingAccent({
 
 export default function HomePage() {
   const router = useRouter();
+
+  /* ── submit inquiry ────────────────────────────────── */
+  const handleFindPart = async () => {
+    const { user, isHydrated } = useAuthStore.getState();
+    if (isHydrated && !user) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const partsToRequest = selectedParts.length > 0 ? selectedParts.join(", ") : partInput;
+      await fetchApi("/inquiries", {
+        method: "POST",
+        body: JSON.stringify({
+          partName: partsToRequest || "General Request",
+          make: selectedMake || "Unknown Make",
+          model: selectedModel || "Unknown Model",
+          year: selectedYear || "Unknown Year",
+        }),
+      });
+      alert("Your inquiry has been submitted! Suppliers will contact you shortly.");
+      setSelectedMake("");
+      setSelectedModel("");
+      setSelectedYear("");
+      setSelectedParts([]);
+      setPartInput("");
+    } catch (err: any) {
+      alert(err.message || "Failed to submit inquiry. Please try again.");
+    }
+  };
 
   // — split locator state
   const [selectedParts, setSelectedParts] = useState<string[]>([]);
@@ -805,7 +838,7 @@ export default function HomePage() {
 
                         {/* CTA */}
                         <motion.button
-                          onClick={() => router.push('/product')}
+                          onClick={handleFindPart}
                           className={`w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-sm tracking-wide transition-all shadow-lg ${
                             canSearch || selectedParts.length > 0
                               ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-900 shadow-amber-500/25 relative overflow-hidden group border border-amber-400/50"
@@ -1002,7 +1035,7 @@ export default function HomePage() {
 
                   {/* Find My Part CTA */}
                   <motion.button
-                    onClick={() => router.push('/product')}
+                    onClick={handleFindPart}
                     className={`w-full flex items-center justify-center gap-2 py-5 rounded-xl font-black text-lg tracking-wide transition-all shadow-lg ${
                       canSearch || selectedParts.length > 0
                         ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-900 shadow-amber-500/25 hover:shadow-amber-500/40 relative overflow-hidden group border border-amber-400/50"
@@ -1026,39 +1059,186 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ─── Trust / How it Works Banner ──────────── */}
+        {/* ─── Dual Action Command Center ──────────── */}
         <motion.section
           className="max-w-5xl mx-auto px-4 sm:px-6 -mt-2 mb-16 sm:mb-24 relative z-10"
-          variants={fadeUp}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, amount: 0.5 }}
-          custom={0}
+          viewport={{ once: true, amount: 0.3 }}
+          variants={staggerContainer}
         >
-          <div className="grid grid-cols-3 gap-3 sm:gap-6">
-            {[
-              { icon: BadgeCheck, title: "Verified Fitment",  desc: "100% compatibility guaranteed" },
-              { icon: ShieldCheck, title: "Authentic Parts",   desc: "OEM & trusted aftermarket" },
-              { icon: Truck,       title: "Fast Delivery",     desc: "Shipped within 24 hours" },
-            ].map((item) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={item.title}
-                  className="flex flex-col items-center text-center bg-white border border-stone-100 rounded-xl sm:rounded-2xl py-5 sm:py-8 px-3 sm:px-6 shadow-sm"
-                >
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-50 border border-amber-100 rounded-xl flex items-center justify-center mb-3 sm:mb-4">
-                    <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" strokeWidth={2} />
-                  </div>
-                  <h3 className="text-[11px] sm:text-sm font-bold text-stone-900 mb-0.5 sm:mb-1">
-                    {item.title}
-                  </h3>
-                  <p className="text-[10px] sm:text-xs text-stone-500 font-medium hidden sm:block">
-                    {item.desc}
-                  </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+
+            {/* ── LEFT: Browse Parts ─────────────────── */}
+            <motion.div variants={staggerItem}>
+              <Link href="/search" className="group block relative overflow-hidden rounded-[2rem] min-h-[260px] sm:min-h-[280px] bg-stone-950 p-6 sm:p-8 cursor-pointer transition-all duration-500 hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.4)]">
+                {/* Animated mesh gradient background */}
+                <div className="absolute inset-0 opacity-60 group-hover:opacity-80 transition-opacity duration-700" style={{background: 'radial-gradient(ellipse at 20% 50%, hsla(30,90%,60%,0.25) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, hsla(200,60%,50%,0.15) 0%, transparent 50%), radial-gradient(ellipse at 60% 80%, hsla(280,50%,50%,0.1) 0%, transparent 50%)'}} />
+
+                {/* Floating orbiting icons */}
+                <div className="absolute top-6 right-6 sm:top-8 sm:right-8 w-24 h-24 sm:w-32 sm:h-32">
+                  {[Settings, Disc3, Zap, Thermometer, Shield].map((Icon, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute"
+                      style={{
+                        top: `${50 + 42 * Math.sin((i * 2 * Math.PI) / 5)}%`,
+                        left: `${50 + 42 * Math.cos((i * 2 * Math.PI) / 5)}%`,
+                        transform: 'translate(-50%, -50%)',
+                      }}
+                      animate={{
+                        rotate: [0, 360],
+                        scale: [1, 1.15, 1],
+                      }}
+                      transition={{
+                        rotate: { duration: 20 + i * 4, repeat: Infinity, ease: "linear" },
+                        scale: { duration: 3 + i * 0.5, repeat: Infinity, ease: "easeInOut" },
+                      }}
+                    >
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center group-hover:bg-white/20 group-hover:border-white/20 transition-all duration-500">
+                        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white/60 group-hover:text-amber-400 transition-colors duration-500" strokeWidth={1.5} />
+                      </div>
+                    </motion.div>
+                  ))}
+                  <motion.div
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-amber-500"
+                    animate={{ scale: [1, 1.5, 1], opacity: [0.8, 1, 0.8] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  />
                 </div>
-              );
-            })}
+
+                {/* Decorative dots grid */}
+                <div className="absolute bottom-0 left-0 right-0 h-24 opacity-10" style={{backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '16px 16px'}} />
+
+                {/* Content */}
+                <div className="relative z-10 flex flex-col h-full justify-between">
+                  <div>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 backdrop-blur-sm mb-4">
+                      <motion.div
+                        className="w-2 h-2 rounded-full bg-emerald-400"
+                        animate={{ opacity: [1, 0.4, 1] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      />
+                      <span className="text-[10px] sm:text-xs font-bold text-white/70 uppercase tracking-widest">Live Inventory</span>
+                    </div>
+
+                    <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight mb-2">
+                      Browse Parts
+                    </h3>
+                    <p className="text-sm sm:text-base text-white/50 font-medium max-w-[240px] leading-relaxed">
+                      Search across 10,000+ genuine & aftermarket parts for every system.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between mt-6">
+                    {/* Animated counter */}
+                    <div className="flex items-baseline gap-1.5">
+                      <motion.span
+                        className="text-3xl sm:text-4xl font-black text-amber-400 tabular-nums"
+                        animate={{ opacity: [0.7, 1, 0.7] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                      >
+                        12
+                      </motion.span>
+                      <span className="text-xs font-bold text-white/40 uppercase tracking-wider">Categories</span>
+                    </div>
+
+                    <motion.div
+                      className="w-12 h-12 rounded-2xl bg-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/30 group-hover:shadow-amber-500/50 group-hover:scale-110 transition-all duration-300"
+                      whileHover={{ rotate: -10 }}
+                    >
+                      <ArrowRight className="w-5 h-5 text-stone-950" strokeWidth={3} />
+                    </motion.div>
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
+
+            {/* ── RIGHT: Request a Part (RFQ simplified) ── */}
+            <motion.div variants={staggerItem}>
+              <Link href="/requests" className="group block relative overflow-hidden rounded-[2rem] min-h-[260px] sm:min-h-[280px] bg-gradient-to-br from-amber-50 via-orange-50/60 to-amber-100/40 border-2 border-amber-200/60 p-6 sm:p-8 cursor-pointer transition-all duration-500 hover:shadow-[0_20px_60px_-15px_rgba(245,158,11,0.25)] hover:border-amber-300/80">
+
+                {/* Warm gradient orb */}
+                <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-gradient-to-br from-amber-300/30 to-orange-400/20 blur-2xl group-hover:scale-125 transition-transform duration-700" />
+                <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-gradient-to-tr from-yellow-200/30 to-amber-300/20 blur-2xl group-hover:scale-110 transition-transform duration-700" />
+
+                {/* Conversation mockup */}
+                <div className="absolute top-5 right-5 sm:top-7 sm:right-7 flex flex-col items-end gap-2 opacity-60 group-hover:opacity-90 transition-opacity duration-500">
+                  <motion.div
+                    className="px-3 py-2 bg-white rounded-2xl rounded-tr-sm shadow-sm border border-amber-100 max-w-[160px] sm:max-w-[180px]"
+                    initial={{ opacity: 0, x: 20, scale: 0.9 }}
+                    whileInView={{ opacity: 1, x: 0, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.5, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <p className="text-[10px] sm:text-xs text-stone-600 font-medium leading-snug">
+                      I need a clutch plate for my <span className="font-bold text-stone-900">2022 Creta</span>
+                    </p>
+                  </motion.div>
+                  <motion.div
+                    className="px-3 py-2 bg-amber-500 rounded-2xl rounded-tr-sm shadow-sm max-w-[140px] sm:max-w-[160px]"
+                    initial={{ opacity: 0, x: 20, scale: 0.9 }}
+                    whileInView={{ opacity: 1, x: 0, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.8, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <p className="text-[10px] sm:text-xs text-white font-bold leading-snug">
+                      We found 3 verified suppliers! ✓
+                    </p>
+                  </motion.div>
+                  <motion.div
+                    className="flex items-center gap-1"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 1.2, duration: 0.4 }}
+                  >
+                    <motion.div className="w-1.5 h-1.5 rounded-full bg-amber-400" animate={{ scale: [1, 1.5, 1] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} />
+                    <motion.div className="w-1.5 h-1.5 rounded-full bg-amber-400" animate={{ scale: [1, 1.5, 1] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }} />
+                    <motion.div className="w-1.5 h-1.5 rounded-full bg-amber-400" animate={{ scale: [1, 1.5, 1] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }} />
+                  </motion.div>
+                </div>
+
+                {/* Content */}
+                <div className="relative z-10 flex flex-col h-full justify-between">
+                  <div>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-300/40 mb-4">
+                      <FileText className="w-3 h-3 text-amber-600" />
+                      <span className="text-[10px] sm:text-xs font-bold text-amber-700 uppercase tracking-widest">Free Service</span>
+                    </div>
+
+                    <h3 className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight leading-tight mb-2">
+                      Request a Part
+                    </h3>
+                    <p className="text-sm sm:text-base text-stone-500 font-medium max-w-[260px] leading-relaxed">
+                      Can&apos;t find what you need? Tell us and we&apos;ll source it from verified suppliers.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between mt-6">
+                    {/* Trust badges inline */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/80 border border-amber-200/50 shadow-sm">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                        <span className="text-[10px] font-bold text-stone-600">Verified</span>
+                      </div>
+                      <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/80 border border-amber-200/50 shadow-sm">
+                        <Truck className="w-3.5 h-3.5 text-blue-500" />
+                        <span className="text-[10px] font-bold text-stone-600">Fast</span>
+                      </div>
+                    </div>
+
+                    <motion.div
+                      className="w-12 h-12 rounded-2xl bg-stone-900 flex items-center justify-center shadow-lg shadow-stone-900/20 group-hover:shadow-stone-900/40 group-hover:scale-110 transition-all duration-300"
+                      whileHover={{ rotate: 10 }}
+                    >
+                      <ArrowRight className="w-5 h-5 text-amber-400" strokeWidth={3} />
+                    </motion.div>
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
+
           </div>
         </motion.section>
 
@@ -1101,29 +1281,51 @@ export default function HomePage() {
           </div>
         </motion.section>
 
-        {/* ─── Browse by Category (Kinetic Gradient Cards) ── */}
+        {/* ─── Browse Parts by Category ─────────────────── */}
         <motion.section
+          id="browse-parts"
           className="max-w-5xl mx-auto px-4 sm:px-6 mb-16 sm:mb-24"
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, amount: 0.1 }}
+          viewport={{ once: true, amount: 0.05 }}
         >
-          <motion.div className="flex items-center gap-2 sm:gap-3 mb-5 sm:mb-6" variants={staggerItem}>
-            <div className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-            <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400">
-              Vehicle Systems
-            </h2>
+          {/* Section Header */}
+          <motion.div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8 sm:mb-10" variants={staggerItem}>
+            <div>
+              <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                  <LayoutGrid className="w-5 h-5 text-white" strokeWidth={2.5} />
+                </div>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-black tracking-tight text-stone-900">
+                    Browse Parts by Category
+                  </h2>
+                  <p className="text-xs sm:text-sm text-stone-500 font-medium mt-0.5">
+                    Explore 10,000+ genuine & aftermarket parts across all vehicle systems
+                  </p>
+                </div>
+              </div>
+            </div>
+            <Link
+              href="/search"
+              className="group flex w-fit items-center gap-2 px-5 py-2.5 rounded-xl bg-stone-900 text-white text-xs sm:text-sm font-bold hover:bg-stone-800 transition-all shadow-lg shadow-stone-900/20"
+            >
+              <Search className="w-3.5 h-3.5" />
+              Browse All Parts
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </Link>
           </motion.div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            {categories.slice(0, 4).map((cat) => {
+          {/* Category Grid — All 12 categories */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            {categories.map((cat) => {
               const Icon = cat.icon;
               return (
-                <div key={cat.label}>
+                <motion.div key={cat.label} variants={staggerItem}>
                   <Link
-                    href="/browse"
-                    className="group relative rounded-[1.5rem] overflow-hidden flex flex-col p-4 sm:p-6 min-h-[180px] sm:min-h-[210px] bg-white border border-stone-100 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] transition-all hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.1)] hover:-translate-y-1.5"
+                    href="/search"
+                    className="group relative rounded-[1.5rem] overflow-hidden flex flex-col p-4 sm:p-6 min-h-[170px] sm:min-h-[200px] bg-white border border-stone-100 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] transition-all hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.1)] hover:-translate-y-1.5"
                   >
                     {/* Top Accent Border */}
                     <div className={`absolute top-0 left-0 right-0 h-1.5 ${cat.color}`} />
@@ -1131,27 +1333,27 @@ export default function HomePage() {
                     {/* Content */}
                     <div className="relative z-10 flex flex-col h-full">
                       {/* Icon Container with subtle tint */}
-                      <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center ${cat.color} bg-opacity-20 text-stone-800 mb-auto shadow-sm group-hover:scale-110 transition-transform`}>
-                        <Icon className="w-6 h-6 sm:w-7 sm:h-7" strokeWidth={1.5} />
+                      <div className={`w-11 h-11 sm:w-13 sm:h-13 rounded-2xl flex items-center justify-center ${cat.color} bg-opacity-20 text-stone-800 mb-auto shadow-sm group-hover:scale-110 transition-transform`}>
+                        <Icon className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={1.5} />
                       </div>
 
                       {/* Label */}
-                      <h3 className="mt-5 font-black text-stone-900 text-lg sm:text-xl leading-snug">
+                      <h3 className="mt-4 font-black text-stone-900 text-base sm:text-lg leading-snug">
                         {cat.label}
                       </h3>
 
                       {/* Description */}
-                      <p className="mt-1 text-xs sm:text-[13px] text-stone-500 font-medium leading-relaxed">
+                      <p className="mt-0.5 text-[11px] sm:text-xs text-stone-500 font-medium leading-relaxed">
                         {cat.desc}
                       </p>
 
                       {/* Count Badge */}
-                      <div className="mt-3.5 inline-flex self-start items-center gap-1.5 px-3 py-1 rounded-full bg-stone-50 border border-stone-100 text-[10px] sm:text-xs font-bold text-stone-500 shadow-inner group-hover:bg-amber-50 group-hover:text-amber-600 group-hover:border-amber-100 transition-colors">
+                      <div className="mt-3 inline-flex self-start items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-stone-50 border border-stone-100 text-[10px] sm:text-xs font-bold text-stone-500 group-hover:bg-amber-50 group-hover:text-amber-600 group-hover:border-amber-100 transition-colors">
                         {cat.count}
                       </div>
                     </div>
                   </Link>
-                </div>
+                </motion.div>
               );
             })}
           </div>
@@ -1324,8 +1526,8 @@ export default function HomePage() {
           <span className="font-bold text-[9px] tracking-wider uppercase">Home</span>
         </Link>
         <Link href="/search" className="flex flex-col items-center gap-1 w-12 text-stone-400 hover:text-amber-500 transition-colors">
-          <Search className="w-5 h-5" strokeWidth={2.5} />
-          <span className="font-bold text-[9px] tracking-wider uppercase">Search</span>
+          <LayoutGrid className="w-5 h-5" strokeWidth={2.5} />
+          <span className="font-bold text-[9px] tracking-wider uppercase">Browse</span>
         </Link>
         <Link href="/scan" className="flex flex-col items-center -mt-7 relative z-10 outline-none hover:scale-105 active:scale-95 transition-transform">
           <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-amber-400 to-amber-500 shadow-[0_4px_16px_rgba(245,158,11,0.45)] flex items-center justify-center text-white border-4 border-[#fafaf9]">
