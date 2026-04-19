@@ -5,9 +5,17 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store";
 import { fetchApi } from "@/lib/api";
 import Link from "next/link";
-import { ChevronRight, Settings } from "lucide-react";
+import { ArrowRightIcon, LockIcon } from "@/lib/icons";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Chip } from "@/components/ui/Chip";
 
-export default function BuyerLoginPage() {
+/* ═══════════════════════════════════════════════════════
+   Login — restyled with new design system
+   Auth logic preserved from original implementation
+   ═══════════════════════════════════════════════════════ */
+
+export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -28,11 +36,10 @@ export default function BuyerLoginPage() {
 
       setAuth(res.user, res.token);
 
-      // On successful buyer login
       if (res.user.role === "supplier") {
-        router.push("/supplier/inquiries");
+        router.push("/supplier");
       } else {
-        router.push("/");
+        router.push("/buyer");
       }
     } catch (err: any) {
       setError(err.message || "Failed to login. Please try again.");
@@ -42,82 +49,84 @@ export default function BuyerLoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-stone-50 flex items-center justify-center p-6">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-stone-200">
-        <div className="p-8">
-          <div className="mb-8">
-            <h1 className="text-2xl font-black text-stone-900 tracking-tight">
-              Sign In to FindMySpare
-            </h1>
-            <p className="text-stone-500 mt-2 text-sm">
-              Enter your buyer account details to continue.
-            </p>
+    <div className="min-h-screen bg-paper flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-[380px]">
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 mb-8">
+          <div className="w-8 h-8 rounded-[9px] bg-ink flex items-center justify-center text-paper font-semibold font-serif text-xl italic">
+            f
           </div>
-
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl text-sm font-medium border border-red-100">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div>
-              <label className="block text-sm font-semibold text-stone-700 mb-1.5">
-                Email Address
-              </label>
-              <input
-                type="email"
-                required
-                className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-stone-700 mb-1.5">
-                Password
-              </label>
-              <input
-                type="password"
-                required
-                className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-amber-500 hover:bg-amber-600 text-stone-900 font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2 mt-4"
-            >
-              {loading ? "Authenticating..." : "Sign In via Secure Portal"}
-              {!loading && <ChevronRight className="w-5 h-5" />}
-            </button>
-          </form>
+          <span className="font-semibold tracking-[-0.01em]">FindMySpare</span>
         </div>
 
-        <div className="bg-stone-50 p-6 border-t border-stone-100 mt-2 text-center space-y-3">
-          <p className="text-stone-600 text-sm font-medium">
+        {/* Title */}
+        <h1 className="serif text-[36px] leading-[1.05] mb-2">
+          Welcome<br />back.
+        </h1>
+        <p className="text-ink-3 text-sm mb-8">
+          Sign in to continue to your account.
+        </p>
+
+        {/* Error */}
+        {error && (
+          <Card variant="accent" className="!p-3 mb-5 !bg-danger-wash !border-transparent">
+            <span className="text-sm text-[oklch(0.45_0.15_25)]">{error}</span>
+          </Card>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-ink-3 mb-1.5 mono tracking-[0.06em] uppercase">
+              Email
+            </label>
+            <input
+              type="email"
+              required
+              className="w-full h-12 px-3.5 rounded-[12px] bg-paper-2 border border-line text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-3 mb-1.5 mono tracking-[0.06em] uppercase">
+              Password
+            </label>
+            <input
+              type="password"
+              required
+              className="w-full h-12 px-3.5 rounded-[12px] bg-paper-2 border border-line text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+
+          <Button variant="primary" block type="submit" disabled={loading}>
+            {loading ? "Authenticating…" : "Sign in"}
+            {!loading && <ArrowRightIcon size={16} />}
+          </Button>
+        </form>
+
+        {/* Links */}
+        <div className="mt-6 text-center space-y-3">
+          <p className="text-sm text-ink-3">
             Don&apos;t have an account?{" "}
-            <Link href="/register" className="text-amber-600 hover:text-amber-700 font-bold">
+            <Link href="/register" className="text-accent-ink font-medium hover:underline">
               Register
             </Link>
           </p>
-          <p className="text-stone-600 text-sm font-medium">
-            Are you an auto parts supplier?
-          </p>
-          <Link
-            href="/supplier/login"
-            className="inline-flex items-center gap-2 text-amber-600 hover:text-amber-700 font-bold text-sm bg-amber-50 hover:bg-amber-100 px-4 py-2 rounded-lg transition-colors border border-amber-200"
-          >
-            <Settings className="w-4 h-4" />
-            Go to Supplier Portal Instead
-          </Link>
+        </div>
+
+        {/* Trust footer */}
+        <div className="mt-8 flex items-center gap-2 justify-center text-ink-3 text-[11px]">
+          <LockIcon size={14} className="text-accent-ink" />
+          <span className="mono tracking-[0.06em]">
+            SSL · ESCROW PROTECTED
+          </span>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
