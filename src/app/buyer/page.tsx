@@ -5,6 +5,14 @@ import { BellIcon, ScanIcon, CameraIcon, BoltIcon, ArrowRightIcon } from "@/lib/
 import { SearchBar } from "@/components/features/SearchBar";
 import { ProductCard } from "@/components/features/ProductCard";
 import { Card } from "@/components/ui/Card";
+import { useAuthStore } from "@/lib/store";
+
+function timeGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
 
 /* ═══════════════════════════════════════════════════════
    Buyer Home — Screen 02
@@ -27,6 +35,9 @@ const quickActions = [
 ];
 
 export default function BuyerHomePage() {
+  const user = useAuthStore((s) => s.user);
+  const firstName = user?.name?.trim().split(/\s+/)[0] || "there";
+
   return (
     <div className="flex-1 overflow-y-auto overflow-x-hidden scroll-hidden">
       {/* ── Header: garage context + notifications ── */}
@@ -36,7 +47,7 @@ export default function BuyerHomePage() {
             GARAGE · MARUTI SWIFT
           </div>
           <div className="font-semibold text-[17px] mt-0.5">
-            Good morning, Daniel
+            {timeGreeting()}, {firstName}
           </div>
         </div>
         <Link href="/buyer/orders" className="relative">
@@ -100,7 +111,7 @@ export default function BuyerHomePage() {
               ))}
             </div>
             <div className="flex-1 text-[13px]">7 suppliers responding</div>
-            <Link href="/buyer/requests/2041">
+            <Link href="/buyer/requests">
               <ArrowRightIcon size={20} />
             </Link>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BackIcon, SearchIcon, StarIcon } from "@/lib/icons";
+import { BackIcon, SearchIcon } from "@/lib/icons";
 import { FilterPills, FilterItem } from "@/components/features/FilterPills";
 import { Chip } from "@/components/ui/Chip";
 import { Card } from "@/components/ui/Card";

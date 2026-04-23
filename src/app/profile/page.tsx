@@ -2,16 +2,15 @@
 
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store";
+import { authApi } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import {
   BackIcon, PackageIcon, PinIcon, WalletIcon,
-  BellIcon, ShieldIcon, ArrowRightIcon, BoltIcon,
-  TrendIcon, UserIcon
+  BellIcon, ShieldIcon, ArrowRightIcon, BoltIcon
 } from "@/lib/icons";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { Avatar } from "@/components/ui/Avatar";
-import { Button } from "@/components/ui/Button";
 
 /* ═══════════════════════════════════════════════════════
    Profile — restyled with new design system
@@ -29,8 +28,16 @@ export default function ProfilePage() {
   const router = useRouter();
   const logout = useAuthStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
+  const refreshToken = useAuthStore((s) => s.refreshToken);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (refreshToken) {
+      try {
+        await authApi.logout(refreshToken);
+      } catch {
+        // Revoke locally regardless of network outcome.
+      }
+    }
     logout();
     router.push("/");
   };

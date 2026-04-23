@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store";
-import { fetchApi } from "@/lib/api";
+import { authApi } from "@/lib/api";
 import Link from "next/link";
 import { ArrowRightIcon, LockIcon, SearchIcon, PackageIcon } from "@/lib/icons";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { getErrorMessage } from "@/lib/errors";
 
 /* ═══════════════════════════════════════════════════════
    Register — restyled with new design system
@@ -30,20 +31,22 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const res = await fetchApi("/auth/register", {
-        method: "POST",
-        body: JSON.stringify({ name, email, password, role }),
-      });
+      const res = await authApi.register(name, email, password, role);
 
-      setAuth(res.user, res.token);
+      setAuth({
+        user: res.user,
+        accessToken: res.accessToken,
+        refreshToken: res.refreshToken,
+        sessionId: res.sessionId,
+      });
 
       if (res.user.role === "supplier") {
         router.push("/supplier");
       } else {
         router.push("/buyer");
       }
-    } catch (err: any) {
-      setError(err.message || "Registration failed. Please try again.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Registration failed. Please try again."));
     } finally {
       setLoading(false);
     }

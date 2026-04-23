@@ -8,7 +8,6 @@ import {
   HomeIcon,
   OrdersIcon,
   ScanIcon,
-  ChatIcon,
   UserIcon,
   PlusIcon,
   PackageIcon,
@@ -32,15 +31,15 @@ const buyerTabs: Tab[] = [
   { key: "home",     icon: HomeIcon,   label: "Home",     href: "/buyer" },
   { key: "orders",   icon: OrdersIcon, label: "Orders",   href: "/buyer/orders" },
   { key: "scan",     icon: ScanIcon,   label: "Scan",     href: "/buyer/scan",     center: true },
-  { key: "chat",     icon: ChatIcon,   label: "Messages", href: "/messages" },
+  { key: "requests", icon: PlusIcon,   label: "Requests", href: "/buyer/requests" },
   { key: "me",       icon: UserIcon,   label: "Profile",  href: "/profile" },
 ];
 
 const supplierTabs: Tab[] = [
   { key: "home",     icon: HomeIcon,    label: "Dash",    href: "/supplier" },
   { key: "orders",   icon: PackageIcon, label: "Orders",  href: "/supplier/orders" },
-  { key: "listing",  icon: PlusIcon,    label: "List",    href: "/supplier/listings", center: true },
-  { key: "chat",     icon: ChatIcon,    label: "Inbox",   href: "/messages" },
+  { key: "leads",    icon: PlusIcon,    label: "Leads",   href: "/supplier/leads", center: true },
+  { key: "tasks",    icon: OrdersIcon,  label: "Tasks",   href: "/supplier/orders" },
   { key: "me",       icon: UserIcon,    label: "Profile", href: "/profile" },
 ];
 

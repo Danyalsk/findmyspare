@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ShieldIcon } from "@/lib/icons";
 
 /* ═══════════════════════════════════════════════════════
@@ -11,6 +11,8 @@ import { ShieldIcon } from "@/lib/icons";
 
 export default function PaymentPage() {
   const router = useRouter();
+  const params = useSearchParams();
+  const orderId = params.get("orderId");
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -18,14 +20,17 @@ export default function PaymentPage() {
       setProgress((p) => {
         if (p >= 100) {
           clearInterval(t);
-          setTimeout(() => router.push("/buyer/success"), 400);
+          setTimeout(() => {
+            if (orderId) router.push(`/buyer/success?orderId=${orderId}`);
+            else router.push("/buyer/success");
+          }, 400);
           return 100;
         }
         return p + 2;
       });
     }, 60);
     return () => clearInterval(t);
-  }, [router]);
+  }, [router, orderId]);
 
   return (
     <div className="min-h-screen bg-paper flex flex-col items-center justify-center p-6">

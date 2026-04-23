@@ -53,21 +53,18 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 /* ── Provider ── */
 
+function readStorage<T extends string>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  const value = localStorage.getItem(key);
+  return (value as T | null) ?? fallback;
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
-  const [density, setDensityState] = useState<Density>("comfortable");
-  const [accent, setAccentState] = useState<Accent>("emerald");
-
-  /* Hydrate from localStorage on mount */
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("fms_theme") as Theme | null;
-    const savedDensity = localStorage.getItem("fms_density") as Density | null;
-    const savedAccent = localStorage.getItem("fms_accent") as Accent | null;
-
-    if (savedTheme) setThemeState(savedTheme);
-    if (savedDensity) setDensityState(savedDensity);
-    if (savedAccent) setAccentState(savedAccent);
-  }, []);
+  const [theme, setThemeState] = useState<Theme>(() => readStorage("fms_theme", "light"));
+  const [density, setDensityState] = useState<Density>(() =>
+    readStorage("fms_density", "comfortable")
+  );
+  const [accent, setAccentState] = useState<Accent>(() => readStorage("fms_accent", "emerald"));
 
   /* Apply theme attribute to <html> */
   const applyTheme = useCallback((t: Theme) => {

@@ -2,15 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { TruckIcon, ArrowRightIcon, ShieldIcon } from "@/lib/icons";
-import { OrderCard } from "@/components/features/OrderCard";
+import { ArrowRightIcon } from "@/lib/icons";
+import { Chip } from "@/components/ui/Chip";
 import { Card } from "@/components/ui/Card";
+import { formatPrice } from "@/lib/constants";
 import { ordersApi } from "@/lib/api";
 import type { OrderListItem, OrderStatus } from "@/lib/types";
 import { getErrorMessage } from "@/lib/errors";
 
 const statusConfig: Record<string, { label: string; variant: "ok" | "warn" | "danger" | "default" }> = {
-  placed: { label: "Placed", variant: "default" },
+  placed: { label: "New order", variant: "default" },
   confirmed: { label: "Confirmed", variant: "default" },
   shipped: { label: "Shipped", variant: "warn" },
   in_transit: { label: "In transit", variant: "warn" },
@@ -20,22 +21,15 @@ const statusConfig: Record<string, { label: string; variant: "ok" | "warn" | "da
   cancelled: { label: "Cancelled", variant: "danger" },
 };
 
-const tabs = ["All", "Active", "Completed"];
-const activeStatuses: OrderStatus[] = [
-  "placed",
-  "confirmed",
-  "shipped",
-  "in_transit",
-  "delivered",
-  "disputed",
-];
+const tabs = ["All", "Action needed", "Completed"];
+const actionNeededStatuses: OrderStatus[] = ["placed", "confirmed", "disputed"];
 const completedStatuses: OrderStatus[] = ["completed", "cancelled"];
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
-export default function OrdersPage() {
+export default function SupplierOrdersPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [orders, setOrders] = useState<OrderListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,19 +58,18 @@ export default function OrdersPage() {
   }, []);
 
   const filtered = useMemo(() => {
-    if (activeTab === 1) return orders.filter((o) => activeStatuses.includes(o.status));
+    if (activeTab === 1) return orders.filter((o) => actionNeededStatuses.includes(o.status));
     if (activeTab === 2) return orders.filter((o) => completedStatuses.includes(o.status));
     return orders;
   }, [orders, activeTab]);
 
-  const activeCount = orders.filter((o) => activeStatuses.includes(o.status)).length;
-  const heroOrder = orders.find((o) => o.status === "shipped" || o.status === "in_transit");
+  const actionCount = orders.filter((o) => actionNeededStatuses.includes(o.status)).length;
 
   return (
     <div className="flex-1 overflow-y-auto overflow-x-hidden scroll-hidden">
       <div className="px-5 pt-5">
-        <div className="serif text-[28px] leading-[1.05]">Your orders</div>
-        <div className="text-[11px] text-ink-3 mt-1">{activeCount} active</div>
+        <div className="serif text-[28px] leading-[1.05]">Orders</div>
+        <div className="text-[11px] text-ink-3 mt-1">{actionCount} need action</div>
       </div>
 
       <div className="px-5 pt-4">
@@ -95,41 +88,6 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {heroOrder && activeTab !== 2 && (
-        <div className="px-5 pt-[18px]">
-          <Card variant="dark" className="!p-4 relative overflow-hidden">
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="mono text-[10px] opacity-50 tracking-[0.1em]">
-                  {heroOrder.id.toUpperCase().slice(0, 10)}
-                </div>
-                <div className="text-sm font-medium mt-0.5">{heroOrder.primaryItemName || "Order in transit"}</div>
-              </div>
-              <Link href={`/buyer/orders/${heroOrder.id}`} className="opacity-80 hover:opacity-100">
-                <ArrowRightIcon size={18} />
-              </Link>
-            </div>
-            <div className="mt-4 flex items-center gap-2.5">
-              <div className="mono text-[10px] opacity-50">SUPPLIER</div>
-              <div className="flex-1 h-0.5 bg-white/20 relative rounded-full overflow-hidden">
-                <div className="absolute left-0 top-0 h-full bg-accent rounded-full" style={{ width: "55%" }} />
-                <div className="absolute top-1/2 -translate-y-1/2 text-paper" style={{ left: "55%", marginLeft: -8 }}>
-                  <TruckIcon size={16} />
-                </div>
-              </div>
-              <div className="mono text-[10px] opacity-50">YOU</div>
-            </div>
-            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/10">
-              <ShieldIcon size={14} className="opacity-60" />
-              <div className="mono text-[10px] opacity-50 tracking-[0.08em]">ESCROW HOLDS</div>
-              <div className="mono text-[13px] ml-auto">
-                ₹{parseFloat(heroOrder.totalAmount || "0").toLocaleString("en-IN")}
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
-
       {loading ? (
         <div className="px-5 pt-16 text-center text-[13px] text-ink-3">Loading orders...</div>
       ) : error ? (
@@ -143,16 +101,25 @@ export default function OrdersPage() {
           {filtered.map((order) => {
             const cfg = statusConfig[order.status] ?? { label: order.status, variant: "default" as const };
             return (
-              <OrderCard
-                key={order.id}
-                orderId={order.id.toUpperCase().slice(0, 10)}
-                name={order.primaryItemName || "Auto part order"}
-                status={cfg.label}
-                statusVariant={cfg.variant}
-                supplier={order.supplierName || "Supplier"}
-                date={formatDate(order.createdAt)}
-                href={`/buyer/orders/${order.id}`}
-              />
+              <Link key={order.id} href={`/supplier/orders/${order.id}`}>
+                <Card className="!p-3.5 flex gap-3 items-start hover:border-ink/30 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[13px] font-medium truncate max-w-[200px]">
+                        {order.primaryItemName || "Order"}
+                      </span>
+                      <Chip variant={cfg.variant}>{cfg.label}</Chip>
+                    </div>
+                    <div className="text-[11px] text-ink-3 mt-0.5">
+                      {order.buyerName || "Buyer"} · {formatDate(order.createdAt)}
+                    </div>
+                    <div className="mono text-[12px] font-semibold mt-1.5">
+                      {formatPrice(parseFloat(order.totalAmount || "0"))}
+                    </div>
+                  </div>
+                  <ArrowRightIcon size={16} className="text-ink-3 flex-shrink-0 mt-1" />
+                </Card>
+              </Link>
             );
           })}
         </div>

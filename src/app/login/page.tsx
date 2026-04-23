@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store";
-import { fetchApi } from "@/lib/api";
+import { authApi } from "@/lib/api";
 import Link from "next/link";
 import { ArrowRightIcon, LockIcon } from "@/lib/icons";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Chip } from "@/components/ui/Chip";
+import { getErrorMessage } from "@/lib/errors";
 
 /* ═══════════════════════════════════════════════════════
    Login — restyled with new design system
@@ -29,20 +29,22 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetchApi("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
+      const res = await authApi.login(email, password);
 
-      setAuth(res.user, res.token);
+      setAuth({
+        user: res.user,
+        accessToken: res.accessToken,
+        refreshToken: res.refreshToken,
+        sessionId: res.sessionId,
+      });
 
       if (res.user.role === "supplier") {
         router.push("/supplier");
       } else {
         router.push("/buyer");
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to login. Please try again.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to login. Please try again."));
     } finally {
       setLoading(false);
     }
