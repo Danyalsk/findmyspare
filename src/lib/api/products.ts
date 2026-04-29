@@ -28,6 +28,11 @@ export const productsApi = {
   list: (params?: ProductListParams): Promise<{ products: ProductSummary[]; pagination: BackendPagination }> =>
     fetchApi(`/products${toQuery(params ? { ...params } : undefined)}`),
 
+  mine: (params?: { status?: string; page?: number; limit?: number }): Promise<{
+    products: ProductSummary[];
+    pagination: BackendPagination;
+  }> => fetchApi(`/products/mine${toQuery(params ? { ...params } : undefined)}`),
+
   get: (id: string): Promise<{ product: ProductDetail }> => fetchApi(`/products/${id}`),
 
   create: (payload: {

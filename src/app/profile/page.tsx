@@ -5,23 +5,15 @@ import { useAuthStore } from "@/lib/store";
 import { authApi } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import {
-  BackIcon, PackageIcon, PinIcon, WalletIcon,
-  BellIcon, ShieldIcon, ArrowRightIcon, BoltIcon
+  BackIcon, PinIcon, BellIcon, ShieldIcon, ArrowRightIcon, ClockIcon,
 } from "@/lib/icons";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { Avatar } from "@/components/ui/Avatar";
 
-/* ═══════════════════════════════════════════════════════
-   Profile — restyled with new design system
-   Settings links, profile card, stats
-   ═══════════════════════════════════════════════════════ */
-
-const menuItems = [
-  { icon: PackageIcon, label: "Order pipeline", href: "/buyer/orders" },
-  { icon: PinIcon,     label: "Saved addresses", href: "#" },
-  { icon: WalletIcon,  label: "Payment methods", href: "#" },
-  { icon: BellIcon,    label: "Notifications",   href: "#" },
+const buyerMenu = [
+  { icon: PinIcon, label: "Saved addresses", href: "#" },
+  { icon: BellIcon, label: "Notifications", href: "#" },
 ];
 
 export default function ProfilePage() {
@@ -34,20 +26,71 @@ export default function ProfilePage() {
     if (refreshToken) {
       try {
         await authApi.logout(refreshToken);
-      } catch {
-        // Revoke locally regardless of network outcome.
-      }
+      } catch {}
     }
     logout();
     router.push("/");
   };
 
+  const backHref =
+    user?.role === "supplier"
+      ? user.verificationStatus === "approved"
+        ? "/supplier"
+        : "/login"
+      : user?.role === "admin"
+      ? "/admin"
+      : "/buyer";
+
+  const renderBadge = () => {
+    if (!user) return null;
+    if (user.role === "admin") {
+      return (
+        <Chip variant="ok" className="mt-2">
+          <ShieldIcon size={10} /> Administrator
+        </Chip>
+      );
+    }
+    if (user.role === "buyer") {
+      return (
+        <Chip variant="ok" className="mt-2">
+          <ShieldIcon size={10} /> Buyer
+        </Chip>
+      );
+    }
+    // supplier
+    switch (user.verificationStatus) {
+      case "approved":
+        return (
+          <Chip variant="ok" className="mt-2">
+            <ShieldIcon size={10} /> Verified supplier
+          </Chip>
+        );
+      case "pending":
+        return (
+          <Chip variant="warn" className="mt-2">
+            <ClockIcon size={10} /> Verification pending
+          </Chip>
+        );
+      case "rejected":
+        return (
+          <Chip variant="danger" className="mt-2">
+            Verification rejected
+          </Chip>
+        );
+      default:
+        return (
+          <Link href="/supplier/onboarding">
+            <Chip variant="warn" className="mt-2">Complete onboarding</Chip>
+          </Link>
+        );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-paper">
-      {/* Top bar */}
       <div className="px-5 pt-4 flex items-center gap-3">
         <Link
-          href="/buyer"
+          href={backHref}
           className="w-9 h-9 rounded-[11px] bg-paper-2 border border-line flex items-center justify-center flex-shrink-0 active:scale-90 transition-transform"
         >
           <BackIcon size={18} />
@@ -56,64 +99,42 @@ export default function ProfilePage() {
       </div>
 
       <div className="px-5 pt-5 max-w-lg mx-auto w-full pb-[100px]">
-        {/* Profile card */}
         <Card className="!p-4 flex gap-4 items-center">
-          <Avatar initials={user?.name?.slice(0, 2) || "DK"} size="lg" color="oklch(0.55 0.10 200)" />
+          <Avatar initials={user?.name?.slice(0, 2) || "?"} size="lg" color="oklch(0.55 0.10 200)" />
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-[17px]">{user?.name || "Danyal Developer"}</div>
-            <div className="text-[11px] text-ink-3 mt-0.5">{user?.email || "danyal@example.com"}</div>
-            <Chip variant="ok" className="mt-2">
-              <ShieldIcon size={10} /> Verified buyer
-            </Chip>
+            <div className="font-semibold text-[17px]">{user?.name || "—"}</div>
+            <div className="text-[11px] text-ink-3 mt-0.5">{user?.email || ""}</div>
+            {renderBadge()}
           </div>
         </Card>
 
-        {/* Stats row */}
-        <div className="grid grid-cols-3 gap-2.5 mt-4">
-          <Card className="!p-3 text-center">
-            <div className="serif text-[24px]">₹48K</div>
-            <div className="mono text-[9px] text-ink-3 tracking-[0.08em] mt-0.5">ESCROW SPEND</div>
-          </Card>
-          <Card className="!p-3 text-center">
-            <div className="serif text-[24px]">14</div>
-            <div className="mono text-[9px] text-ink-3 tracking-[0.08em] mt-0.5">REQUESTS</div>
-          </Card>
-          <Card className="!p-3 text-center">
-            <div className="serif text-[24px]">8</div>
-            <div className="mono text-[9px] text-ink-3 tracking-[0.08em] mt-0.5">ORDERS</div>
-          </Card>
-        </div>
-
-        {/* Menu items */}
-        <div className="mt-5 flex flex-col gap-1.5">
-          {menuItems.map((item) => (
-            <Link key={item.label} href={item.href}>
-              <Card className="!p-3 flex items-center gap-3 cursor-pointer hover:border-accent/40 transition-colors">
-                <div className="w-9 h-9 rounded-[10px] bg-paper-2 flex items-center justify-center flex-shrink-0">
-                  <item.icon size={18} />
-                </div>
-                <span className="text-[13px] font-medium flex-1">{item.label}</span>
-                <ArrowRightIcon size={16} className="text-ink-3" />
-              </Card>
-            </Link>
-          ))}
-        </div>
-
-        {/* Supplier CTA */}
-        <Link href="/supplier">
-          <Card variant="accent" className="!p-3.5 mt-5 flex items-center gap-3 cursor-pointer">
-            <div className="w-9 h-9 rounded-[10px] bg-paper flex items-center justify-center flex-shrink-0">
-              <BoltIcon size={18} className="text-accent-ink" />
+        {user?.role === "supplier" && user.verificationStatus === "approved" && (
+          <Card className="!p-4 mt-4">
+            <div className="text-xs mono uppercase tracking-[0.06em] text-ink-3 mb-2">
+              Business
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[13px] font-semibold text-accent-ink">Become a supplier</div>
-              <div className="text-[11px] text-accent-ink opacity-75">Start selling parts today</div>
-            </div>
-            <ArrowRightIcon size={16} className="text-accent-ink" />
+            <div className="text-sm">{user.businessName || "—"}</div>
+            <div className="text-xs text-ink-3 mt-1">GSTIN: {user.gstNumber || "—"}</div>
+            <div className="text-xs text-ink-3">Phone: +91 {user.phone || "—"}</div>
           </Card>
-        </Link>
+        )}
 
-        {/* Sign out */}
+        {user?.role === "buyer" && (
+          <div className="mt-5 flex flex-col gap-1.5">
+            {buyerMenu.map((item) => (
+              <Link key={item.label} href={item.href}>
+                <Card className="!p-3 flex items-center gap-3 cursor-pointer hover:border-accent/40 transition-colors">
+                  <div className="w-9 h-9 rounded-[10px] bg-paper-2 flex items-center justify-center flex-shrink-0">
+                    <item.icon size={18} />
+                  </div>
+                  <span className="text-[13px] font-medium flex-1">{item.label}</span>
+                  <ArrowRightIcon size={16} className="text-ink-3" />
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+
         <button
           onClick={handleLogout}
           className="w-full mt-6 py-3 text-center text-danger text-[13px] font-medium hover:bg-danger-wash rounded-[12px] transition-colors cursor-pointer"

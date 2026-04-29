@@ -1,27 +1,5 @@
-"use client";
+import { ComingSoon } from "@/components/layout/ComingSoon";
 
-import Link from "next/link";
-import { TopBar } from "@/components/layout/TopBar";
-import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-
-export default function ChatPage() {
-  return (
-    <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden scroll-hidden">
-      <TopBar title="Conversation" subtitle="Not available in this phase" backHref="/messages" />
-      <div className="px-5 pt-10">
-        <Card className="!p-4">
-          <div className="text-[14px] font-medium">In-app chat is not enabled yet.</div>
-          <div className="text-[12px] text-ink-3 mt-1.5">
-            Use inquiry updates and order status tracking for now.
-          </div>
-          <Link href="/buyer/orders" className="block mt-4">
-            <Button variant="primary" block>
-              Back to orders
-            </Button>
-          </Link>
-        </Card>
-      </div>
-    </div>
-  );
+export default function MessageDetailHidden() {
+  return <ComingSoon redirectTo="/buyer" message="Messaging unavailable" />;
 }

@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { BellIcon, ScanIcon, CameraIcon, BoltIcon, ArrowRightIcon } from "@/lib/icons";
-import { SearchBar } from "@/components/features/SearchBar";
-import { ProductCard } from "@/components/features/ProductCard";
+import { useEffect, useState } from "react";
+import { SearchIcon, PlusIcon, ArrowRightIcon } from "@/lib/icons";
 import { Card } from "@/components/ui/Card";
+import { Chip } from "@/components/ui/Chip";
 import { useAuthStore } from "@/lib/store";
+import { inquiriesApi } from "@/lib/api";
+import type { Inquiry } from "@/lib/types";
 
 function timeGreeting() {
   const h = new Date().getHours();
@@ -14,130 +16,112 @@ function timeGreeting() {
   return "Good evening";
 }
 
-/* ═══════════════════════════════════════════════════════
-   Buyer Home — Screen 02
-   Garage-aware home with search, quick actions,
-   open request hero, and trending products grid.
-   ═══════════════════════════════════════════════════════ */
-
-/* ── Mock trending products (INR) ── */
-const trending = [
-  { id: "1", name: "Alternator 90A",  price: "₹8,400",  vehicle: "Toyota · '01–'08",    rating: 4.9, label: "ALTERNATOR" },
-  { id: "2", name: "Brake disc pair", price: "₹5,200",  vehicle: "Nissan · X-Trail",    rating: 4.7, label: "BRAKE DISC" },
-  { id: "3", name: "Timing belt kit", price: "₹3,950",  vehicle: "Honda · Fit",          rating: 4.8, label: "BELT KIT"  },
-  { id: "4", name: "Headlamp LH",    price: "₹12,000", vehicle: "Subaru · Forester",   rating: 4.6, label: "HEADLAMP"  },
-];
-
-const quickActions = [
-  { icon: ScanIcon,   label: "Scan VIN",     href: "/buyer/scan" },
-  { icon: CameraIcon, label: "Photo search", href: "/buyer/scan" },
-  { icon: BoltIcon,   label: "Post request", href: "/buyer/requests" },
-];
-
 export default function BuyerHomePage() {
   const user = useAuthStore((s) => s.user);
   const firstName = user?.name?.trim().split(/\s+/)[0] || "there";
+  const [requests, setRequests] = useState<Inquiry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await inquiriesApi.mine();
+        if (!cancelled) setRequests(res.inquiries);
+      } catch {
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const open = requests.filter((r) => r.isActive);
 
   return (
     <div className="flex-1 overflow-y-auto overflow-x-hidden scroll-hidden">
-      {/* ── Header: garage context + notifications ── */}
-      <div className="px-5 pt-5 flex items-center justify-between">
-        <div>
-          <div className="mono text-[10px] text-ink-3 tracking-[0.12em]">
-            GARAGE · MARUTI SWIFT
-          </div>
-          <div className="font-semibold text-[17px] mt-0.5">
-            {timeGreeting()}, {firstName}
-          </div>
+      <div className="px-5 pt-5">
+        <div className="mono text-[10px] text-ink-3 tracking-[0.12em]">FINDMYSPARE</div>
+        <div className="font-semibold text-[17px] mt-0.5">
+          {timeGreeting()}, {firstName}
         </div>
-        <Link href="/buyer/orders" className="relative">
-          <div className="w-10 h-10 rounded-[12px] bg-paper-2 border border-line flex items-center justify-center">
-            <BellIcon size={20} />
+      </div>
+
+      <div className="px-5 pt-5 grid grid-cols-2 gap-3">
+        <Link
+          href="/search"
+          className="p-4 rounded-[14px] bg-paper border border-line flex flex-col items-start gap-2 hover:border-accent/40 transition-colors active:scale-[0.97]"
+        >
+          <div className="w-9 h-9 rounded-[10px] bg-paper-2 flex items-center justify-center text-accent-ink">
+            <SearchIcon size={18} />
           </div>
-          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-accent border-2 border-paper" />
+          <div className="text-[13px] font-medium leading-[1.2]">Browse parts</div>
+          <div className="text-[11px] text-ink-3">From verified suppliers</div>
+        </Link>
+
+        <Link
+          href="/buyer/requests/new"
+          className="p-4 rounded-[14px] bg-ink text-paper flex flex-col items-start gap-2 active:scale-[0.97]"
+        >
+          <div className="w-9 h-9 rounded-[10px] bg-white/10 flex items-center justify-center">
+            <PlusIcon size={18} />
+          </div>
+          <div className="text-[13px] font-medium leading-[1.2]">Post a request</div>
+          <div className="text-[11px] opacity-70">Suppliers will bid</div>
         </Link>
       </div>
 
-      {/* ── Search bar ── */}
-      <div className="px-5 pt-[18px]">
-        <SearchBar />
+      <div className="px-5 pt-7 flex items-baseline justify-between">
+        <div className="serif text-[22px]">Your open requests</div>
+        <Link
+          href="/buyer/requests"
+          className="text-[12px] text-accent-ink hover:underline flex items-center gap-1"
+        >
+          View all <ArrowRightIcon size={12} />
+        </Link>
       </div>
 
-      {/* ── Quick action trio ── */}
-      <div className="px-5 pt-3.5 grid grid-cols-3 gap-2">
-        {quickActions.map((a) => (
-          <Link
-            key={a.label}
-            href={a.href}
-            className="p-3.5 px-2.5 rounded-[12px] bg-paper border border-line flex flex-col items-start gap-2 hover:border-accent/40 transition-colors active:scale-[0.97]"
-          >
-            <div className="w-7 h-7 text-accent-ink">
-              <a.icon size={28} />
+      <div className="px-5 pt-2.5 pb-8 flex flex-col gap-2">
+        {loading ? (
+          <div className="text-[13px] text-ink-3 py-6 text-center">Loading…</div>
+        ) : open.length === 0 ? (
+          <Card className="text-center !p-6">
+            <div className="text-[13px] font-medium mb-1">No open requests</div>
+            <div className="text-[11px] text-ink-3 mb-3">
+              Post one and verified suppliers will bid.
             </div>
-            <div className="text-xs font-medium leading-[1.2]">{a.label}</div>
-          </Link>
-        ))}
-      </div>
-
-      {/* ── Open request hero card ── */}
-      <div className="px-5 pt-[18px]">
-        <div className="mono text-[10px] tracking-[0.12em] text-ink-3 mb-2">
-          YOUR OPEN REQUEST
-        </div>
-        <Card variant="dark" className="!p-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="text-xs opacity-60 mono">REQ-2041</div>
-              <div className="font-medium mt-1 text-[15px]">
-                Front brake caliper · &apos;18 Swift
-              </div>
-            </div>
-            <div className="text-[11px] bg-white/[0.14] px-2 py-1 rounded-md">
-              4h left
-            </div>
-          </div>
-          <div className="flex items-center gap-3.5 mt-3.5">
-            {/* Avatar stack */}
-            <div className="flex">
-              {[0, 1, 2, 3].map((i) => (
+            <Link
+              href="/buyer/requests/new"
+              className="text-accent-ink text-[12px] font-medium hover:underline"
+            >
+              Post a request →
+            </Link>
+          </Card>
+        ) : (
+          open.slice(0, 5).map((r) => (
+            <Link key={r.id} href={`/buyer/requests/${r.id}`}>
+              <Card className="!p-3.5 flex items-center gap-3 cursor-pointer hover:border-accent/40 transition-colors">
                 <div
-                  key={i}
-                  className="w-[26px] h-[26px] rounded-full border-2 border-ink"
+                  className="w-12 h-12 rounded-[10px] flex-shrink-0"
                   style={{
-                    marginLeft: i ? -8 : 0,
-                    background: `oklch(${0.5 + i * 0.05} 0.02 ${i * 60})`,
+                    background:
+                      "repeating-linear-gradient(135deg, var(--paper-2) 0 6px, var(--paper-3) 6px 12px)",
                   }}
                 />
-              ))}
-            </div>
-            <div className="flex-1 text-[13px]">7 suppliers responding</div>
-            <Link href="/buyer/requests">
-              <ArrowRightIcon size={20} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-medium truncate">{r.partName}</div>
+                  <div className="text-[11px] text-ink-3 mt-0.5 truncate">
+                    {r.make} {r.model} · {r.year}
+                  </div>
+                </div>
+                <Chip variant="ok">{r.bidCount ?? 0} bids</Chip>
+              </Card>
             </Link>
-          </div>
-        </Card>
-      </div>
-
-      {/* ── Trending near you ── */}
-      <div className="px-5 pt-[22px] flex items-baseline justify-between">
-        <div className="serif text-[22px]">Trending near you</div>
-        <div className="mono text-[10px] text-ink-3 tracking-[0.1em]">
-          DELHI · 12KM
-        </div>
-      </div>
-
-      <div className="px-5 pt-2.5 pb-5 grid grid-cols-2 gap-2.5">
-        {trending.map((p) => (
-          <ProductCard
-            key={p.id}
-            id={p.id}
-            name={p.name}
-            price={p.price}
-            vehicle={p.vehicle}
-            rating={p.rating}
-            imageLabel={p.label}
-          />
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

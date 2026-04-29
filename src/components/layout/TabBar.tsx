@@ -6,18 +6,11 @@ import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import {
   HomeIcon,
-  OrdersIcon,
-  ScanIcon,
+  SearchIcon,
   UserIcon,
   PlusIcon,
   PackageIcon,
 } from "@/lib/icons";
-
-/* ═══════════════════════════════════════════════════════
-   TabBar — bottom navigation for mobile
-   Role-aware: different tabs for buyer vs supplier
-   Matches prototype screens.js tabbar() function
-   ═══════════════════════════════════════════════════════ */
 
 interface Tab {
   key: string;
@@ -29,18 +22,16 @@ interface Tab {
 
 const buyerTabs: Tab[] = [
   { key: "home",     icon: HomeIcon,   label: "Home",     href: "/buyer" },
-  { key: "orders",   icon: OrdersIcon, label: "Orders",   href: "/buyer/orders" },
-  { key: "scan",     icon: ScanIcon,   label: "Scan",     href: "/buyer/scan",     center: true },
-  { key: "requests", icon: PlusIcon,   label: "Requests", href: "/buyer/requests" },
+  { key: "browse",   icon: SearchIcon, label: "Browse",   href: "/search" },
+  { key: "requests", icon: PlusIcon,   label: "Request",  href: "/buyer/requests", center: true },
   { key: "me",       icon: UserIcon,   label: "Profile",  href: "/profile" },
 ];
 
 const supplierTabs: Tab[] = [
-  { key: "home",     icon: HomeIcon,    label: "Dash",    href: "/supplier" },
-  { key: "orders",   icon: PackageIcon, label: "Orders",  href: "/supplier/orders" },
-  { key: "leads",    icon: PlusIcon,    label: "Leads",   href: "/supplier/leads", center: true },
-  { key: "tasks",    icon: OrdersIcon,  label: "Tasks",   href: "/supplier/orders" },
-  { key: "me",       icon: UserIcon,    label: "Profile", href: "/profile" },
+  { key: "home",     icon: HomeIcon,    label: "Dash",     href: "/supplier" },
+  { key: "products", icon: PackageIcon, label: "Products", href: "/supplier/products" },
+  { key: "leads",    icon: PlusIcon,    label: "Leads",    href: "/supplier/leads", center: true },
+  { key: "me",       icon: UserIcon,    label: "Profile",  href: "/profile" },
 ];
 
 export interface TabBarProps {

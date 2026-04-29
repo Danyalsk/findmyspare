@@ -1,4 +1,18 @@
-export type Role = "buyer" | "supplier";
+export type Role = "buyer" | "supplier" | "admin";
+
+export type VerificationStatus =
+  | "not_submitted"
+  | "pending"
+  | "approved"
+  | "rejected";
+
+export interface BusinessAddress {
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string;
+  pincode: string;
+}
 
 export interface User {
   id: string;
@@ -8,6 +22,12 @@ export interface User {
   image?: string | null;
   phone?: string | null;
   businessName?: string | null;
+  verificationStatus?: VerificationStatus | null;
+  gstNumber?: string | null;
+  panNumber?: string | null;
+  gstCertificateUrl?: string | null;
+  businessAddress?: BusinessAddress | null;
+  rejectionReason?: string | null;
 }
 
 export type PartCondition = "oem" | "oem_equivalent" | "used";
@@ -81,6 +101,7 @@ export interface Bid {
   createdAt: string;
   supplierName?: string | null;
   supplierBusinessName?: string | null;
+  supplierPhone?: string | null;
   completedOrders?: number;
 }
 
@@ -189,6 +210,7 @@ export interface ProductDetail {
   supplierId: string;
   supplierName: string | null;
   supplierBusinessName: string | null;
+  supplierPhone: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -200,6 +222,46 @@ export interface SupplierDashboard {
   releasedChange: number;
   activeBids: number;
   openInquiries: number;
+}
+
+export interface Banner {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  imageUrl: string | null;
+  ctaLabel: string | null;
+  ctaHref: string | null;
+  status: "active" | "draft";
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminUserRow {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  phone: string | null;
+  businessName: string | null;
+  verificationStatus: VerificationStatus | null;
+  isBlocked: boolean;
+  createdAt: string;
+}
+
+export interface AdminInquiryRow {
+  id: string;
+  partName: string;
+  make: string;
+  model: string;
+  year: string;
+  status: InquiryStatus;
+  isActive: boolean;
+  createdAt: string;
+  buyerId: string;
+  buyerName: string | null;
+  buyerEmail: string | null;
+  bidCount: number;
 }
 
 export interface ApiError {

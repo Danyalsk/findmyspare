@@ -37,6 +37,7 @@ export const bidsApi = {
 
   get: (id: string): Promise<{ bid: Bid }> => fetchApi(`/bids/${id}`),
 
+  // DEPRECATED v1: bid acceptance creates an order. Replaced by WhatsApp contact in UI.
   accept: (bidId: string): Promise<{ order: { id: string }; orderId: string }> =>
     fetchApi(`/bids/${bidId}/accept`, { method: "POST" }),
 };

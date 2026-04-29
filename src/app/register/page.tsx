@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, getPostLoginPath } from "@/lib/store";
 import { authApi } from "@/lib/api";
 import Link from "next/link";
 import { ArrowRightIcon, LockIcon, SearchIcon, PackageIcon } from "@/lib/icons";
@@ -40,11 +40,7 @@ export default function RegisterPage() {
         sessionId: res.sessionId,
       });
 
-      if (res.user.role === "supplier") {
-        router.push("/supplier");
-      } else {
-        router.push("/buyer");
-      }
+      router.push(getPostLoginPath(res.user));
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Registration failed. Please try again."));
     } finally {
@@ -172,7 +168,7 @@ export default function RegisterPage() {
         {/* Trust */}
         <div className="mt-8 flex items-center gap-2 justify-center text-ink-3 text-[11px]">
           <LockIcon size={14} className="text-accent-ink" />
-          <span className="mono tracking-[0.06em]">SSL · ESCROW PROTECTED</span>
+          <span className="mono tracking-[0.06em]">SSL · TRUSTED MARKETPLACE</span>
         </div>
       </div>
     </div>

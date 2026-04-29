@@ -103,6 +103,22 @@ export function setRefreshTokenRaw(token: string) {
   useAuthStore.setState({ refreshToken: token });
 }
 
+export function getPostLoginPath(user: User): string {
+  if (user.role === "admin") return "/admin";
+  if (user.role === "buyer") return "/buyer";
+  switch (user.verificationStatus) {
+    case "approved":
+      return "/supplier";
+    case "pending":
+      return "/supplier/pending";
+    case "rejected":
+      return "/supplier/rejected";
+    case "not_submitted":
+    default:
+      return "/supplier/onboarding";
+  }
+}
+
 export function clearAuthRaw() {
   if (!hasWindow()) return;
   sessionStorage.removeItem(K_USER);

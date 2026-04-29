@@ -1,435 +1,253 @@
 "use client";
 
 import Link from "next/link";
-import { useAuthStore } from "@/lib/store";
+import { useEffect, useState } from "react";
+import { PublicNav } from "@/components/layout/PublicNav";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { ArrowRightIcon, LockIcon, ShieldIcon, BoltIcon, PackageIcon } from "@/lib/icons";
+import { productsApi, bannersApi } from "@/lib/api";
+import type { Banner, ProductSummary } from "@/lib/types";
+import { formatPrice } from "@/lib/constants";
 
-/* ═══════════════════════════════════════════════════════
-   Root Page — Role Switch (Screen 01 from prototype)
-   
-   Authenticated → role switch screen (exact prototype match)
-   Unauthenticated → redirects to /buyer (public role-free)
-   ═══════════════════════════════════════════════════════ */
+export default function PublicHome() {
+  const [products, setProducts] = useState<ProductSummary[]>([]);
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [bannerIdx, setBannerIdx] = useState(0);
 
-export default function RootPage() {
-  const user = useAuthStore((s) => s.user);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [prodRes, bannerRes] = await Promise.allSettled([
+          productsApi.list({ limit: 12, sort: "newest" }),
+          bannersApi.listActive(),
+        ]);
+        if (cancelled) return;
+        if (prodRes.status === "fulfilled") setProducts(prodRes.value.products);
+        if (bannerRes.status === "fulfilled") setBanners(bannerRes.value.banners);
+      } catch {}
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  /* ── Unauthenticated: straight to buyer experience ── */
-  if (!user) {
-    return (
-      <div className="min-h-dvh bg-paper flex flex-col px-6 py-8 max-w-[390px] mx-auto w-full">
-        {/* Logo row */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div
-              className="w-8 h-8 rounded-[9px] bg-ink flex items-center justify-center"
-              style={{ color: "var(--paper)" }}
-            >
-              <span className="serif italic text-[20px] font-semibold leading-none">f</span>
-            </div>
-            <span className="font-semibold text-ink" style={{ letterSpacing: "-0.01em" }}>
-              FindMySpare
-            </span>
-          </div>
-          {/* Escrow chip */}
-          <span
-            className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-[5px] rounded-full"
-            style={{
-              background: "var(--paper-2)",
-              border: "1px solid var(--line)",
-              color: "var(--ink-2)",
-            }}
-          >
-            <span
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ background: "var(--accent)" }}
-            />
-            Escrow protected
-          </span>
-        </div>
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const t = setInterval(() => setBannerIdx((i) => (i + 1) % banners.length), 5000);
+    return () => clearInterval(t);
+  }, [banners.length]);
 
-        {/* Hero text */}
-        <div className="mt-10">
-          <div
-            className="mono text-[11px] uppercase"
-            style={{ color: "var(--ink-3)", letterSpacing: "0.1em" }}
-          >
-            Trusted auto parts marketplace
-          </div>
-          <h1
-            className="serif mt-2.5"
-            style={{ fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em" }}
-          >
-            Find the{" "}
-            <em className="not-italic" style={{ fontStyle: "italic", color: "var(--accent-ink)" }}>
-              exact part
-            </em>
-            <br />for your car.
-          </h1>
-        </div>
+  const activeBanner = banners[bannerIdx];
 
-        {/* Cards */}
-        <div className="mt-8 flex flex-col gap-3">
-          <Link href="/buyer">
-            <RoleCard
-              icon={<SearchIconSvg />}
-              iconBg="var(--accent-wash)"
-              iconColor="var(--accent-ink)"
-              heading="Start finding parts"
-              subtext="Browse, scan VIN or post a request"
-              bordered
-            />
-          </Link>
-          <div className="flex gap-3">
-            <Link href="/login" className="flex-1">
-              <div
-                className="p-4 text-center rounded-[14px] border"
-                style={{ background: "var(--paper)", borderColor: "var(--line)" }}
-              >
-                <div className="font-semibold text-sm">Sign In</div>
-                <div className="text-[11px] mt-1" style={{ color: "var(--ink-3)" }}>
-                  Existing account
-                </div>
-              </div>
-            </Link>
-            <Link href="/register" className="flex-1">
-              <div
-                className="p-4 text-center rounded-[14px] border-[1.5px]"
-                style={{
-                  background: "var(--paper)",
-                  borderColor: "var(--accent)",
-                }}
-              >
-                <div className="font-semibold text-sm" style={{ color: "var(--accent-ink)" }}>
-                  Register
-                </div>
-                <div className="text-[11px] mt-1" style={{ color: "var(--ink-3)" }}>
-                  Create account
-                </div>
-              </div>
-            </Link>
-          </div>
-        </div>
-
-        {/* Trust footer */}
-        <TrustFooter />
-      </div>
-    );
-  }
-
-  /* ── Authenticated: Role Switch — Screen 01 (exact prototype) ── */
   return (
-    <div
-      className="min-h-dvh flex flex-col"
-      style={{ background: "var(--paper)", color: "var(--ink)" }}
-    >
-      {/* Scrollable body — padded exactly as prototype: 32px 24px 24px */}
-      <div
-        className="flex-1 flex flex-col overflow-y-auto max-w-[390px] mx-auto w-full"
-        style={{ padding: "32px 24px 24px", gap: 20 }}
-      >
-        {/* Logo row */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div
-              className="flex items-center justify-center"
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 9,
-                background: "var(--ink)",
-                color: "var(--paper)",
-                fontFamily: "'Instrument Serif', serif",
-                fontWeight: 600,
-                fontSize: 20,
-                fontStyle: "italic",
-              }}
-            >
-              f
-            </div>
-            <div style={{ fontWeight: 600, letterSpacing: "-0.01em" }}>
-              FindMySpare
-            </div>
-          </div>
-          {/* Escrow chip — exactly as prototype */}
-          <span
-            className="inline-flex items-center"
-            style={{
-              gap: 6,
-              padding: "5px 10px",
-              borderRadius: 999,
-              fontSize: 11,
-              fontWeight: 500,
-              background: "var(--paper-2)",
-              border: "1px solid var(--line)",
-              color: "var(--ink-2)",
-              whiteSpace: "nowrap",
-            }}
-          >
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: "var(--accent)",
-                display: "inline-block",
-              }}
-            />
-            Escrow protected
-          </span>
-        </div>
+    <div className="min-h-screen bg-paper flex flex-col">
+      <PublicNav />
 
-        {/* Heading block — mt:28px as prototype */}
-        <div style={{ marginTop: 28 }}>
-          <div
-            className="mono"
-            style={{
-              fontSize: 11,
-              color: "var(--ink-3)",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-            }}
-          >
-            Welcome back, {user.name?.split(" ")[0] || "Daniel"}
-          </div>
-          <h1
-            className="serif"
-            style={{
-              fontSize: 44,
-              lineHeight: 1,
-              margin: "10px 0 0",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Choose
-            <br />
-            how you&apos;re{" "}
-            <em style={{ fontStyle: "italic", color: "var(--accent-ink)" }}>
-              trading
-            </em>
-            <br />
-            today.
-          </h1>
-        </div>
-
-        {/* Role cards — gap:12px, mt:14px as prototype */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 14 }}>
-          {/* Buyer card — thick ink border (selected) */}
-          <Link href="/buyer">
-            <div
-              className="card-role"
-              style={{
-                padding: 18,
-                display: "flex",
-                gap: 14,
-                alignItems: "center",
-                border: "1.5px solid var(--ink)",
-                borderRadius: "var(--radius)",
-                background: "var(--paper)",
-                cursor: "pointer",
-                transition: "opacity 0.15s",
-              }}
+      {/* Hero / Banner */}
+      <section className="border-b border-line bg-paper-3">
+        <div className="max-w-7xl mx-auto px-5 py-8">
+          {activeBanner ? (
+            <Link
+              href={activeBanner.ctaHref || "/search"}
+              className="block rounded-[16px] overflow-hidden border border-line bg-paper relative group"
             >
-              {/* Icon box */}
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 11,
-                  background: "var(--accent-wash)",
-                  color: "var(--accent-ink)",
-                  display: "grid",
-                  placeItems: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <SearchIconSvg />
-              </div>
-              {/* Text */}
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600 }}>I&apos;m looking for a part</div>
-                <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 2 }}>
-                  Browse, scan VIN or post a request
+              {activeBanner.imageUrl ? (
+                <div className="aspect-[16/5] w-full overflow-hidden">
+                  <img
+                    src={activeBanner.imageUrl}
+                    alt={activeBanner.title}
+                    className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700"
+                  />
+                </div>
+              ) : (
+                <div
+                  className="aspect-[16/5] w-full"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, var(--accent-wash) 0%, var(--paper-2) 100%)",
+                  }}
+                />
+              )}
+              <div className="absolute inset-0 flex items-end">
+                <div className="p-5 sm:p-8 max-w-xl">
+                  <div className="serif text-[28px] sm:text-[40px] leading-[1.05] text-ink">
+                    {activeBanner.title}
+                  </div>
+                  {activeBanner.subtitle && (
+                    <div className="text-sm text-ink-2 mt-2">{activeBanner.subtitle}</div>
+                  )}
+                  {activeBanner.ctaLabel && (
+                    <div className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-accent-ink">
+                      {activeBanner.ctaLabel} <ArrowRightIcon size={14} />
+                    </div>
+                  )}
                 </div>
               </div>
-              {/* Arrow — full size as prototype */}
-              <ArrowRightSvg />
-            </div>
-          </Link>
-
-          {/* Supplier card */}
-          <Link href="/supplier">
-            <div
-              style={{
-                padding: 18,
-                display: "flex",
-                gap: 14,
-                alignItems: "center",
-                border: "1px solid var(--line)",
-                borderRadius: "var(--radius)",
-                background: "var(--paper)",
-                cursor: "pointer",
-                transition: "opacity 0.15s",
-              }}
-            >
-              {/* Icon box */}
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 11,
-                  background: "var(--paper-3)",
-                  display: "grid",
-                  placeItems: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <PackageIconSvg />
-              </div>
-              {/* Text */}
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600 }}>I supply parts</div>
-                <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 2 }}>
-                  12 active listings · 3 pending orders
+              {banners.length > 1 && (
+                <div className="absolute bottom-3 right-4 flex gap-1.5">
+                  {banners.map((_, i) => (
+                    <span
+                      key={i}
+                      className={`w-1.5 h-1.5 rounded-full ${i === bannerIdx ? "bg-ink" : "bg-line"}`}
+                    />
+                  ))}
                 </div>
+              )}
+            </Link>
+          ) : (
+            <div className="rounded-[16px] border border-line bg-paper p-8 sm:p-14">
+              <div className="mono text-[10px] text-ink-3 tracking-[0.12em] uppercase">
+                Trusted auto parts marketplace
               </div>
-              <ArrowRightSvg />
+              <h1 className="serif text-[40px] sm:text-[56px] leading-[1.05] mt-3 max-w-2xl">
+                Find the{" "}
+                <em className="not-italic italic text-accent-ink">exact part</em> for your car.
+              </h1>
+              <p className="text-ink-2 text-sm sm:text-base mt-3 max-w-lg">
+                Browse from GST-verified suppliers across India. Direct WhatsApp contact, no middleman.
+              </p>
+              <div className="mt-6 flex gap-3 flex-wrap">
+                <Link href="/search">
+                  <Button variant="primary" size="lg">
+                    Start browsing <ArrowRightIcon size={16} />
+                  </Button>
+                </Link>
+                <Link href="/buyer/requests/new">
+                  <Button variant="default" size="lg">
+                    Post a request
+                  </Button>
+                </Link>
+              </div>
             </div>
-          </Link>
+          )}
         </div>
+      </section>
 
-        {/* Trust footer — sits naturally after cards */}
-        <div
-          style={{
-            paddingTop: 24,
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            justifyContent: "center",
-            color: "var(--ink-3)",
-            fontSize: 11,
-          }}
-        >
-          <span style={{ width: 14, height: 14, color: "var(--accent-ink)", display: "flex" }}>
-            <LockIconSvg />
-          </span>
-          <span className="mono" style={{ letterSpacing: "0.06em" }}>
-            SSL · ESCROW · KYC-VERIFIED SUPPLIERS
-          </span>
+      {/* Trust strip */}
+      <section className="border-b border-line bg-paper">
+        <div className="max-w-7xl mx-auto px-5 py-5 grid grid-cols-2 md:grid-cols-4 gap-4 text-[12px]">
+          <Trust icon={<ShieldIcon size={16} />} label="GST-verified suppliers" />
+          <Trust icon={<BoltIcon size={16} />} label="Direct WhatsApp contact" />
+          <Trust icon={<PackageIcon size={16} />} label="OEM, equivalent, used" />
+          <Trust icon={<LockIcon size={16} />} label="Admin-reviewed listings" />
         </div>
-      </div>
+      </section>
+
+      {/* Featured */}
+      <section className="flex-1">
+        <div className="max-w-7xl mx-auto px-5 py-8">
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="serif text-[28px]">Featured parts</h2>
+            <Link href="/search" className="text-[13px] text-accent-ink hover:underline flex items-center gap-1">
+              View all <ArrowRightIcon size={12} />
+            </Link>
+          </div>
+
+          {products.length === 0 ? (
+            <Card className="text-center !p-10">
+              <div className="text-[14px] font-medium mb-1">No products yet</div>
+              <div className="text-[12px] text-ink-3 mb-4">
+                Be the first supplier to list parts.
+              </div>
+              <Link href="/register">
+                <Button variant="primary">Become a supplier</Button>
+              </Link>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {products.map((p) => (
+                <Link key={p.id} href={`/product/${p.id}`}>
+                  <Card className="!p-3 cursor-pointer hover:border-accent/40 transition-colors group">
+                    <div
+                      className="aspect-square rounded-[10px] mb-2.5 overflow-hidden relative"
+                      style={{
+                        background:
+                          "repeating-linear-gradient(135deg, var(--paper-2) 0 6px, var(--paper-3) 6px 12px)",
+                      }}
+                    >
+                      {p.images?.[0] ? (
+                        <img
+                          src={p.images[0]}
+                          alt={p.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <span className="absolute left-2 bottom-2 mono text-[9px] text-ink-3 uppercase tracking-[0.08em] bg-paper px-1.5 py-0.5 rounded border border-line">
+                          {(p.category || "PART").slice(0, 8)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[13px] font-medium leading-[1.25] line-clamp-2">{p.name}</div>
+                    <div className="text-[11px] text-ink-3 mt-0.5">{p.supplierName || "Supplier"}</div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="mono text-[14px] font-semibold">
+                        {formatPrice(parseFloat(p.price))}
+                      </span>
+                      <span className="text-[10px] text-ink-3">
+                        {p.stockQuantity > 0 ? `${p.stockQuantity} in stock` : "Out of stock"}
+                      </span>
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Supplier CTA */}
+      <section className="border-t border-line bg-ink text-paper">
+        <div className="max-w-7xl mx-auto px-5 py-10 grid md:grid-cols-2 gap-8 items-center">
+          <div>
+            <div className="mono text-[10px] uppercase tracking-[0.12em] opacity-70">
+              For suppliers
+            </div>
+            <h3 className="serif text-[32px] sm:text-[40px] leading-[1.05] mt-2">
+              Sell parts to{" "}
+              <em className="not-italic italic text-accent">verified buyers</em> nationwide.
+            </h3>
+            <p className="opacity-80 mt-3 text-sm">
+              GST verification, product CRUD, real-time enquiries, direct WhatsApp leads. No
+              listing fees while we&apos;re in beta.
+            </p>
+          </div>
+          <div className="flex gap-3 md:justify-end flex-wrap">
+            <Link href="/register">
+              <Button variant="accent" size="lg">
+                Become a supplier <ArrowRightIcon size={16} />
+              </Button>
+            </Link>
+            <Link href="/login">
+              <Button
+                variant="default"
+                size="lg"
+                className="!bg-transparent !border-paper/40 !text-paper hover:!bg-white/10"
+              >
+                Supplier login
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-line bg-paper-2">
+        <div className="max-w-7xl mx-auto px-5 py-6 text-[11px] text-ink-3 flex flex-wrap items-center justify-between gap-3">
+          <span className="mono tracking-[0.06em]">© FindMySpare · India</span>
+          <span className="mono tracking-[0.06em]">SSL · TRUSTED MARKETPLACE</span>
+        </div>
+      </footer>
     </div>
   );
 }
 
-/* ─────────────────────────────── helpers ─────────────────────────────── */
-
-function TrustFooter() {
+function Trust({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
-    <div
-      style={{
-        marginTop: "auto",
-        paddingTop: 24,
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        justifyContent: "center",
-        color: "var(--ink-3)",
-        fontSize: 11,
-      }}
-    >
-      <span style={{ width: 14, height: 14, color: "var(--accent-ink)", display: "flex" }}>
-        <LockIconSvg />
-      </span>
-      <span className="mono" style={{ letterSpacing: "0.06em" }}>
-        SSL · ESCROW · KYC-VERIFIED SUPPLIERS
-      </span>
-    </div>
-  );
-}
-
-/* ── Inline SVGs exactly from prototype (1.6 stroke, rounded) ── */
-
-function SearchIconSvg() {
-  return (
-    <svg viewBox="0 0 24 24" width={22} height={22} fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-    </svg>
-  );
-}
-
-function PackageIconSvg() {
-  return (
-    <svg viewBox="0 0 24 24" width={22} height={22} fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5zM3 7.5l9 4.5 9-4.5M12 12v9" />
-    </svg>
-  );
-}
-
-function ArrowRightSvg() {
-  return (
-    <svg viewBox="0 0 24 24" width={24} height={24} fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-      <path d="M5 12h14M13 6l6 6-6 6" />
-    </svg>
-  );
-}
-
-function LockIconSvg() {
-  return (
-    <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="5" y="11" width="14" height="10" rx="2" />
-      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-    </svg>
-  );
-}
-
-function RoleCard({
-  icon,
-  iconBg,
-  iconColor,
-  heading,
-  subtext,
-  bordered = false,
-}: {
-  icon: React.ReactNode;
-  iconBg: string;
-  iconColor: string;
-  heading: string;
-  subtext: string;
-  bordered?: boolean;
-}) {
-  return (
-    <div
-      style={{
-        padding: 18,
-        display: "flex",
-        gap: 14,
-        alignItems: "center",
-        border: bordered ? "1.5px solid var(--ink)" : "1px solid var(--line)",
-        borderRadius: "var(--radius)",
-        background: "var(--paper)",
-        cursor: "pointer",
-      }}
-    >
-      <div
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 11,
-          background: iconBg,
-          color: iconColor,
-          display: "grid",
-          placeItems: "center",
-          flexShrink: 0,
-        }}
-      >
-        {icon}
-      </div>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 600 }}>{heading}</div>
-        <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 2 }}>{subtext}</div>
-      </div>
-      <ArrowRightSvg />
+    <div className="flex items-center gap-2">
+      <span className="text-accent-ink">{icon}</span>
+      <span className="text-ink-2">{label}</span>
     </div>
   );
 }

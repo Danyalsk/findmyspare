@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { TopBar } from "@/components/layout/TopBar";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
-import { ShieldIcon, StarIcon } from "@/lib/icons";
+import { StarIcon } from "@/lib/icons";
 import { toast } from "@/lib/toast";
 import { formatPrice } from "@/lib/constants";
 import { bidsApi, inquiriesApi } from "@/lib/api";
+import { useAuthStore } from "@/lib/store";
+import { buildWhatsAppLink, waTemplates } from "@/lib/whatsapp";
 import type { Bid, Inquiry } from "@/lib/types";
 import { getErrorMessage } from "@/lib/errors";
 
@@ -30,14 +32,12 @@ const avatarColors = [
 export default function RequestDetailPage() {
   const params = useParams<{ id: string }>();
   const inquiryId = params.id;
-  const router = useRouter();
+  const buyer = useAuthStore((s) => s.user);
 
   const [inquiry, setInquiry] = useState<Inquiry | null>(null);
   const [bids, setBids] = useState<Bid[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [accepting, setAccepting] = useState<string | null>(null);
-  const [confirmBidId, setConfirmBidId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,18 +72,19 @@ export default function RequestDetailPage() {
     [bids]
   );
 
-  async function handleAccept(bidId: string) {
-    setAccepting(bidId);
-    try {
-      const res = await bidsApi.accept(bidId);
-      toast.success("Bid accepted. Order created.");
-      router.push(`/buyer/orders/${res.orderId}`);
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Failed to accept bid."));
-    } finally {
-      setAccepting(null);
-      setConfirmBidId(null);
+  function contactBidder(bid: Bid) {
+    if (!inquiry) return;
+    if (!bid.supplierPhone) {
+      toast.error("Supplier phone unavailable");
+      return;
     }
+    const msg = waTemplates.bidFollowUp({
+      buyerName: buyer?.name || "a buyer",
+      partName: inquiry.partName,
+      vehicle: `${inquiry.make} ${inquiry.model} ${inquiry.year}`,
+      bidPrice: bid.price,
+    });
+    window.open(buildWhatsAppLink(bid.supplierPhone, msg), "_blank", "noopener,noreferrer");
   }
 
   if (loading) {
@@ -143,9 +144,6 @@ export default function RequestDetailPage() {
           <div className="flex flex-col gap-3">
             {sortedBids.map((bid, idx) => {
               const isBest = idx === 0;
-              const isAccepting = accepting === bid.id;
-              const isConfirming = confirmBidId === bid.id;
-
               return (
                 <Card
                   key={bid.id}
@@ -167,7 +165,9 @@ export default function RequestDetailPage() {
                           color={avatarColors[idx % 4]}
                         />
                         <div>
-                          <div className="text-[13px] font-medium leading-[1.2]">{bid.supplierName || "Supplier"}</div>
+                          <div className="text-[13px] font-medium leading-[1.2]">
+                            {bid.supplierBusinessName || bid.supplierName || "Supplier"}
+                          </div>
                           <div className="text-[10px] text-ink-3 flex items-center gap-1">
                             <StarIcon size={10} className="text-ink" />
                             {(bid.completedOrders || 0).toLocaleString("en-IN")} orders
@@ -190,41 +190,16 @@ export default function RequestDetailPage() {
                   {bid.notes && <div className="text-[11px] text-ink-3 leading-[1.4]">{bid.notes}</div>}
 
                   {inquiry.isActive && bid.status === "pending" && (
-                    isConfirming ? (
-                      <div className="flex flex-col gap-2 pt-2 border-t border-line">
-                        <div className="flex items-center gap-2 text-[12px]">
-                          <ShieldIcon size={14} className="text-accent-ink flex-shrink-0" />
-                          <span className="text-ink-2">
-                            Payment of <strong>{formatPrice(parseFloat(bid.price))}</strong> will be held in escrow.
-                          </span>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button variant="default" className="flex-1 !h-9 !text-[12px]" onClick={() => setConfirmBidId(null)}>
-                            Cancel
-                          </Button>
-                          <Button
-                            variant="primary"
-                            className="flex-1 !h-9 !text-[12px]"
-                            loading={isAccepting}
-                            onClick={() => handleAccept(bid.id)}
-                          >
-                            Confirm & accept
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <Button
-                        variant={isBest ? "primary" : "default"}
-                        block
-                        className="!h-9 !text-[12px]"
-                        onClick={() => setConfirmBidId(bid.id)}
-                      >
-                        Accept this bid
-                      </Button>
-                    )
+                    <Button
+                      variant={isBest ? "primary" : "default"}
+                      block
+                      className="!h-9 !text-[12px]"
+                      onClick={() => contactBidder(bid)}
+                      disabled={!bid.supplierPhone}
+                    >
+                      Contact supplier on WhatsApp
+                    </Button>
                   )}
-
-                  {bid.status === "accepted" && <Chip variant="ok" className="self-start">Accepted</Chip>}
                 </Card>
               );
             })}
