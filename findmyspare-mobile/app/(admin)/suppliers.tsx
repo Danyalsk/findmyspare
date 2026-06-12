@@ -33,7 +33,7 @@ export default function AdminSuppliers() {
   return (
     <PageShell refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }}>
       <View className="pt-3 pb-3">
-        <Text className="serif text-[24px] text-ink">Suppliers</Text>
+        <Text className="font-sans-extrabold text-title text-ink">Suppliers</Text>
       </View>
 
       <View className="flex-row gap-2 mb-4">
@@ -47,7 +47,7 @@ export default function AdminSuppliers() {
       ) : items.length === 0 ? (
         <View className="items-center mt-20 gap-2">
           <Icon name="shield-outline" size={44} color={C.ink3} />
-          <Text className="text-ink-3 text-[14px]">No {filter === "all" ? "" : filter} suppliers</Text>
+          <Text className="text-ink-3 text-body">No {filter === "all" ? "" : filter} suppliers</Text>
         </View>
       ) : (
         <View className="gap-2.5">
@@ -56,11 +56,11 @@ export default function AdminSuppliers() {
               <Card className="flex-row items-center gap-3">
                 <Avatar name={s.businessName || s.name} size={42} />
                 <View className="flex-1">
-                  <Text className="text-[14px] font-semibold text-ink" numberOfLines={1}>
+                  <Text className="text-body font-sans-semibold text-ink" numberOfLines={1}>
                     {s.businessName || s.name}
                   </Text>
-                  <Text className="text-[12px] text-ink-3" numberOfLines={1}>{s.email}</Text>
-                  {s.gstNumber ? <Text className="text-[11px] text-ink-3 mono mt-0.5">{s.gstNumber}</Text> : null}
+                  <Text className="text-caption text-ink-3" numberOfLines={1}>{s.email}</Text>
+                  {s.gstNumber ? <Text className="text-micro text-ink-3 font-mono mt-0.5">{s.gstNumber}</Text> : null}
                 </View>
                 <StatusPill status={s.verificationStatus} />
               </Card>
@@ -88,7 +88,7 @@ function StatusPill({ status }: { status: string | null }) {
   const s = map[status ?? "not_submitted"] ?? map.not_submitted;
   return (
     <View className={`px-2 py-0.5 rounded-full ${s.cls}`}>
-      <Text className={`text-[10px] mono uppercase font-semibold ${s.text}`}>{status ?? "—"}</Text>
+      <Text className={`text-micro font-mono uppercase font-sans-semibold ${s.text}`}>{status ?? "—"}</Text>
     </View>
   );
 }
@@ -131,7 +131,7 @@ function SupplierDetailModal({
     <Modal visible={!!id} animationType="slide" presentationStyle="formSheet" onRequestClose={onClose}>
       <SafeAreaView edges={["top"]} className="flex-1 bg-paper">
         <View className="flex-row items-center justify-between px-5 h-14">
-          <Text className="serif text-[20px] text-ink">Supplier review</Text>
+          <Text className="font-sans-extrabold text-title text-ink">Supplier review</Text>
           <Pressable onPress={onClose} className="p-2"><Icon name="close" size={22} color={C.ink} /></Pressable>
         </View>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1">
@@ -141,15 +141,15 @@ function SupplierDetailModal({
             ) : (
               <>
                 <Card className="gap-1">
-                  <Text className="text-[17px] font-semibold text-ink">{detail.businessName || detail.name}</Text>
-                  <Text className="text-[13px] text-ink-3">{detail.email}</Text>
-                  {detail.phone ? <Text className="text-[13px] text-ink-3">{detail.phone}</Text> : null}
+                  <Text className="text-headline font-sans-semibold text-ink">{detail.businessName || detail.name}</Text>
+                  <Text className="text-sub text-ink-3">{detail.email}</Text>
+                  {detail.phone ? <Text className="text-sub text-ink-3">{detail.phone}</Text> : null}
                   <View className="mt-1"><StatusPill status={detail.verificationStatus} /></View>
                 </Card>
 
                 <Card className="mt-3 gap-2">
-                  <Detail label="GST number" value={detail.gstNumber} mono />
-                  <Detail label="PAN" value={detail.panNumber} mono />
+                  <Detail label="GST number" value={detail.gstNumber} font-mono />
+                  <Detail label="PAN" value={detail.panNumber} font-mono />
                   {detail.businessAddress && (
                     <Detail
                       label="Address"
@@ -160,34 +160,34 @@ function SupplierDetailModal({
 
                 {gstv && (
                   <Card className={`mt-3 gap-1 ${gstv.ok ? "border-accent-ink" : "border-amber"}`}>
-                    <Text className="text-[12px] mono uppercase text-ink-3">GST verification</Text>
-                    <Text className={`text-[13px] font-semibold ${gstv.ok ? "text-accent-ink" : "text-amber"}`}>
+                    <Text className="text-caption font-mono uppercase text-ink-3">GST verification</Text>
+                    <Text className={`text-sub font-sans-semibold ${gstv.ok ? "text-accent-ink" : "text-amber"}`}>
                       {gstv.ok ? "Verified with GST registry" : "Could not verify"}
                     </Text>
-                    {gstv.legalName ? <Text className="text-[12px] text-ink-2">Legal name: {gstv.legalName}</Text> : null}
+                    {gstv.legalName ? <Text className="text-caption text-ink-2">Legal name: {gstv.legalName}</Text> : null}
                     {typeof gstv.nameMatch === "boolean" && (
-                      <Text className="text-[12px] text-ink-2">Name match: {gstv.nameMatch ? "Yes" : "No"}</Text>
+                      <Text className="text-caption text-ink-2">Name match: {gstv.nameMatch ? "Yes" : "No"}</Text>
                     )}
                   </Card>
                 )}
 
                 {detail.verificationStatus === "rejected" && detail.rejectionReason ? (
                   <Card className="mt-3 bg-danger-wash border-0">
-                    <Text className="text-[12px] font-semibold text-danger mb-1">Rejection reason</Text>
-                    <Text className="text-[12px] text-ink-2">{detail.rejectionReason}</Text>
+                    <Text className="text-caption font-sans-semibold text-danger mb-1">Rejection reason</Text>
+                    <Text className="text-caption text-ink-2">{detail.rejectionReason}</Text>
                   </Card>
                 ) : null}
 
                 {rejecting ? (
                   <View className="mt-5 gap-3">
-                    <Text className="text-[12px] font-medium text-ink-2">Reason for rejection</Text>
+                    <Text className="text-caption font-sans-medium text-ink-2">Reason for rejection</Text>
                     <TextInput
                       value={reason}
                       onChangeText={setReason}
                       placeholder="Explain what needs fixing…"
                       placeholderTextColor={C.ink3}
                       multiline
-                      className="bg-paper-2 border border-line rounded-[12px] px-3.5 py-3 text-[14px] text-ink h-24"
+                      className="bg-paper-2 border border-line rounded-input px-3.5 py-3 text-body text-ink h-24"
                     />
                     <View className="flex-row gap-2">
                       <View className="flex-1"><Button label="Cancel" variant="default" onPress={() => setRejecting(false)} fullWidth /></View>
@@ -201,7 +201,7 @@ function SupplierDetailModal({
                   </View>
                 ) : (
                   <View className="mt-5 items-center">
-                    <Text className="text-[13px] text-accent-ink font-semibold">✓ Approved supplier</Text>
+                    <Text className="text-sub text-accent-ink font-sans-semibold">✓ Approved supplier</Text>
                   </View>
                 )}
               </>
@@ -216,8 +216,8 @@ function SupplierDetailModal({
 function Detail({ label, value, mono }: { label: string; value: string | null; mono?: boolean }) {
   return (
     <View className="flex-row justify-between gap-3">
-      <Text className="text-[12px] text-ink-3">{label}</Text>
-      <Text className={`text-[12px] text-ink font-medium flex-1 text-right ${mono ? "mono" : ""}`}>{value || "—"}</Text>
+      <Text className="text-caption text-ink-3">{label}</Text>
+      <Text className={`text-caption text-ink font-sans-medium flex-1 text-right ${mono ? "font-mono" : ""}`}>{value || "—"}</Text>
     </View>
   );
 }

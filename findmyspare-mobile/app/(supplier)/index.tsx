@@ -47,10 +47,10 @@ export default function SupplierHome() {
       <View className="pt-3 pb-4 flex-row items-start justify-between">
         <View className="flex-1">
           {user?.businessName && (
-            <Text className="text-ink-3 text-[11px] mono uppercase tracking-[0.08em]">{user.businessName}</Text>
+            <Text className="text-ink-3 text-micro font-mono uppercase tracking-[0.08em]">{user.businessName}</Text>
           )}
-          <Text className="serif text-[26px] text-ink mt-1">{greeting()}, {firstName} 👋</Text>
-          <Text className="text-ink-3 text-[12px] mt-1">Here&apos;s your shop today</Text>
+          <Text className="font-sans-extrabold text-display text-ink mt-1">{greeting()}, {firstName} 👋</Text>
+          <Text className="text-ink-3 text-caption mt-1">Here&apos;s your shop today</Text>
         </View>
         <Pressable
           onPress={() => router.push("/profile/notifications" as never)}
@@ -59,7 +59,7 @@ export default function SupplierHome() {
           <Icon name="notifications-outline" size={18} color={C.ink} />
           {unread > 0 && (
             <View className="absolute -top-1 -right-1 bg-accent-ink rounded-full min-w-[18px] h-[18px] px-1 items-center justify-center">
-              <Text className="text-paper text-[10px] font-bold">{unread > 9 ? "9+" : unread}</Text>
+              <Text className="text-paper text-micro font-sans-bold">{unread > 9 ? "9+" : unread}</Text>
             </View>
           )}
         </Pressable>
@@ -78,7 +78,7 @@ export default function SupplierHome() {
         </View>
       )}
 
-      <Text className="text-[12px] mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">Quick actions</Text>
+      <Text className="text-caption font-mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">Quick actions</Text>
       <View className="flex-row flex-wrap gap-3">
         <Action label="Add item" icon="add-circle-outline" onPress={() => router.push("/supplier/products/new?draft=1" as never)} />
         <Action label="Orders" icon="cube-outline" onPress={() => router.push("/supplier/orders" as never)} />
@@ -98,9 +98,11 @@ function Kpi({ label, value, icon, delay }: { label: string; value: number; icon
       style={{ width: "47%" }}
     >
       <Card>
-        <Icon name={icon} size={18} color={C.accent} />
-        <Text className="serif text-[28px] text-ink mt-2">{value}</Text>
-        <Text className="text-[12px] text-ink-3 mt-0.5">{label}</Text>
+        <View className="w-8 h-8 rounded-input bg-accent-wash items-center justify-center">
+          <Icon name={icon} size={17} color={C.accentInk} />
+        </View>
+        <Text className="font-sans-extrabold text-title text-ink mt-2.5">{value}</Text>
+        <Text className="text-caption text-ink-3 mt-0.5">{label}</Text>
       </Card>
     </MotiView>
   );
@@ -108,9 +110,11 @@ function Kpi({ label, value, icon, delay }: { label: string; value: number; icon
 
 function Action({ label, icon, onPress }: { label: string; icon: IconName; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={{ width: "47%" }} className="bg-paper border border-line rounded-card px-4 py-4 flex-row items-center gap-2.5">
-      <Icon name={icon} size={18} color={C.ink} />
-      <Text className="text-[13px] font-semibold text-ink flex-1">{label}</Text>
-    </Pressable>
+    <View style={{ width: "47%" }}>
+      <Card onPress={onPress} className="!px-4 !py-4 flex-row items-center gap-2.5">
+        <Icon name={icon} size={18} color={C.accentInk} />
+        <Text className="text-sub font-sans-semibold text-ink flex-1">{label}</Text>
+      </Card>
+    </View>
   );
 }

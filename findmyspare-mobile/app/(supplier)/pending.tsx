@@ -15,8 +15,8 @@ export default function PendingScreen() {
     <PageShell>
       <View className="items-center mt-24 gap-4 px-6">
         <Icon name="hourglass-outline" size={56} color={C.gold} />
-        <Text className="serif text-[26px] text-ink text-center">Under review</Text>
-        <Text className="text-ink-2 text-[14px] text-center leading-[1.5]">
+        <Text className="font-sans-extrabold text-display text-ink text-center">Under review</Text>
+        <Text className="text-ink-2 text-body text-center leading-[1.5]">
           Our team is verifying your GST and PAN details. You&apos;ll be notified once approved (usually within 24 hours).
         </Text>
         <Button

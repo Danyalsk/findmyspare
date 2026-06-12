@@ -12,6 +12,7 @@ import { getThread, sendMessage, markRead } from "@/lib/api/messages";
 import { pickAndUploadMedia } from "@/lib/api/upload";
 import { useAuthStore } from "@/lib/store";
 import { useSocket } from "@/lib/socket";
+import { haptics } from "@/lib/haptics";
 import type { Message, MessageAttachment } from "@/lib/types";
 import { C } from "@/lib/theme";
 
@@ -111,6 +112,7 @@ export default function ChatThreadScreen() {
     if (!content || sending || !me || !id) return;
     setSending(true);
     setInput("");
+    haptics.light();
     try {
       await pushMessage(content);
     } catch {
@@ -141,11 +143,11 @@ export default function ChatThreadScreen() {
         </Pressable>
         <Avatar name={other?.name || "?"} image={other?.image} size={32} className="mr-2.5" />
         <View className="flex-1">
-          <Text className="text-[14px] font-semibold text-ink" numberOfLines={1}>
+          <Text className="text-body font-sans-semibold text-ink" numberOfLines={1}>
             {other?.name || "…"}
           </Text>
           {other?.businessName && (
-            <Text className="text-[11px] text-ink-3" numberOfLines={1}>
+            <Text className="text-micro text-ink-3" numberOfLines={1}>
               {other.businessName}
             </Text>
           )}
@@ -181,7 +183,7 @@ export default function ChatThreadScreen() {
             ListFooterComponent={
               otherTyping ? (
                 <View className="flex-row items-center gap-1 px-3 py-2 mt-1">
-                  <Text className="text-ink-3 text-[12px]">typing…</Text>
+                  <Text className="text-ink-3 text-caption">typing…</Text>
                 </View>
               ) : null
             }
@@ -202,7 +204,7 @@ export default function ChatThreadScreen() {
             placeholder="Message…"
             placeholderTextColor={C.ink3}
             multiline
-            className="flex-1 bg-paper-2 border border-line rounded-[20px] px-4 py-2.5 text-[14px] text-ink max-h-[120px]"
+            className="flex-1 bg-paper-2 border border-line rounded-xl2 px-4 py-2.5 text-body text-ink max-h-[120px]"
           />
           <Pressable
             onPress={handleSend}

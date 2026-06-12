@@ -26,8 +26,8 @@ export function AuthGate({
         <View className="w-16 h-16 rounded-full bg-accent-wash items-center justify-center mb-1">
           <Icon name={icon} size={28} color={C.accent} />
         </View>
-        <Text className="serif text-[22px] text-ink text-center">{title}</Text>
-        <Text className="text-[13px] text-ink-3 text-center leading-[19px]">{subtitle}</Text>
+        <Text className="font-sans-extrabold text-title text-ink text-center">{title}</Text>
+        <Text className="text-sub text-ink-3 text-center leading-[19px]">{subtitle}</Text>
         <View className="mt-3 w-full">
           <Button label="Sign in / Sign up" size="lg" fullWidth onPress={() => router.push("/(auth)/login" as never)} />
         </View>

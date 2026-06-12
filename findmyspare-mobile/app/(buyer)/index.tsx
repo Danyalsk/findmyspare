@@ -7,13 +7,16 @@ import { PageShell } from "@/components/layout/PageShell";
 import { ProductCard } from "@/components/features/ProductCard";
 import { BannerCarousel } from "@/components/features/BannerCarousel";
 import { BrandTile } from "@/components/features/BrandTile";
+import { Touchable } from "@/components/ui/Touchable";
+import { SPRING, useReducedMotion } from "@/lib/motion";
+import { haptics } from "@/lib/haptics";
 import { ProductCardSkeleton } from "@/components/ui/Skeleton";
 import { GradientFill } from "@/components/ui/Gradient";
 import { Avatar } from "@/components/ui/Avatar";
 import { productsApi, bannersApi } from "@/lib/api";
 import { categories, makes } from "@/lib/constants";
 import { useAuthStore } from "@/lib/store";
-import { C, glowAccent, shadowCard } from "@/lib/theme";
+import { C, GRADIENT, glowAccent, shadowCard } from "@/lib/theme";
 import type { Banner, ProductSummary } from "@/lib/types";
 
 const CATEGORY_ICON: Record<string, IconName> = {
@@ -33,6 +36,7 @@ const CATEGORY_ICON: Record<string, IconName> = {
 
 export default function BuyerHome() {
   const router = useRouter();
+  const reduced = useReducedMotion();
   const user = useAuthStore((s) => s.user);
   const [products, setProducts] = useState<ProductSummary[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -60,33 +64,33 @@ export default function BuyerHome() {
     <PageShell padded={false} refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }}>
       {/* ── Header: location + account ── */}
       <View className="px-5 pt-1 pb-3 flex-row items-center justify-between">
-        <Pressable className="flex-row items-center gap-2 flex-1">
+        <Touchable scaleTo={0.98} className="flex-row items-center gap-2 flex-1">
           <View className="w-9 h-9 rounded-full bg-accent-wash items-center justify-center">
             <Icon name="location" size={18} color={C.accent} />
           </View>
           <View className="flex-1">
-            <Text className="text-[10px] mono uppercase tracking-[0.1em] text-ink-3">Find parts in</Text>
+            <Text className="text-micro font-mono uppercase tracking-[0.1em] text-ink-3">Find parts in</Text>
             <View className="flex-row items-center gap-1">
-              <Text className="text-[16px] font-bold text-ink" numberOfLines={1}>{location}</Text>
+              <Text className="text-body font-sans-bold text-ink" numberOfLines={1}>{location}</Text>
               <Icon name="chevron-down" size={14} color={C.ink2} />
             </View>
           </View>
-        </Pressable>
+        </Touchable>
         {user ? (
-          <Pressable onPress={() => router.push("/(buyer)/profile" as never)}>
+          <Touchable scaleTo={0.92} onPress={() => router.push("/(buyer)/profile" as never)}>
             <Avatar name={user.name} image={user.image} size={40} />
-          </Pressable>
+          </Touchable>
         ) : (
-          <Pressable onPress={() => router.push("/(auth)/login" as never)}>
+          <Pressable onPress={() => router.push("/(auth)/login" as never)} onPressIn={() => haptics.light()}>
             {({ pressed }) => (
               <MotiView
-                animate={{ scale: pressed ? 0.95 : 1 }}
-                transition={{ type: "spring", damping: 15, stiffness: 320 }}
+                animate={{ scale: pressed && !reduced ? 0.95 : 1 }}
+                transition={SPRING.press}
                 style={glowAccent}
                 className="overflow-hidden rounded-full px-5 py-2.5"
               >
-                <GradientFill colors={[C.gold, C.accent, C.accent2]} />
-                <Text style={{ color: C.onAccent }} className="text-[13px] font-bold">Sign in</Text>
+                <GradientFill colors={GRADIENT} />
+                <Text style={{ color: C.onAccent }} className="text-sub font-sans-bold">Sign in</Text>
               </MotiView>
             )}
           </Pressable>
@@ -94,15 +98,17 @@ export default function BuyerHome() {
       </View>
 
       {/* ── Search ── */}
-      <Pressable
+      <Touchable
         onPress={() => router.push("/(buyer)/search" as never)}
-        className="mx-5 mb-5 flex-row items-center bg-paper-2 border border-line-2 rounded-[16px] px-4 py-3.5"
+        scaleTo={0.98}
+        haptic="select"
+        className="mx-5 mb-5 flex-row items-center bg-paper-2 border border-line-2 rounded-card px-4 py-3.5"
         style={shadowCard}
       >
         <Icon name="search" size={20} color={C.accent} />
-        <Text className="text-ink-3 text-[14px] ml-2.5 flex-1">Search “brake pads”, “Swift”…</Text>
+        <Text className="text-ink-3 text-body ml-2.5 flex-1">Search “brake pads”, “Swift”…</Text>
         <Icon name="options-outline" size={18} color={C.ink3} />
-      </Pressable>
+      </Touchable>
 
       {banners.length > 0 && (
         <View className="px-5">
@@ -112,7 +118,7 @@ export default function BuyerHome() {
 
       {/* ── Categories (circular rail) ── */}
       <View className="flex-row items-baseline justify-between px-5 mb-3">
-        <Text className="text-[18px] font-bold text-ink">Shop by category</Text>
+        <Text className="text-headline font-sans-bold text-ink">Shop by category</Text>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="px-5 gap-4" className="mb-7">
         {categories.map((c, i) => (
@@ -122,16 +128,17 @@ export default function BuyerHome() {
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ type: "timing", duration: 220, delay: Math.min(i * 30, 300) }}
           >
-            <Pressable
+            <Touchable
               onPress={() => router.push(`/(buyer)/search?q=${encodeURIComponent(c.label)}` as never)}
+              scaleTo={0.94}
               className="items-center gap-2"
               style={{ width: 68 }}
             >
               <View className="w-16 h-16 rounded-full bg-accent-wash border border-line items-center justify-center">
                 <Icon name={CATEGORY_ICON[c.label] || "pricetag-outline"} size={26} color={C.accent} />
               </View>
-              <Text className="text-[11px] text-ink-2 font-medium text-center" numberOfLines={1}>{c.label}</Text>
-            </Pressable>
+              <Text className="text-micro text-ink-2 font-sans-medium text-center" numberOfLines={1}>{c.label}</Text>
+            </Touchable>
           </MotiView>
         ))}
       </ScrollView>
@@ -145,15 +152,15 @@ export default function BuyerHome() {
             style={glowAccent}
             className="overflow-hidden rounded-card p-5 flex-row items-center"
           >
-            <GradientFill colors={[C.gold, C.accent, C.accent2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+            <GradientFill colors={GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
             <View className="flex-1 pr-3">
-              <Text style={{ color: C.onAccent }} className="text-[19px] font-extrabold">Can&apos;t find a part?</Text>
-              <Text style={{ color: "rgba(255,255,255,0.9)" }} className="text-[13px] mt-1">
+              <Text style={{ color: C.onAccent }} className="text-headline font-sans-extrabold">Can&apos;t find a part?</Text>
+              <Text style={{ color: "rgba(255,255,255,0.9)" }} className="text-sub mt-1">
                 Post a request — verified suppliers quote in minutes.
               </Text>
               <View className="self-start mt-3 bg-white rounded-full px-4 py-2 flex-row items-center gap-1.5">
                 <Icon name="add" size={15} color={C.accent} />
-                <Text style={{ color: C.accentInk }} className="text-[12px] font-bold">Post a request</Text>
+                <Text style={{ color: C.accentInk }} className="text-caption font-sans-bold">Post a request</Text>
               </View>
             </View>
             <View className="w-12 h-12 rounded-full bg-white/20 items-center justify-center">
@@ -164,29 +171,30 @@ export default function BuyerHome() {
       </Pressable>
 
       {/* ── Brands (circular rail) ── */}
-      <Text className="text-[18px] font-bold text-ink px-5 mb-3">Browse by brand</Text>
+      <Text className="text-headline font-sans-bold text-ink px-5 mb-3">Browse by brand</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="px-5 gap-3.5" className="mb-7">
         {makes.map((m) => (
-          <Pressable
+          <Touchable
             key={m}
             onPress={() => router.push(`/(buyer)/search?q=${encodeURIComponent(m)}` as never)}
+            scaleTo={0.93}
             className="items-center gap-2"
             style={{ width: 64 }}
           >
             <BrandTile name={m} size={64} />
-            <Text className="text-[10px] text-ink-2 font-medium text-center" numberOfLines={1}>{m.split(" ")[0]}</Text>
-          </Pressable>
+            <Text className="text-micro text-ink-2 font-sans-medium text-center" numberOfLines={1}>{m.split(" ")[0]}</Text>
+          </Touchable>
         ))}
       </ScrollView>
 
       {/* ── Section divider band ── */}
-      <View className="h-2 bg-paper-3 mb-5" />
+      <View className="mb-7" />
 
       {/* ── Featured ── */}
       <View className="flex-row items-baseline justify-between px-5 mb-3">
-        <Text className="text-[18px] font-bold text-ink">Fresh arrivals</Text>
+        <Text className="text-headline font-sans-bold text-ink">Fresh arrivals</Text>
         <Pressable onPress={() => router.push("/(buyer)/search" as never)}>
-          <Text className="text-[12px] text-accent-ink font-bold">See all</Text>
+          <Text className="text-caption text-accent-ink font-sans-bold">See all</Text>
         </Pressable>
       </View>
 
@@ -205,8 +213,8 @@ export default function BuyerHome() {
             <View className="w-12 h-12 rounded-full bg-accent-wash items-center justify-center mb-2">
               <Icon name="sparkles" size={22} color={C.accent} />
             </View>
-            <Text className="text-[15px] font-bold text-ink">Fresh inventory incoming</Text>
-            <Text className="text-[12px] text-ink-3 mt-1 text-center">
+            <Text className="text-body font-sans-bold text-ink">Fresh inventory incoming</Text>
+            <Text className="text-caption text-ink-3 mt-1 text-center">
               Post a request and verified suppliers will quote you directly.
             </Text>
           </View>

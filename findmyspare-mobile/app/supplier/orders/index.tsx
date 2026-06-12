@@ -54,7 +54,7 @@ export default function SupplierOrdersScreen() {
         ) : visible.length === 0 ? (
           <View className="items-center mt-24 gap-3">
             <Icon name="cube-outline" size={46} color={C.ink3} />
-            <Text className="text-ink-3 text-[14px]">No orders here</Text>
+            <Text className="text-ink-3 text-body">No orders here</Text>
           </View>
         ) : (
           <View className="gap-2.5">

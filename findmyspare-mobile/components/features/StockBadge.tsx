@@ -20,16 +20,16 @@ export function StockBadge({
   } else if (status === "paused") {
     label = "Paused";
   } else if (stockQuantity <= 0) {
-    bg = "#FCE8E9"; fg = C.danger; label = "Out of stock";
+    bg = C.dangerWash; fg = C.danger; label = "Out of stock";
   } else if (stockQuantity <= lowStockThreshold) {
-    bg = "#FFF1DB"; fg = C.accentInk; label = `Low · ${stockQuantity}`;
+    bg = C.amberWash; fg = C.amber; label = `Low · ${stockQuantity}`;
   } else {
-    bg = "#DCF3E6"; fg = C.success; label = `${stockQuantity} in stock`;
+    bg = C.successWash; fg = C.success; label = `${stockQuantity} in stock`;
   }
 
   return (
     <View style={{ backgroundColor: bg }} className="px-2 py-1 rounded-full self-start">
-      <Text style={{ color: fg }} className="text-[10.5px] font-semibold">{label}</Text>
+      <Text style={{ color: fg }} className="text-micro font-sans-semibold">{label}</Text>
     </View>
   );
 }

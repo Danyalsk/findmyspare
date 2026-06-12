@@ -29,10 +29,10 @@ export function Avatar({ name, image, size = 40, className = "" }: AvatarProps) 
 
   return (
     <View
-      className={`bg-paper-3 border border-line items-center justify-center ${className}`}
+      className={`bg-accent-wash items-center justify-center ${className}`}
       style={{ width: size, height: size, borderRadius: size / 2 }}
     >
-      <Text className="text-ink-2 font-semibold" style={{ fontSize: size * 0.38 }}>
+      <Text className="text-accent-ink font-sans-semibold" style={{ fontSize: size * 0.38 }}>
         {initials}
       </Text>
     </View>

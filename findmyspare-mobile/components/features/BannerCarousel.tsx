@@ -47,8 +47,8 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
             {/* Scrim for legibility (plain overlay — no gradient dependency). */}
             <View className="absolute left-0 right-0 bottom-0 h-1/2 bg-black/35" />
             <View className="absolute inset-0 justify-end p-4">
-              <Text className="serif text-[22px] text-white">{b.title}</Text>
-              {b.subtitle ? <Text className="text-white/85 text-[12px] mt-0.5">{b.subtitle}</Text> : null}
+              <Text className="text-title font-sans-bold text-white">{b.title}</Text>
+              {b.subtitle ? <Text className="text-white/85 text-caption mt-0.5">{b.subtitle}</Text> : null}
             </View>
           </View>
         ))}
@@ -56,7 +56,7 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
       {banners.length > 1 && (
         <View className="flex-row justify-center gap-1.5 mt-2.5">
           {banners.map((_, i) => (
-            <View key={i} className={`h-1.5 rounded-full ${i === idx ? "w-4 bg-ink" : "w-1.5 bg-line-2"}`} />
+            <View key={i} className={`h-1.5 rounded-full ${i === idx ? "w-4 bg-accent" : "w-1.5 bg-line-2"}`} />
           ))}
         </View>
       )}

@@ -8,12 +8,15 @@ import { useAuthStore } from "@/lib/store";
 import { useSocket } from "@/lib/socket";
 import { getUnreadCount } from "@/lib/api/messages";
 import { C, shadowFloat } from "@/lib/theme";
+import { SPRING, DURATION, useReducedMotion } from "@/lib/motion";
+import { haptics } from "@/lib/haptics";
 
 /** Floating frosted-glass pill tab bar — accent-highlighted active tab. */
 export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const socket = useSocket();
+  const reduced = useReducedMotion();
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
@@ -37,7 +40,7 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
       className="items-center"
     >
       <View style={[shadowFloat, { marginBottom: insets.bottom > 0 ? insets.bottom : 14 }]} className="rounded-full overflow-hidden">
-        <BlurView intensity={50} tint="light" className="flex-row items-center px-2 py-2 rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.82)" }}>
+        <BlurView intensity={70} tint="light" className="flex-row items-center px-2 py-2 rounded-full" style={{ backgroundColor: C.glassTab, borderWidth: 1, borderColor: C.line }}>
           {routes.map((route) => {
             const { options } = descriptors[route.key];
             const realIndex = state.routes.findIndex((r) => r.key === route.key);
@@ -53,26 +56,37 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
             };
 
             return (
-              <Pressable key={route.key} onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: focused }}>
+              <Pressable
+                key={route.key}
+                onPress={onPress}
+                onPressIn={() => { if (!focused) haptics.select(); }}
+                accessibilityRole="button"
+                accessibilityState={{ selected: focused }}
+              >
+                {({ pressed }) => (
                 <MotiView
-                  animate={{ backgroundColor: focused ? C.accentWash : "rgba(0,0,0,0)" }}
-                  transition={{ type: "timing", duration: 200 }}
+                  animate={{
+                    backgroundColor: focused ? C.accentWash : "rgba(0,0,0,0)",
+                    scale: pressed && !reduced ? 0.94 : 1,
+                  }}
+                  transition={{ backgroundColor: { type: "timing", duration: DURATION.base }, scale: SPRING.press }}
                   className="flex-row items-center rounded-full px-3.5 py-2.5"
                 >
                   <View>
                     {icon}
                     {showBadge && (
                       <View className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-danger items-center justify-center">
-                        <Text className="text-white text-[9px] font-bold">{unread > 9 ? "9+" : unread}</Text>
+                        <Text className="text-white text-micro font-sans-bold">{unread > 9 ? "9+" : unread}</Text>
                       </View>
                     )}
                   </View>
                   {focused && (
-                    <MotiView from={{ opacity: 0, translateX: -4 }} animate={{ opacity: 1, translateX: 0 }} transition={{ type: "timing", duration: 180 }}>
-                      <Text style={{ color: C.accentInk }} className="text-[12px] font-bold ml-1.5">{label}</Text>
+                    <MotiView from={{ opacity: 0, translateX: -4 }} animate={{ opacity: 1, translateX: 0 }} transition={{ type: "timing", duration: DURATION.fast }}>
+                      <Text style={{ color: C.accentInk }} className="text-caption font-sans-bold ml-1.5">{label}</Text>
                     </MotiView>
                   )}
                 </MotiView>
+                )}
               </Pressable>
             );
           })}

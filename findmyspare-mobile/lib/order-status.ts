@@ -8,14 +8,14 @@ export interface StatusMeta {
 }
 
 const META: Record<OrderStatus, StatusMeta> = {
-  placed: { label: "Placed", color: C.accentInk, bg: "#FFF1DB" },
-  confirmed: { label: "Confirmed", color: C.success, bg: "#DCF3E6" },
-  shipped: { label: "Shipped", color: C.success, bg: "#DCF3E6" },
-  in_transit: { label: "In transit", color: C.success, bg: "#DCF3E6" },
-  delivered: { label: "Delivered", color: C.success, bg: "#DCF3E6" },
-  completed: { label: "Completed", color: C.success, bg: "#DCF3E6" },
-  disputed: { label: "Disputed", color: C.danger, bg: "#FCE8E9" },
-  cancelled: { label: "Cancelled", color: C.danger, bg: "#FCE8E9" },
+  placed: { label: "Placed", color: C.amber, bg: C.amberWash },
+  confirmed: { label: "Confirmed", color: C.success, bg: C.successWash },
+  shipped: { label: "Shipped", color: C.success, bg: C.successWash },
+  in_transit: { label: "In transit", color: C.success, bg: C.successWash },
+  delivered: { label: "Delivered", color: C.success, bg: C.successWash },
+  completed: { label: "Completed", color: C.success, bg: C.successWash },
+  disputed: { label: "Disputed", color: C.danger, bg: C.dangerWash },
+  cancelled: { label: "Cancelled", color: C.danger, bg: C.dangerWash },
 };
 
 export function statusMeta(status: OrderStatus | string): StatusMeta {

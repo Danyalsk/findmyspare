@@ -16,8 +16,10 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageShell } from "@/components/layout/PageShell";
 import { requestOtp, verifyOtp } from "@/lib/api/auth";
+import { haptics } from "@/lib/haptics";
 import { useAuthStore, getPostLoginPath } from "@/lib/store";
-import { C } from "@/lib/theme";
+import { C, GRADIENT, glowAccent } from "@/lib/theme";
+import { GradientFill } from "@/components/ui/Gradient";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -67,9 +69,11 @@ export default function LoginScreen() {
     setBusy(true);
     try {
       const { user, token } = await verifyOtp(email, code);
+      haptics.success();
       await setAuth({ user, accessToken: token });
       router.replace(getPostLoginPath(user) as never);
     } catch (err) {
+      haptics.error();
       Alert.alert("Verification failed", (err as Error).message);
     } finally {
       setBusy(false);
@@ -91,11 +95,12 @@ export default function LoginScreen() {
           transition={{ type: "timing", duration: 350 }}
         >
           <View className="items-center mt-6 mb-8 gap-2">
-            <View className="w-16 h-16 bg-ink rounded-[18px] items-center justify-center">
-              <Text className="text-paper text-[32px] serif italic">f</Text>
+            <View className="w-16 h-16 rounded-card items-center justify-center overflow-hidden" style={glowAccent}>
+              <GradientFill colors={GRADIENT} />
+              <Text className="text-white text-display font-sans-extrabold">f</Text>
             </View>
-            <Text className="serif text-[30px] text-ink">FindMySpare</Text>
-            <Text className="text-ink-3 text-[13px]">Sign in to request parts & message suppliers</Text>
+            <Text className="font-sans-extrabold text-display text-ink">FindMySpare</Text>
+            <Text className="text-ink-3 text-sub">Sign in to request parts & message suppliers</Text>
           </View>
 
           <Card className="gap-4">
@@ -119,14 +124,14 @@ export default function LoginScreen() {
                   fullWidth
                   size="lg"
                 />
-                <Text className="text-[11px] text-ink-3 text-center">
+                <Text className="text-micro text-ink-3 text-center">
                   We&apos;ll email you a 6-digit code. No password needed.
                 </Text>
               </>
             ) : (
               <>
                 <View>
-                  <Text className="text-[12px] font-medium text-ink-2 mb-1.5">
+                  <Text className="text-caption font-sans-medium text-ink-2 mb-1.5">
                     Enter the code sent to {email}
                   </Text>
                   <OtpBoxes value={code} onChange={setCode} inputRef={codeRef} onFilled={verify} />
@@ -141,10 +146,10 @@ export default function LoginScreen() {
                 />
                 <View className="flex-row justify-between items-center">
                   <Pressable onPress={() => { setStep("email"); setCode(""); }}>
-                    <Text className="text-[12px] text-ink-2">← Change email</Text>
+                    <Text className="text-caption text-ink-2">← Change email</Text>
                   </Pressable>
                   <Pressable disabled={cooldown > 0} onPress={sendCode}>
-                    <Text className={`text-[12px] font-semibold ${cooldown > 0 ? "text-ink-3" : "text-accent-ink"}`}>
+                    <Text className={`text-caption font-sans-semibold ${cooldown > 0 ? "text-ink-3" : "text-accent-ink"}`}>
                       {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
                     </Text>
                   </Pressable>
@@ -153,7 +158,7 @@ export default function LoginScreen() {
             )}
           </Card>
 
-          <Text className="text-[11px] text-ink-3 text-center mt-6 px-6 leading-[16px]">
+          <Text className="text-micro text-ink-3 text-center mt-6 px-6 leading-[16px]">
             New here? Signing in creates your account. Want to sell parts? Sign in, then tap
             &quot;Sell on FindMySpare&quot; in your profile.
           </Text>
@@ -185,11 +190,11 @@ function OtpBoxes({
           return (
             <View
               key={i}
-              className={`w-[46px] h-[56px] rounded-[12px] border items-center justify-center ${
+              className={`w-[46px] h-[56px] rounded-input border items-center justify-center ${
                 active ? "border-accent-ink bg-accent-wash" : char ? "border-ink bg-paper" : "border-line bg-paper-2"
               }`}
             >
-              <Text className="text-[22px] text-ink mono">{char}</Text>
+              <Text className="text-title text-ink font-mono">{char}</Text>
             </View>
           );
         })}

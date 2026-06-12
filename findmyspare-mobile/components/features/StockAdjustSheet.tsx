@@ -1,12 +1,15 @@
 import React, { useState } from "react";
-import { View, Text, Pressable, Modal, Alert } from "react-native";
+import { View, Text, Alert } from "react-native";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
+import { Touchable } from "@/components/ui/Touchable";
+import { BottomSheet } from "@/components/ui/BottomSheet";
 import { inventoryApi } from "@/lib/api/inventory";
 import type { InventoryItem, StockAdjustReason } from "@/lib/types";
-import { C, shadowFloat } from "@/lib/theme";
+import { C } from "@/lib/theme";
+import { haptics } from "@/lib/haptics";
 
 const ADD_REASONS: { value: StockAdjustReason; label: string }[] = [
   { value: "received", label: "Received" },
@@ -51,6 +54,7 @@ export function StockAdjustSheet({
     setBusy(true);
     try {
       await inventoryApi.adjust(item.id, { delta, reason, note: note.trim() || undefined });
+      haptics.success();
       onAdjusted();
       onClose();
     } catch (e) {
@@ -61,47 +65,44 @@ export function StockAdjustSheet({
   }
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable onPress={onClose} className="flex-1 bg-black/40 justify-end">
-        <Pressable onPress={(e) => e.stopPropagation()} style={shadowFloat} className="bg-paper rounded-t-[24px] px-5 pt-4 pb-8">
-          <View className="items-center mb-3">
-            <View className="w-10 h-1 rounded-full bg-line-2" />
-          </View>
-          <Text className="serif text-[20px] text-ink">Adjust stock</Text>
-          <Text className="text-[12px] text-ink-3 mb-4" numberOfLines={1}>{item.name}</Text>
+    <BottomSheet visible={visible} onClose={onClose}>
+          <Text className="font-sans-extrabold text-title text-ink">Adjust stock</Text>
+          <Text className="text-caption text-ink-3 mb-4" numberOfLines={1}>{item.name}</Text>
 
           {/* Direction */}
           <View className="flex-row gap-2 mb-4">
             {(["add", "remove"] as const).map((d) => (
-              <Pressable
+              <Touchable
                 key={d}
                 onPress={() => switchDir(d)}
-                className={`flex-1 h-11 rounded-[12px] items-center justify-center border ${
+                haptic="select"
+                scaleTo={0.96}
+                className={`flex-1 h-11 rounded-input items-center justify-center border ${
                   direction === d ? "border-ink bg-ink" : "border-line bg-paper-2"
                 }`}
               >
-                <Text className={`text-[13px] font-semibold ${direction === d ? "text-onInk" : "text-ink-2"}`}>
+                <Text className={`text-sub font-sans-semibold ${direction === d ? "text-onInk" : "text-ink-2"}`}>
                   {d === "add" ? "Add" : "Remove"}
                 </Text>
-              </Pressable>
+              </Touchable>
             ))}
           </View>
 
           {/* Amount stepper */}
           <View className="flex-row items-center gap-3 mb-4">
-            <Pressable onPress={() => setAmount(String(Math.max(1, qty - 1)))} className="w-12 h-12 rounded-[12px] bg-paper-2 border border-line items-center justify-center">
+            <Touchable onPress={() => setAmount(String(Math.max(1, qty - 1)))} scaleTo={0.9} className="w-12 h-12 rounded-input bg-paper-2 border border-line items-center justify-center">
               <Icon name="close" size={18} color={C.ink} weight="bold" />
-            </Pressable>
+            </Touchable>
             <View className="flex-1">
               <Input value={amount} onChangeText={setAmount} keyboardType="numeric" />
             </View>
-            <Pressable onPress={() => setAmount(String(qty + 1))} className="w-12 h-12 rounded-[12px] bg-paper-2 border border-line items-center justify-center">
+            <Touchable onPress={() => setAmount(String(qty + 1))} scaleTo={0.9} className="w-12 h-12 rounded-input bg-paper-2 border border-line items-center justify-center">
               <Icon name="add" size={18} color={C.ink} weight="bold" />
-            </Pressable>
+            </Touchable>
           </View>
 
           {/* Reason chips */}
-          <Text className="text-[12px] font-medium text-ink-2 mb-2">Reason</Text>
+          <Text className="text-caption font-sans-medium text-ink-2 mb-2">Reason</Text>
           <View className="flex-row flex-wrap gap-2 mb-4">
             {reasons.map((r) => (
               <Chip key={r.value} label={r.label} active={reason === r.value} onPress={() => setReason(r.value)} />
@@ -111,13 +112,11 @@ export function StockAdjustSheet({
           <Input label="Note (optional)" value={note} onChangeText={setNote} placeholder="e.g. PO #4821" />
 
           <View className="flex-row items-center justify-between mt-4 mb-4 px-1">
-            <Text className="text-[12px] text-ink-3">New stock level</Text>
-            <Text className="mono text-[16px] font-semibold text-ink">{item.stockQuantity} → {resulting}</Text>
+            <Text className="text-caption text-ink-3">New stock level</Text>
+            <Text className="font-mono text-body font-sans-semibold text-ink">{item.stockQuantity} → {resulting}</Text>
           </View>
 
           <Button label={busy ? "Saving…" : "Confirm"} loading={busy} onPress={submit} fullWidth size="lg" />
-        </Pressable>
-      </Pressable>
-    </Modal>
+    </BottomSheet>
   );
 }

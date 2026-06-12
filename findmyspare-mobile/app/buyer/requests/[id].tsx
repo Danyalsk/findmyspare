@@ -59,15 +59,15 @@ export default function RequestDetailScreen() {
       <ScrollView className="flex-1" contentContainerClassName="px-5 pb-12 pt-3">
         <Card className="gap-2">
           <View className="flex-row items-center justify-between">
-            <Text className="serif text-[22px] text-ink flex-1">{inquiry.partName}</Text>
+            <Text className="font-sans-extrabold text-title text-ink flex-1">{inquiry.partName}</Text>
             <Chip
               label={`${bids.length} ${bids.length === 1 ? "quote" : "quotes"}`}
               active={bids.length > 0}
             />
           </View>
-          <Text className="text-[13px] text-ink-2">{inquiry.make} · {inquiry.model} · {inquiry.year}</Text>
+          <Text className="text-sub text-ink-2">{inquiry.make} · {inquiry.model} · {inquiry.year}</Text>
           {inquiry.description ? (
-            <Text className="text-[13px] text-ink-2 mt-1 leading-[19px]">{inquiry.description}</Text>
+            <Text className="text-sub text-ink-2 mt-1 leading-[19px]">{inquiry.description}</Text>
           ) : null}
           {inquiry.imageUrl ? (
             <Image
@@ -78,15 +78,15 @@ export default function RequestDetailScreen() {
           ) : null}
         </Card>
 
-        <Text className="text-[12px] mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">
+        <Text className="text-caption font-mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">
           Supplier quotes
         </Text>
 
         {bids.length === 0 ? (
           <View className="items-center mt-10 gap-3">
             <Icon name="hourglass-outline" size={42} color={C.ink3} />
-            <Text className="text-ink-2 text-[14px] font-medium">Waiting for quotes</Text>
-            <Text className="text-ink-3 text-[12px] text-center px-8">
+            <Text className="text-ink-2 text-body font-sans-medium">Waiting for quotes</Text>
+            <Text className="text-ink-3 text-caption text-center px-8">
               Verified suppliers are reviewing your request. You&apos;ll be notified when quotes arrive.
             </Text>
           </View>

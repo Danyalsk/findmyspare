@@ -39,7 +39,7 @@ export default function Index() {
 
   return (
     <View className="flex-1 items-center justify-center bg-paper gap-4">
-      <Text className="serif text-[32px] text-ink">FindMySpare</Text>
+      <Text className="font-sans-extrabold text-display text-ink">FindMySpare</Text>
       <ActivityIndicator color={C.accent} />
     </View>
   );

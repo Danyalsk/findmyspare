@@ -70,7 +70,7 @@ export default function AddressesScreen() {
         ) : items.length === 0 ? (
           <View className="items-center mt-20 gap-3">
             <Icon name="location-outline" size={46} color={C.ink3} />
-            <Text className="text-ink-3 text-[14px]">No saved addresses</Text>
+            <Text className="text-ink-3 text-body">No saved addresses</Text>
             <Button label="Add address" onPress={() => router.push("/profile/addresses/new" as never)} />
           </View>
         ) : (
@@ -78,29 +78,29 @@ export default function AddressesScreen() {
             {items.map((a) => (
               <Card key={a.id} className="gap-1">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-[14px] font-semibold text-ink">{a.label || "Address"}</Text>
+                  <Text className="text-body font-sans-semibold text-ink">{a.label || "Address"}</Text>
                   {a.isDefault ? (
                     <View className="bg-accent-wash px-2 py-0.5 rounded-full">
-                      <Text className="text-[10px] mono uppercase text-accent-ink font-semibold">Default</Text>
+                      <Text className="text-micro font-mono uppercase text-accent-ink font-sans-semibold">Default</Text>
                     </View>
                   ) : null}
                 </View>
-                <Text className="text-[13px] text-ink-2">
+                <Text className="text-sub text-ink-2">
                   {a.line1}{a.line2 ? `, ${a.line2}` : ""}
                 </Text>
-                <Text className="text-[13px] text-ink-2">{a.city}, {a.state} {a.postalCode}</Text>
-                {a.phone ? <Text className="text-[12px] text-ink-3 mt-0.5">{a.phone}</Text> : null}
+                <Text className="text-sub text-ink-2">{a.city}, {a.state} {a.postalCode}</Text>
+                {a.phone ? <Text className="text-caption text-ink-3 mt-0.5">{a.phone}</Text> : null}
                 <View className="flex-row gap-2 mt-2 pt-2 border-t border-line">
                   {!a.isDefault && (
                     <Pressable onPress={() => setDefault(a)} className="flex-row items-center gap-1">
                       <Icon name="star-outline" size={14} color={C.accent} />
-                      <Text className="text-[12px] text-accent-ink font-medium">Set default</Text>
+                      <Text className="text-caption text-accent-ink font-sans-medium">Set default</Text>
                     </Pressable>
                   )}
                   <View className="flex-1" />
                   <Pressable onPress={() => confirmDelete(a)} className="flex-row items-center gap-1">
                     <Icon name="trash-outline" size={14} color={C.danger} />
-                    <Text className="text-[12px] text-danger font-medium">Delete</Text>
+                    <Text className="text-caption text-danger font-sans-medium">Delete</Text>
                   </Pressable>
                 </View>
               </Card>

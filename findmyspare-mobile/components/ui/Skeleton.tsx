@@ -14,8 +14,8 @@ export interface SkeletonProps {
 export function Skeleton({ width = "100%", height = 16, radius = 8, className = "", style }: SkeletonProps) {
   return (
     <MotiView
-      from={{ opacity: 0.4 }}
-      animate={{ opacity: 0.85 }}
+      from={{ opacity: 0.5 }}
+      animate={{ opacity: 0.9 }}
       transition={{
         type: "timing",
         duration: 900,
@@ -31,7 +31,7 @@ export function Skeleton({ width = "100%", height = 16, radius = 8, className = 
 
 export function ProductCardSkeleton() {
   return (
-    <View className="bg-paper border border-line rounded-card p-3">
+    <View className="bg-paper-2 border border-line rounded-card p-3">
       <Skeleton height={120} radius={10} className="mb-2.5" />
       <Skeleton height={12} width="75%" className="mb-1.5" />
       <Skeleton height={10} width="50%" className="mb-2" />

@@ -61,20 +61,20 @@ export default function NewAddressScreen() {
             <Input label="City" value={city} onChangeText={setCity} placeholder="Mumbai" autoCapitalize="words" />
 
             <View className="gap-1.5">
-              <Text className="text-[12px] font-medium text-ink-2">State</Text>
+              <Text className="text-caption font-sans-medium text-ink-2">State</Text>
               <Text
                 onPress={() => setStateOpen((o) => !o)}
-                className={`bg-paper-2 border border-line rounded-[12px] px-3.5 py-3 text-[14px] ${state ? "text-ink" : "text-ink-3"}`}
+                className={`bg-paper-2 border border-line rounded-input px-3.5 py-3 text-body ${state ? "text-ink" : "text-ink-3"}`}
               >
                 {state || "Select state"}
               </Text>
               {stateOpen && (
-                <ScrollView className="max-h-56 bg-paper border border-line rounded-[12px] mt-1" nestedScrollEnabled>
+                <ScrollView className="max-h-56 bg-paper border border-line rounded-input mt-1" nestedScrollEnabled>
                   {INDIAN_STATES.map((s) => (
                     <Text
                       key={s}
                       onPress={() => { setState(s); setStateOpen(false); }}
-                      className={`px-3.5 py-2.5 text-[13px] ${s === state ? "text-accent-ink font-semibold" : "text-ink-2"}`}
+                      className={`px-3.5 py-2.5 text-sub ${s === state ? "text-accent-ink font-sans-semibold" : "text-ink-2"}`}
                     >
                       {s}
                     </Text>
@@ -88,9 +88,9 @@ export default function NewAddressScreen() {
 
             <Pressable onPress={() => setIsDefault((d) => !d)} className="flex-row items-center gap-2">
               <View className={`w-5 h-5 rounded-[6px] border items-center justify-center ${isDefault ? "bg-accent-ink border-accent-ink" : "border-line-2"}`}>
-                {isDefault && <Text className="text-paper text-[12px]">✓</Text>}
+                {isDefault && <Text className="text-paper text-caption">✓</Text>}
               </View>
-              <Text className="text-[13px] text-ink-2">Set as default address</Text>
+              <Text className="text-sub text-ink-2">Set as default address</Text>
             </Pressable>
           </Card>
 

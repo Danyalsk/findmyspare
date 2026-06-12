@@ -97,16 +97,16 @@ export default function OnboardingScreen() {
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1">
       <PageShell>
         <View className="pt-4 pb-3">
-          <Text className="serif text-[26px] text-ink">Verify your business</Text>
-          <Text className="text-ink-3 text-[13px] mt-1">
+          <Text className="font-sans-extrabold text-display text-ink">Verify your business</Text>
+          <Text className="text-ink-3 text-sub mt-1">
             GST + PAN are required to list parts. Review takes ~24 hours.
           </Text>
         </View>
 
         {isResubmit && user?.rejectionReason && (
           <Card className="mb-3 bg-danger-wash border-0">
-            <Text className="text-[12px] font-semibold text-danger mb-1">Previous rejection</Text>
-            <Text className="text-[12px] text-ink-2">{user.rejectionReason}</Text>
+            <Text className="text-caption font-sans-semibold text-danger mb-1">Previous rejection</Text>
+            <Text className="text-caption text-ink-2">{user.rejectionReason}</Text>
           </Card>
         )}
 
@@ -117,7 +117,7 @@ export default function OnboardingScreen() {
           <Input label="Phone (optional)" value={phone} onChangeText={setPhone} placeholder="9876543210" keyboardType="phone-pad" maxLength={10} error={errors.phone} />
 
           <View className="h-px bg-line my-1" />
-          <Text className="text-[12px] font-semibold text-ink-2">Business address</Text>
+          <Text className="text-caption font-sans-semibold text-ink-2">Business address</Text>
           <Input label="Address line 1" value={line1} onChangeText={setLine1} placeholder="Shop / building, street" error={errors.line1} />
           <Input label="Address line 2 (optional)" value={line2} onChangeText={setLine2} placeholder="Area, landmark" />
           <Input label="City" value={city} onChangeText={setCity} placeholder="Mumbai" autoCapitalize="words" error={errors.city} />
@@ -126,12 +126,12 @@ export default function OnboardingScreen() {
 
           <View className="h-px bg-line my-1" />
           <View>
-            <Text className="text-[12px] font-medium text-ink-2 mb-2">GST certificate (optional)</Text>
+            <Text className="text-caption font-sans-medium text-ink-2 mb-2">GST certificate (optional)</Text>
             {certUrl ? (
               <View className="flex-row items-center gap-2">
                 <Icon name="document-attach-outline" size={18} color={C.accent} />
-                <Text className="text-[12px] text-accent-ink flex-1" numberOfLines={1}>Attached</Text>
-                <Text className="text-[12px] text-danger" onPress={() => setCertUrl(null)}>Remove</Text>
+                <Text className="text-caption text-accent-ink flex-1" numberOfLines={1}>Attached</Text>
+                <Text className="text-caption text-danger" onPress={() => setCertUrl(null)}>Remove</Text>
               </View>
             ) : (
               <Button label={uploading ? "Uploading…" : "Attach certificate"} variant="default" loading={uploading} onPress={addCert} leftIcon={<Icon name="cloud-upload-outline" size={16} color={C.ink} />} />
@@ -149,21 +149,21 @@ function StatePicker({ value, onChange, error }: { value: string; onChange: (v: 
   const [open, setOpen] = useState(false);
   return (
     <View className="gap-1.5">
-      <Text className="text-[12px] font-medium text-ink-2">State</Text>
+      <Text className="text-caption font-sans-medium text-ink-2">State</Text>
       <Text
         onPress={() => setOpen((o) => !o)}
-        className={`bg-paper-2 border rounded-[12px] px-3.5 py-3 text-[14px] ${value ? "text-ink" : "text-ink-3"} ${error ? "border-danger" : "border-line"}`}
+        className={`bg-paper-2 border rounded-input px-3.5 py-3 text-body ${value ? "text-ink" : "text-ink-3"} ${error ? "border-danger" : "border-line"}`}
       >
         {value || "Select state"}
       </Text>
-      {error && <Text className="text-[11px] text-danger">{error}</Text>}
+      {error && <Text className="text-micro text-danger">{error}</Text>}
       {open && (
-        <ScrollView className="max-h-56 bg-paper border border-line rounded-[12px] mt-1" nestedScrollEnabled>
+        <ScrollView className="max-h-56 bg-paper border border-line rounded-input mt-1" nestedScrollEnabled>
           {INDIAN_STATES.map((s) => (
             <Text
               key={s}
               onPress={() => { onChange(s); setOpen(false); }}
-              className={`px-3.5 py-2.5 text-[13px] ${s === value ? "text-accent-ink font-semibold" : "text-ink-2"}`}
+              className={`px-3.5 py-2.5 text-sub ${s === value ? "text-accent-ink font-sans-semibold" : "text-ink-2"}`}
             >
               {s}
             </Text>

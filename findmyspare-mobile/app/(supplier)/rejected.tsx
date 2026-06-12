@@ -15,11 +15,11 @@ export default function RejectedScreen() {
     <PageShell>
       <View className="items-center mt-24 gap-4 px-6">
         <Icon name="close-circle-outline" size={56} color={C.danger} />
-        <Text className="serif text-[26px] text-ink text-center">Application rejected</Text>
+        <Text className="font-sans-extrabold text-display text-ink text-center">Application rejected</Text>
         {user?.rejectionReason && (
           <View className="bg-danger-wash border border-line rounded-card px-4 py-3 w-full">
-            <Text className="text-[12px] text-ink-2 mono uppercase mb-1">Reason</Text>
-            <Text className="text-[14px] text-ink">{user.rejectionReason}</Text>
+            <Text className="text-caption text-ink-2 font-mono uppercase mb-1">Reason</Text>
+            <Text className="text-body text-ink">{user.rejectionReason}</Text>
           </View>
         )}
         <Button label="Resubmit" onPress={() => router.replace("/(supplier)/onboarding")} />

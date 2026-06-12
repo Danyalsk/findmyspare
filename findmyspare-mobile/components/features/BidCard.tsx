@@ -32,24 +32,24 @@ export function BidCard({
     <Card className={best ? "border-accent-ink" : ""}>
       {best && (
         <View className="self-start bg-accent-wash px-2 py-0.5 rounded-full mb-2">
-          <Text className="text-[10px] mono uppercase text-accent-ink font-semibold">Lowest quote</Text>
+          <Text className="text-micro font-mono uppercase text-accent-ink font-sans-semibold">Lowest quote</Text>
         </View>
       )}
       <View className="flex-row items-center gap-3">
         <Avatar name={name} size={40} />
         <View className="flex-1">
-          <Text className="text-[14px] font-semibold text-ink" numberOfLines={1}>{name}</Text>
+          <Text className="text-body font-sans-semibold text-ink" numberOfLines={1}>{name}</Text>
           <View className="flex-row items-center gap-2 mt-0.5">
-            <Text className="text-[11px] text-ink-3">{CONDITION_LABEL[bid.condition] || bid.condition}</Text>
+            <Text className="text-micro text-ink-3">{CONDITION_LABEL[bid.condition] || bid.condition}</Text>
             {typeof bid.completedOrders === "number" && bid.completedOrders > 0 && (
               <View className="flex-row items-center gap-0.5">
                 <Icon name="checkmark-circle" size={11} color={C.accent} />
-                <Text className="text-[11px] text-accent-ink">{bid.completedOrders} deals</Text>
+                <Text className="text-micro text-accent-ink">{bid.completedOrders} deals</Text>
               </View>
             )}
           </View>
         </View>
-        <Text className="mono text-[18px] font-semibold text-ink">{formatPrice(parseFloat(bid.price))}</Text>
+        <Text className="font-mono text-headline font-sans-semibold text-ink">{formatPrice(parseFloat(bid.price))}</Text>
       </View>
 
       <View className="flex-row gap-4 mt-3">
@@ -58,7 +58,7 @@ export function BidCard({
       </View>
 
       {bid.notes ? (
-        <Text className="text-[12px] text-ink-2 mt-2.5 leading-[17px]">{bid.notes}</Text>
+        <Text className="text-caption text-ink-2 mt-2.5 leading-[17px]">{bid.notes}</Text>
       ) : null}
 
       <View className="flex-row gap-2 mt-3">
@@ -93,7 +93,7 @@ function Meta({ icon, label }: { icon: IconName; label: string }) {
   return (
     <View className="flex-row items-center gap-1">
       <Icon name={icon} size={13} color={C.ink3} />
-      <Text className="text-[11px] text-ink-3">{label}</Text>
+      <Text className="text-micro text-ink-3">{label}</Text>
     </View>
   );
 }

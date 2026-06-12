@@ -32,11 +32,11 @@ export function ChatBubble({ message, timestamp, direction, attachments }: ChatB
         }`}
       >
         {media.map((m, i) => (
-          <View key={m.url + i} className="mb-2 rounded-[12px] overflow-hidden bg-paper-3" style={{ width: 200, height: 200 }}>
+          <View key={m.url + i} className="mb-2 rounded-input overflow-hidden bg-paper-3" style={{ width: 200, height: 200 }}>
             {m.type === "video" ? (
               <Pressable onPress={() => Linking.openURL(m.url)} className="w-full h-full items-center justify-center bg-ink">
                 <Icon name="play-outline" size={40} color={C.onInk} weight="fill" />
-                <Text className="text-paper text-[11px] mt-1">Tap to play video</Text>
+                <Text className="text-paper text-micro mt-1">Tap to play video</Text>
               </Pressable>
             ) : (
               <Image source={{ uri: m.url }} style={{ width: "100%", height: "100%" }} contentFit="cover" transition={200} />
@@ -44,10 +44,10 @@ export function ChatBubble({ message, timestamp, direction, attachments }: ChatB
           </View>
         ))}
         {message ? (
-          <Text className={`text-[13px] ${isOut ? "text-paper" : "text-ink"}`}>{message}</Text>
+          <Text className={`text-sub ${isOut ? "text-paper-2" : "text-ink"}`}>{message}</Text>
         ) : null}
         {timestamp && (
-          <Text className={`mono text-[10px] mt-1 ${isOut ? "text-ink-3 text-right" : "text-ink-3"}`}>
+          <Text className={`text-micro mt-1 ${isOut ? "text-paper-3 text-right" : "text-ink-3"}`}>
             {timestamp}
           </Text>
         )}

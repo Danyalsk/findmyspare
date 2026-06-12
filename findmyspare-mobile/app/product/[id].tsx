@@ -54,7 +54,7 @@ export default function ProductDetailScreen() {
         <Pressable onPress={() => router.back()} className="w-9 h-9 items-center justify-center">
           <Icon name="chevron-back" size={22} color={C.ink} />
         </Pressable>
-        <Text className="flex-1 text-[14px] font-semibold text-ink" numberOfLines={1}>
+        <Text className="flex-1 text-body font-sans-semibold text-ink" numberOfLines={1}>
           {p.name}
         </Text>
       </View>
@@ -89,28 +89,28 @@ export default function ProductDetailScreen() {
         </View>
 
         <View className="px-5 pt-4">
-          <Text className="serif text-[26px] text-ink leading-[1.1]">{p.name}</Text>
+          <Text className="font-sans-extrabold text-display text-ink leading-[1.1]">{p.name}</Text>
           {p.partNumber && (
-            <Text className="mono text-[11px] text-ink-3 mt-1">PN: {p.partNumber}</Text>
+            <Text className="font-mono text-micro text-ink-3 mt-1">PN: {p.partNumber}</Text>
           )}
           <View className="flex-row items-baseline gap-2 mt-3">
-            <Text className="mono text-[28px] font-semibold text-ink">
+            <Text className="font-mono text-display font-sans-semibold text-ink">
               {formatPrice(parseFloat(p.price))}
             </Text>
-            <Text className="text-[12px] text-ink-3">
+            <Text className="text-caption text-ink-3">
               {p.stockQuantity > 0 ? `${p.stockQuantity} in stock` : "Out of stock"}
             </Text>
           </View>
 
           {p.description && (
             <Card className="mt-4">
-              <Text className="text-[13px] text-ink leading-[1.5]">{p.description}</Text>
+              <Text className="text-sub text-ink leading-[1.5]">{p.description}</Text>
             </Card>
           )}
 
           {p.compatibleVehicles && p.compatibleVehicles.length > 0 && (
             <View className="mt-4">
-              <Text className="text-[12px] font-semibold text-ink-2 mb-2 uppercase mono tracking-[0.08em]">
+              <Text className="text-caption font-sans-semibold text-ink-2 mb-2 uppercase font-mono tracking-[0.08em]">
                 Compatible
               </Text>
               <View className="flex-row flex-wrap gap-2">
@@ -123,14 +123,14 @@ export default function ProductDetailScreen() {
 
           {p.specifications && Object.keys(p.specifications).length > 0 && (
             <View className="mt-4">
-              <Text className="text-[12px] font-semibold text-ink-2 mb-2 uppercase mono tracking-[0.08em]">
+              <Text className="text-caption font-sans-semibold text-ink-2 mb-2 uppercase font-mono tracking-[0.08em]">
                 Specifications
               </Text>
               <Card className="gap-2">
                 {Object.entries(p.specifications).map(([k, v]) => (
                   <View key={k} className="flex-row justify-between">
-                    <Text className="text-[12px] text-ink-3">{k.replace(/_/g, " ")}</Text>
-                    <Text className="text-[12px] text-ink font-medium">{String(v)}</Text>
+                    <Text className="text-caption text-ink-3">{k.replace(/_/g, " ")}</Text>
+                    <Text className="text-caption text-ink font-sans-medium">{String(v)}</Text>
                   </View>
                 ))}
               </Card>
@@ -139,17 +139,17 @@ export default function ProductDetailScreen() {
 
           {p.warrantyInfo && (
             <View className="mt-4">
-              <Text className="text-[12px] font-semibold text-ink-2 mb-2 uppercase mono tracking-[0.08em]">
+              <Text className="text-caption font-sans-semibold text-ink-2 mb-2 uppercase font-mono tracking-[0.08em]">
                 Warranty
               </Text>
-              <Text className="text-[13px] text-ink">{p.warrantyInfo}</Text>
+              <Text className="text-sub text-ink">{p.warrantyInfo}</Text>
             </View>
           )}
 
           {p.supplierBusinessName && (
             <View className="mt-4 mb-2">
-              <Text className="text-[12px] text-ink-3">Supplied by</Text>
-              <Text className="text-[14px] font-semibold text-accent-ink">
+              <Text className="text-caption text-ink-3">Supplied by</Text>
+              <Text className="text-body font-sans-semibold text-accent-ink">
                 {p.supplierBusinessName}
               </Text>
             </View>

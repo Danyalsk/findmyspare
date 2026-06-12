@@ -67,7 +67,7 @@ export default function MessagesScreen() {
       onRefresh={() => { setRefreshing(true); load(); }}
     >
       <View className="pt-3 pb-3">
-        <Text className="serif text-[24px] text-ink">Messages</Text>
+        <Text className="font-sans-extrabold text-title text-ink">Messages</Text>
       </View>
 
       {loading ? (
@@ -79,7 +79,7 @@ export default function MessagesScreen() {
       ) : convos.length === 0 ? (
         <View className="items-center mt-20 gap-3">
           <Icon name="chatbubbles-outline" size={48} color={C.ink3} />
-          <Text className="text-ink-3 text-[14px]">No conversations yet</Text>
+          <Text className="text-ink-3 text-body">No conversations yet</Text>
         </View>
       ) : (
         <View>
@@ -97,25 +97,25 @@ export default function MessagesScreen() {
                 <Avatar name={c.name} image={c.image} size={44} />
                 <View className="flex-1">
                   <View className="flex-row justify-between items-center">
-                    <Text className="text-[14px] font-semibold text-ink" numberOfLines={1}>
+                    <Text className="text-body font-sans-semibold text-ink" numberOfLines={1}>
                       {c.name}
                     </Text>
-                    <Text className="text-[11px] text-ink-3">{timeAgo(c.lastMessageAt)}</Text>
+                    <Text className="text-micro text-ink-3">{timeAgo(c.lastMessageAt)}</Text>
                   </View>
                   <View className="flex-row justify-between items-center mt-0.5">
-                    <Text className="text-[13px] text-ink-3 flex-1 mr-2" numberOfLines={1}>
+                    <Text className="text-sub text-ink-3 flex-1 mr-2" numberOfLines={1}>
                       {c.lastMessage}
                     </Text>
                     {c.unreadCount > 0 && (
                       <View className="min-w-[18px] h-[18px] px-1 rounded-full bg-ink items-center justify-center">
-                        <Text className="text-paper text-[10px] font-semibold">
+                        <Text className="text-paper text-micro font-sans-semibold">
                           {c.unreadCount > 99 ? "99+" : c.unreadCount}
                         </Text>
                       </View>
                     )}
                   </View>
                   {c.businessName && (
-                    <Text className="text-[11px] text-ink-3" numberOfLines={1}>
+                    <Text className="text-micro text-ink-3" numberOfLines={1}>
                       {c.businessName}
                     </Text>
                   )}

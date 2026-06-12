@@ -8,6 +8,7 @@ import { Chip } from "@/components/ui/Chip";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { disputesApi } from "@/lib/api/disputes";
+import { haptics } from "@/lib/haptics";
 import type { IssueType } from "@/lib/types";
 
 const ISSUES: { value: IssueType; label: string }[] = [
@@ -34,6 +35,7 @@ export default function RaiseDisputeScreen() {
     setBusy(true);
     try {
       const res = await disputesApi.raise(id!, { issueType, description: description.trim() });
+      haptics.success();
       router.replace(`/disputes/${res.dispute.id}` as never);
     } catch (e) {
       Alert.alert("Failed", (e as Error).message);
@@ -48,7 +50,7 @@ export default function RaiseDisputeScreen() {
         <ScrollView className="flex-1" contentContainerClassName="px-5 pb-12 pt-3" keyboardShouldPersistTaps="handled">
           <Card className="gap-4">
             <View>
-              <Text className="text-[12px] font-medium text-ink-2 mb-2">What went wrong?</Text>
+              <Text className="text-caption font-sans-medium text-ink-2 mb-2">What went wrong?</Text>
               <View className="flex-row flex-wrap gap-2">
                 {ISSUES.map((i) => (
                   <Chip key={i.value} label={i.label} active={issueType === i.value} onPress={() => setIssueType(i.value)} />
@@ -65,7 +67,7 @@ export default function RaiseDisputeScreen() {
               className="h-28 pt-3"
             />
           </Card>
-          <Text className="text-[12px] text-ink-3 mt-3 px-1">
+          <Text className="text-caption text-ink-3 mt-3 px-1">
             Raising a dispute pauses the order. Your escrow stays held until it&apos;s resolved.
           </Text>
           <View className="mt-5">

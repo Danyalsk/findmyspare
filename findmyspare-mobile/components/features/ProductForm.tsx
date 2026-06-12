@@ -105,7 +105,7 @@ export function ProductForm({
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1">
         <ScrollView className="flex-1" contentContainerClassName="px-5 pb-12 pt-3" keyboardShouldPersistTaps="handled">
           {/* Images */}
-          <Text className="text-[12px] font-medium text-ink-2 mb-2">Photos</Text>
+          <Text className="text-caption font-sans-medium text-ink-2 mb-2">Photos</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
             <View className="flex-row gap-2">
               {images.map((uri, i) => (
@@ -122,10 +122,10 @@ export function ProductForm({
               <Pressable
                 onPress={addImage}
                 disabled={uploading}
-                className="w-[84px] h-[84px] rounded-[12px] border border-dashed border-line-2 bg-paper-2 items-center justify-center"
+                className="w-[84px] h-[84px] rounded-input border border-dashed border-line-2 bg-paper-2 items-center justify-center"
               >
                 <Icon name={uploading ? "hourglass-outline" : "camera-outline"} size={22} color={C.ink3} />
-                <Text className="text-[10px] text-ink-3 mt-1">{uploading ? "…" : "Add"}</Text>
+                <Text className="text-micro text-ink-3 mt-1">{uploading ? "…" : "Add"}</Text>
               </Pressable>
             </View>
           </ScrollView>
@@ -133,7 +133,7 @@ export function ProductForm({
           <Card className="gap-4">
             <Input label="Product name" value={name} onChangeText={setName} placeholder="Front brake pad set" />
             <View>
-              <Text className="text-[12px] font-medium text-ink-2 mb-2">Category</Text>
+              <Text className="text-caption font-sans-medium text-ink-2 mb-2">Category</Text>
               <View className="flex-row flex-wrap gap-2">
                 {categories.map((c) => (
                   <Chip key={c.label} label={c.label} active={category === c.label} onPress={() => setCategory(c.label)} />
@@ -155,14 +155,14 @@ export function ProductForm({
           </Card>
 
           {/* Compatible vehicles */}
-          <Text className="text-[12px] mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">Compatible vehicles</Text>
+          <Text className="text-caption font-mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">Compatible vehicles</Text>
           <Card className="gap-3">
             {vehicles.length > 0 && (
               <View className="flex-row flex-wrap gap-2">
                 {vehicles.map((v, i) => (
                   <Pressable key={i} onPress={() => setVehicles((prev) => prev.filter((_, idx) => idx !== i))}>
                     <View className="flex-row items-center gap-1 bg-paper-2 border border-line rounded-full px-3 py-1.5">
-                      <Text className="text-[12px] text-ink-2">{v.make} {v.model}</Text>
+                      <Text className="text-caption text-ink-2">{v.make} {v.model}</Text>
                       <Icon name="close" size={12} color={C.ink3} />
                     </View>
                   </Pressable>
@@ -170,7 +170,7 @@ export function ProductForm({
               </View>
             )}
             <View>
-              <Text className="text-[11px] text-ink-3 mb-1.5">Make</Text>
+              <Text className="text-micro text-ink-3 mb-1.5">Make</Text>
               <View className="flex-row flex-wrap gap-2">
                 {makes.map((m) => (
                   <Chip key={m} label={m} active={vMake === m} onPress={() => { setVMake(m); setVModel(""); }} />
@@ -179,7 +179,7 @@ export function ProductForm({
             </View>
             {vModels.length > 0 && (
               <View>
-                <Text className="text-[11px] text-ink-3 mb-1.5">Model</Text>
+                <Text className="text-micro text-ink-3 mb-1.5">Model</Text>
                 <View className="flex-row flex-wrap gap-2">
                   {vModels.map((m) => (
                     <Chip key={m} label={m} active={vModel === m} onPress={() => setVModel(m)} />
@@ -191,7 +191,7 @@ export function ProductForm({
           </Card>
 
           {/* Specifications */}
-          <Text className="text-[12px] mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">Specifications</Text>
+          <Text className="text-caption font-mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">Specifications</Text>
           <Card className="gap-3">
             {specs.map((row, i) => (
               <View key={i} className="flex-row gap-2 items-end">

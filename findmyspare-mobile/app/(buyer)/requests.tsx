@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { inquiriesApi } from "@/lib/api/inquiries";
+import { haptics } from "@/lib/haptics";
 import { pickAndUploadImage } from "@/lib/api/upload";
 import { vehicleData, makes } from "@/lib/constants";
 import { useAuthStore } from "@/lib/store";
@@ -49,7 +50,7 @@ export default function RequestsScreen() {
   return (
     <PageShell refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }}>
       <View className="pt-3 pb-3 flex-row items-center justify-between">
-        <Text className="serif text-[24px] text-ink">My requests</Text>
+        <Text className="font-sans-extrabold text-title text-ink">My requests</Text>
         <Pressable
           onPress={() => setOpen(true)}
           className="bg-ink rounded-full w-10 h-10 items-center justify-center"
@@ -67,7 +68,7 @@ export default function RequestsScreen() {
       ) : items.length === 0 ? (
         <View className="items-center mt-20 gap-3">
           <Icon name="document-text-outline" size={48} color={C.ink3} />
-          <Text className="text-ink-3 text-[14px]">No requests yet</Text>
+          <Text className="text-ink-3 text-body">No requests yet</Text>
           <Button label="Post a request" onPress={() => setOpen(true)} />
         </View>
       ) : (
@@ -82,7 +83,7 @@ export default function RequestsScreen() {
               <Pressable onPress={() => router.push(`/buyer/requests/${it.id}` as never)}>
                 <Card>
                   <View className="flex-row items-center justify-between mb-1">
-                    <Text className="text-[14px] font-semibold text-ink flex-1" numberOfLines={1}>
+                    <Text className="text-body font-sans-semibold text-ink flex-1" numberOfLines={1}>
                       {it.partName}
                     </Text>
                     <Chip
@@ -90,18 +91,18 @@ export default function RequestsScreen() {
                       active={(it.bidCount ?? 0) > 0}
                     />
                   </View>
-                  <Text className="text-[12px] text-ink-3">
+                  <Text className="text-caption text-ink-3">
                     {it.make} · {it.model} · {it.year}
                   </Text>
                   {it.description && (
-                    <Text className="text-[12px] text-ink-2 mt-1" numberOfLines={2}>
+                    <Text className="text-caption text-ink-2 mt-1" numberOfLines={2}>
                       {it.description}
                     </Text>
                   )}
                   <View className="flex-row items-center justify-between mt-2">
-                    <Text className="text-[10px] text-ink-3 mono uppercase">{it.status}</Text>
+                    <Text className="text-micro text-ink-3 font-mono uppercase">{it.status}</Text>
                     <View className="flex-row items-center gap-1">
-                      <Text className="text-[11px] text-accent-ink font-semibold">View quotes</Text>
+                      <Text className="text-micro text-accent-ink font-sans-semibold">View quotes</Text>
                       <Icon name="chevron-forward" size={13} color={C.accent} />
                     </View>
                   </View>
@@ -163,6 +164,7 @@ function NewRequestModal({
         description: description || undefined,
         imageUrl: imageUrl || undefined,
       });
+      haptics.success();
       setPartName(""); setModel(""); setYear(""); setDescription(""); setImageUrl(null);
       onCreated();
     } catch (e) {
@@ -175,7 +177,7 @@ function NewRequestModal({
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1">
         <PageShell>
           <View className="pt-2 pb-3 flex-row items-center justify-between">
-            <Text className="serif text-[22px] text-ink">New request</Text>
+            <Text className="font-sans-extrabold text-title text-ink">New request</Text>
             <Pressable onPress={onClose} className="p-2">
               <Icon name="close" size={22} color={C.ink} />
             </Pressable>
@@ -184,7 +186,7 @@ function NewRequestModal({
           <Card className="gap-3">
             <Input label="Part name" value={partName} onChangeText={setPartName} placeholder="e.g. Front brake pads" />
             <View>
-              <Text className="text-[12px] font-medium text-ink-2 mb-2">Make</Text>
+              <Text className="text-caption font-sans-medium text-ink-2 mb-2">Make</Text>
               <View className="flex-row flex-wrap gap-2">
                 {makes.map((m) => (
                   <Chip key={m} label={m} active={make === m} onPress={() => { setMake(m); setModel(""); setYear(""); }} />
@@ -193,7 +195,7 @@ function NewRequestModal({
             </View>
             {models.length > 0 && (
               <View>
-                <Text className="text-[12px] font-medium text-ink-2 mb-2">Model</Text>
+                <Text className="text-caption font-sans-medium text-ink-2 mb-2">Model</Text>
                 <View className="flex-row flex-wrap gap-2">
                   {models.map((m) => (
                     <Chip key={m} label={m} active={model === m} onPress={() => { setModel(m); setYear(""); }} />
@@ -203,7 +205,7 @@ function NewRequestModal({
             )}
             {years.length > 0 && (
               <View>
-                <Text className="text-[12px] font-medium text-ink-2 mb-2">Year</Text>
+                <Text className="text-caption font-sans-medium text-ink-2 mb-2">Year</Text>
                 <View className="flex-row flex-wrap gap-2">
                   {years.map((y) => (
                     <Chip key={y} label={y} active={year === y} onPress={() => setYear(y)} />
@@ -223,12 +225,12 @@ function NewRequestModal({
 
             {/* Optional photo */}
             <View>
-              <Text className="text-[12px] font-medium text-ink-2 mb-2">Photo (optional)</Text>
+              <Text className="text-caption font-sans-medium text-ink-2 mb-2">Photo (optional)</Text>
               {imageUrl ? (
                 <View className="flex-row items-center gap-3">
                   <Image source={{ uri: imageUrl }} style={{ width: 64, height: 64, borderRadius: 12 }} contentFit="cover" />
                   <Pressable onPress={() => setImageUrl(null)}>
-                    <Text className="text-[12px] text-danger">Remove</Text>
+                    <Text className="text-caption text-danger">Remove</Text>
                   </Pressable>
                 </View>
               ) : (

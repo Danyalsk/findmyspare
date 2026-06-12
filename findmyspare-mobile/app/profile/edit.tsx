@@ -83,7 +83,7 @@ export default function EditProfileScreen() {
                 <Icon name={uploading ? "hourglass-outline" : "camera"} size={13} color={C.onInk} />
               </View>
             </Pressable>
-            <Text className="text-[12px] text-ink-3 mt-2">Tap to change photo</Text>
+            <Text className="text-caption text-ink-3 mt-2">Tap to change photo</Text>
           </View>
 
           <Card className="gap-4">

@@ -38,9 +38,9 @@ export default function AdminOverview() {
   return (
     <PageShell refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }}>
       <View className="pt-3 pb-4">
-        <Text className="text-ink-3 text-[11px] mono uppercase tracking-[0.08em]">Admin</Text>
-        <Text className="serif text-[26px] text-ink mt-1">Platform overview</Text>
-        <Text className="text-ink-3 text-[12px] mt-1">{user?.name}</Text>
+        <Text className="text-ink-3 text-micro font-mono uppercase tracking-[0.08em]">Admin</Text>
+        <Text className="font-sans-extrabold text-display text-ink mt-1">Platform overview</Text>
+        <Text className="text-ink-3 text-caption mt-1">{user?.name}</Text>
       </View>
 
       {loading ? (
@@ -59,8 +59,8 @@ export default function AdminOverview() {
             >
               <Card className={c.highlight ? "border-accent-ink" : ""}>
                 <Icon name={c.icon} size={18} color={c.highlight ? C.accent : C.ink3} />
-                <Text className="serif text-[28px] text-ink mt-2">{c.value}</Text>
-                <Text className="text-[12px] text-ink-3 mt-0.5">{c.label}</Text>
+                <Text className="font-sans-extrabold text-display text-ink mt-2">{c.value}</Text>
+                <Text className="text-caption text-ink-3 mt-0.5">{c.label}</Text>
               </Card>
             </MotiView>
           ))}
@@ -70,7 +70,7 @@ export default function AdminOverview() {
       {(stats?.pendingSuppliers ?? 0) > 0 && (
         <View className="mt-5 bg-accent-wash rounded-card p-4 flex-row items-center gap-2">
           <Icon name="alert-circle" size={18} color={C.accent} />
-          <Text className="text-[13px] text-accent-ink flex-1">
+          <Text className="text-sub text-accent-ink flex-1">
             {stats?.pendingSuppliers} supplier{(stats?.pendingSuppliers ?? 0) > 1 ? "s" : ""} awaiting review — see the Suppliers tab.
           </Text>
         </View>

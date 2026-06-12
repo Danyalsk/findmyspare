@@ -39,8 +39,8 @@ export default function SearchScreen() {
     <SafeAreaView edges={["top"]} className="flex-1 bg-paper">
       {/* Header + search */}
       <View className="px-5 pt-2 pb-3">
-        <Text className="text-[24px] font-extrabold text-ink mb-3">Browse parts</Text>
-        <View className="flex-row items-center bg-paper-2 border border-line-2 rounded-[16px] px-4 py-3" style={shadowCard}>
+        <Text className="text-title font-sans-extrabold text-ink mb-3">Browse parts</Text>
+        <View className="flex-row items-center bg-paper-2 border border-line-2 rounded-card px-4 py-3" style={shadowCard}>
           <Icon name="search" size={20} color={C.accent} />
           <TextInput
             value={q}
@@ -49,7 +49,7 @@ export default function SearchScreen() {
             placeholderTextColor={C.ink3}
             selectionColor={C.accent}
             autoFocus={!q}
-            className="flex-1 ml-2.5 text-[15px] text-ink"
+            className="flex-1 ml-2.5 text-body text-ink"
           />
           {q ? (
             <Text onPress={() => setQ("")}>
@@ -74,14 +74,14 @@ export default function SearchScreen() {
             <View className="w-14 h-14 rounded-full bg-accent-wash items-center justify-center">
               <Icon name="search" size={26} color={C.accent} />
             </View>
-            <Text className="text-[15px] font-bold text-ink">No parts found</Text>
-            <Text className="text-[12px] text-ink-3 text-center px-10">
+            <Text className="text-body font-sans-bold text-ink">No parts found</Text>
+            <Text className="text-caption text-ink-3 text-center px-10">
               Try another keyword — or post a request and let suppliers quote you.
             </Text>
           </View>
         ) : (
           <View className="gap-3">
-            <Text className="text-[12px] text-ink-3 mono uppercase tracking-[0.08em]">{products.length} results</Text>
+            <Text className="text-caption text-ink-3 font-mono uppercase tracking-[0.08em]">{products.length} results</Text>
             {products.map((p, i) => <ListCard key={p.id} product={p} index={i} />)}
           </View>
         )}

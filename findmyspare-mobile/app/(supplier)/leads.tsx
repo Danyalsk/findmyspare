@@ -56,25 +56,25 @@ export default function SupplierLeads() {
     <PageShell refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }}>
       <View className="pt-3 pb-3">
         <View className="flex-row items-center gap-2">
-          <Text className="serif text-[24px] text-ink">Live leads</Text>
+          <Text className="font-sans-extrabold text-title text-ink">Live leads</Text>
           <View className={`flex-row items-center gap-1 px-2 py-0.5 rounded-full ${live ? "bg-accent-wash" : "bg-paper-2"}`}>
             <View className={`w-1.5 h-1.5 rounded-full ${live ? "bg-accent-ink" : "bg-ink-3"}`} />
-            <Text className={`text-[10px] mono ${live ? "text-accent-ink" : "text-ink-3"}`}>
+            <Text className={`text-micro font-mono ${live ? "text-accent-ink" : "text-ink-3"}`}>
               {live ? "LIVE" : "OFFLINE"}
             </Text>
           </View>
         </View>
-        <Text className="text-ink-3 text-[12px] mt-1">{filtered.length} open requests</Text>
+        <Text className="text-ink-3 text-caption mt-1">{filtered.length} open requests</Text>
       </View>
 
-      <View className="flex-row items-center bg-paper-2 border border-line rounded-[12px] px-3 mb-4">
+      <View className="flex-row items-center bg-paper-2 border border-line rounded-input px-3 mb-4">
         <Icon name="search" size={16} color={C.ink3} />
         <TextInput
           value={q}
           onChangeText={setQ}
           placeholder="Search leads…"
           placeholderTextColor={C.ink3}
-          className="flex-1 py-2.5 px-2 text-[14px] text-ink"
+          className="flex-1 py-2.5 px-2 text-body text-ink"
         />
       </View>
 
@@ -85,8 +85,8 @@ export default function SupplierLeads() {
       ) : filtered.length === 0 ? (
         <View className="items-center mt-20 gap-2">
           <Icon name="radio-outline" size={44} color={C.ink3} />
-          <Text className="text-ink-3 text-[14px]">No open leads</Text>
-          <Text className="text-ink-3 text-[12px]">New requests appear here in real-time.</Text>
+          <Text className="text-ink-3 text-body">No open leads</Text>
+          <Text className="text-ink-3 text-caption">New requests appear here in real-time.</Text>
         </View>
       ) : (
         <View className="gap-2.5">
@@ -100,25 +100,25 @@ export default function SupplierLeads() {
               <Pressable onPress={() => router.push(`/supplier/leads/${it.id}` as never)}>
                 <Card>
                   <View className="flex-row items-center justify-between mb-1">
-                    <Text className="text-[14px] font-semibold text-ink flex-1" numberOfLines={1}>
+                    <Text className="text-body font-sans-semibold text-ink flex-1" numberOfLines={1}>
                       {it.partName}
                     </Text>
                     <Chip label={`${it.bidCount ?? 0} bids`} active={(it.bidCount ?? 0) > 0} />
                   </View>
-                  <Text className="text-[12px] text-ink-3">
+                  <Text className="text-caption text-ink-3">
                     {it.make} · {it.model} · {it.year}
                   </Text>
                   {it.description && (
-                    <Text className="text-[12px] text-ink-2 mt-1.5" numberOfLines={2}>
+                    <Text className="text-caption text-ink-2 mt-1.5" numberOfLines={2}>
                       {it.description}
                     </Text>
                   )}
                   <View className="flex-row items-center justify-between mt-2">
                     {it.buyerName ? (
-                      <Text className="text-[11px] text-accent-ink font-semibold">{it.buyerName}</Text>
+                      <Text className="text-micro text-accent-ink font-sans-semibold">{it.buyerName}</Text>
                     ) : <View />}
                     <View className="flex-row items-center gap-1">
-                      <Text className="text-[11px] text-accent-ink font-semibold">Quote</Text>
+                      <Text className="text-micro text-accent-ink font-sans-semibold">Quote</Text>
                       <Icon name="chevron-forward" size={13} color={C.accent} />
                     </View>
                   </View>

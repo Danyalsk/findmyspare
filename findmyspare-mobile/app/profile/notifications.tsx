@@ -62,7 +62,7 @@ export default function NotificationsScreen() {
         right={
           hasUnread ? (
             <Pressable onPress={markAll} className="px-2">
-              <Text className="text-[12px] text-accent-ink font-semibold">Mark all</Text>
+              <Text className="text-caption text-accent-ink font-sans-semibold">Mark all</Text>
             </Pressable>
           ) : undefined
         }
@@ -77,7 +77,7 @@ export default function NotificationsScreen() {
         ) : items.length === 0 ? (
           <View className="items-center mt-20 gap-3">
             <Icon name="notifications-off-outline" size={46} color={C.ink3} />
-            <Text className="text-ink-3 text-[14px]">No notifications yet</Text>
+            <Text className="text-ink-3 text-body">No notifications yet</Text>
           </View>
         ) : (
           <View className="gap-2">
@@ -97,10 +97,10 @@ export default function NotificationsScreen() {
                   </View>
                   <View className="flex-1">
                     <View className="flex-row items-center justify-between">
-                      <Text className="text-[13px] font-semibold text-ink flex-1" numberOfLines={1}>{n.title}</Text>
-                      <Text className="text-[11px] text-ink-3 ml-2">{relTime(n.createdAt)}</Text>
+                      <Text className="text-sub font-sans-semibold text-ink flex-1" numberOfLines={1}>{n.title}</Text>
+                      <Text className="text-micro text-ink-3 ml-2">{relTime(n.createdAt)}</Text>
                     </View>
-                    <Text className="text-[12px] text-ink-2 mt-0.5" numberOfLines={2}>{n.message}</Text>
+                    <Text className="text-caption text-ink-2 mt-0.5" numberOfLines={2}>{n.message}</Text>
                   </View>
                   {!n.isRead && <View className="w-2 h-2 rounded-full bg-accent-ink mt-1" />}
                 </Pressable>

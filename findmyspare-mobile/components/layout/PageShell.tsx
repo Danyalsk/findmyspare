@@ -3,6 +3,7 @@ import { ScrollView, View, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Aurora } from "./Aurora";
 import { C } from "@/lib/theme";
+import { haptics } from "@/lib/haptics";
 
 export interface PageShellProps {
   children: React.ReactNode;
@@ -24,6 +25,9 @@ export function PageShell({
   aurora = true,
 }: PageShellProps) {
   const padCls = padded ? "px-5" : "";
+  const handleRefresh = onRefresh
+    ? () => { haptics.select(); onRefresh(); }
+    : undefined;
 
   const body = !scroll ? (
     <View className={`flex-1 ${padCls} ${className}`}>{children}</View>
@@ -34,8 +38,8 @@ export function PageShell({
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
       refreshControl={
-        onRefresh ? (
-          <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={C.accent} />
+        handleRefresh ? (
+          <RefreshControl refreshing={!!refreshing} onRefresh={handleRefresh} tintColor={C.accent} />
         ) : undefined
       }
     >

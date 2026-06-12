@@ -15,6 +15,7 @@ import { inventoryApi } from "@/lib/api/inventory";
 import type { InventoryItem, ProductDetail, StockMovement } from "@/lib/types";
 import { formatPrice } from "@/lib/constants";
 import { C } from "@/lib/theme";
+import { haptics } from "@/lib/haptics";
 
 export default function InventoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -44,6 +45,7 @@ export default function InventoryDetailScreen() {
     setBusy(true);
     try {
       await inventoryApi.publish(product.id);
+      haptics.success();
       load();
     } catch (e) { Alert.alert("Failed", (e as Error).message); }
     finally { setBusy(false); }
@@ -55,7 +57,7 @@ export default function InventoryDetailScreen() {
       { text: "Cancel", style: "cancel" },
       { text: "Delist", style: "destructive", onPress: async () => {
         setBusy(true);
-        try { await inventoryApi.unpublish(product.id); load(); }
+        try { await inventoryApi.unpublish(product.id); haptics.success(); load(); }
         catch (e) { Alert.alert("Failed", (e as Error).message); }
         finally { setBusy(false); }
       } },
@@ -99,24 +101,24 @@ export default function InventoryDetailScreen() {
       <ScrollView className="flex-1" contentContainerClassName="px-5 pb-12 pt-3">
         <Card className="gap-3">
           <View className="flex-row gap-3 items-center">
-            <View className="w-20 h-20 rounded-[12px] overflow-hidden bg-paper-3">
+            <View className="w-20 h-20 rounded-input overflow-hidden bg-paper-3">
               {product.images?.[0] && <Image source={{ uri: product.images[0] }} style={{ width: "100%", height: "100%" }} contentFit="cover" />}
             </View>
             <View className="flex-1">
-              <Text className="text-[16px] font-semibold text-ink" numberOfLines={2}>{product.name}</Text>
-              <Text className="text-[12px] text-ink-3 mt-0.5">{product.category || "—"}</Text>
-              <Text className="mono text-[15px] font-semibold text-ink mt-1">{formatPrice(parseFloat(product.price))}</Text>
+              <Text className="text-body font-sans-semibold text-ink" numberOfLines={2}>{product.name}</Text>
+              <Text className="text-caption text-ink-3 mt-0.5">{product.category || "—"}</Text>
+              <Text className="font-mono text-body font-sans-semibold text-ink mt-1">{formatPrice(parseFloat(product.price))}</Text>
             </View>
           </View>
 
           <View className="flex-row items-center justify-between pt-3 border-t border-line">
             <View>
-              <Text className="text-[11px] text-ink-3">In stock</Text>
-              <Text className="serif text-[28px] text-ink leading-tight">{product.stockQuantity}</Text>
+              <Text className="text-micro text-ink-3">In stock</Text>
+              <Text className="font-sans-extrabold text-display text-ink leading-tight">{product.stockQuantity}</Text>
             </View>
             <StockBadge status={product.status} stockQuantity={product.stockQuantity} lowStockThreshold={threshold} />
           </View>
-          <Text className="text-[11px] text-ink-3">Low-stock alert below {threshold}</Text>
+          <Text className="text-micro text-ink-3">Low-stock alert below {threshold}</Text>
         </Card>
 
         {/* Actions */}
@@ -131,10 +133,10 @@ export default function InventoryDetailScreen() {
         </View>
 
         {/* Movements */}
-        <Text className="text-[12px] mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-1">Stock history</Text>
+        <Text className="text-caption font-mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-1">Stock history</Text>
         <Card>
           {movements.length === 0 ? (
-            <Text className="text-[13px] text-ink-3 text-center py-4">No movements yet.</Text>
+            <Text className="text-sub text-ink-3 text-center py-4">No movements yet.</Text>
           ) : (
             <View className="divide-y divide-line">
               {movements.map((m) => <MovementRow key={m.id} m={m} />)}

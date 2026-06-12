@@ -14,6 +14,7 @@ import { bidsApi } from "@/lib/api/bids";
 import { formatPrice } from "@/lib/constants";
 import type { Bid, Inquiry } from "@/lib/types";
 import { C } from "@/lib/theme";
+import { haptics } from "@/lib/haptics";
 
 const CONDITIONS: { value: string; label: string }[] = [
   { value: "oem", label: "OEM" },
@@ -66,6 +67,7 @@ export default function LeadDetailScreen() {
         etaDays: eta ? parseInt(eta) : 3,
         notes: notes || undefined,
       });
+      haptics.success();
       Alert.alert("Quote sent", "The buyer has been notified.", [
         { text: "Done", onPress: () => router.back() },
       ]);
@@ -106,13 +108,13 @@ export default function LeadDetailScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1">
         <ScrollView className="flex-1" contentContainerClassName="px-5 pb-12 pt-3" keyboardShouldPersistTaps="handled">
           <Card className="gap-2">
-            <Text className="serif text-[22px] text-ink">{inquiry.partName}</Text>
-            <Text className="text-[13px] text-ink-2">{inquiry.make} · {inquiry.model} · {inquiry.year}</Text>
+            <Text className="font-sans-extrabold text-title text-ink">{inquiry.partName}</Text>
+            <Text className="text-sub text-ink-2">{inquiry.make} · {inquiry.model} · {inquiry.year}</Text>
             {inquiry.description ? (
-              <Text className="text-[13px] text-ink-2 mt-1 leading-[19px]">{inquiry.description}</Text>
+              <Text className="text-sub text-ink-2 mt-1 leading-[19px]">{inquiry.description}</Text>
             ) : null}
             {inquiry.buyerName ? (
-              <Text className="text-[12px] text-accent-ink font-semibold mt-1">Requested by {inquiry.buyerName}</Text>
+              <Text className="text-caption text-accent-ink font-sans-semibold mt-1">Requested by {inquiry.buyerName}</Text>
             ) : null}
             {inquiry.imageUrl ? (
               <Image source={{ uri: inquiry.imageUrl }} style={{ width: "100%", height: 180, borderRadius: 12, marginTop: 8 }} contentFit="cover" />
@@ -123,13 +125,13 @@ export default function LeadDetailScreen() {
             <Card className="mt-5 border-accent-ink gap-2">
               <View className="flex-row items-center gap-2">
                 <Icon name="checkmark-circle" size={18} color={C.accent} />
-                <Text className="text-[14px] font-semibold text-accent-ink">Your quote is in</Text>
+                <Text className="text-body font-sans-semibold text-accent-ink">Your quote is in</Text>
               </View>
-              <Text className="mono text-[22px] font-semibold text-ink">{formatPrice(parseFloat(myBid.price))}</Text>
-              <Text className="text-[12px] text-ink-3">
+              <Text className="font-mono text-title font-sans-semibold text-ink">{formatPrice(parseFloat(myBid.price))}</Text>
+              <Text className="text-caption text-ink-3">
                 {CONDITIONS.find((c) => c.value === myBid.condition)?.label} · {myBid.warrantyMonths}mo warranty · {myBid.etaDays} day ETA
               </Text>
-              {myBid.notes ? <Text className="text-[12px] text-ink-2 mt-1">{myBid.notes}</Text> : null}
+              {myBid.notes ? <Text className="text-caption text-ink-2 mt-1">{myBid.notes}</Text> : null}
               <View className="mt-2">
                 <Button
                   label="Message buyer"
@@ -141,11 +143,11 @@ export default function LeadDetailScreen() {
             </Card>
           ) : (
             <>
-              <Text className="text-[12px] mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">Submit your quote</Text>
+              <Text className="text-caption font-mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">Submit your quote</Text>
               <Card className="gap-4">
                 <Input label="Price (₹)" value={price} onChangeText={setPrice} placeholder="3200" keyboardType="numeric" />
                 <View>
-                  <Text className="text-[12px] font-medium text-ink-2 mb-2">Condition</Text>
+                  <Text className="text-caption font-sans-medium text-ink-2 mb-2">Condition</Text>
                   <View className="flex-row flex-wrap gap-2">
                     {CONDITIONS.map((c) => (
                       <Chip key={c.value} label={c.label} active={condition === c.value} onPress={() => setCondition(c.value)} />

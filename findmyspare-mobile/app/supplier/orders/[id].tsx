@@ -10,6 +10,7 @@ import { OrderStatusTimeline } from "@/components/features/OrderStatusTimeline";
 import { ordersApi } from "@/lib/api/orders";
 import type { OrderDetail, OrderStatus } from "@/lib/types";
 import { statusMeta, buildTimeline } from "@/lib/order-status";
+import { haptics } from "@/lib/haptics";
 import { formatPrice } from "@/lib/constants";
 import { C } from "@/lib/theme";
 
@@ -34,6 +35,7 @@ export default function SupplierOrderDetailScreen() {
     setBusy(true);
     try {
       await ordersApi.updateStatus(id!, { status, ...extra });
+      haptics.success();
       setShipping(false);
       load();
     } catch (e) { Alert.alert("Failed", (e as Error).message); }
@@ -63,35 +65,35 @@ export default function SupplierOrderDetailScreen() {
       <ScrollView className="flex-1" contentContainerClassName="px-5 pb-12 pt-3">
         <Card className="flex-row items-center justify-between">
           <View>
-            <Text className="text-[11px] text-ink-3">Status</Text>
+            <Text className="text-micro text-ink-3">Status</Text>
             <View style={{ backgroundColor: meta.bg }} className="px-2.5 py-1 rounded-full self-start mt-1">
-              <Text style={{ color: meta.color }} className="text-[12px] font-semibold">{meta.label}</Text>
+              <Text style={{ color: meta.color }} className="text-caption font-sans-semibold">{meta.label}</Text>
             </View>
           </View>
           <View className="items-end">
-            <Text className="text-[11px] text-ink-3">Total</Text>
-            <Text className="serif text-[20px] text-ink">{formatPrice(parseFloat(order.totalAmount))}</Text>
+            <Text className="text-micro text-ink-3">Total</Text>
+            <Text className="font-sans-extrabold text-title text-ink">{formatPrice(parseFloat(order.totalAmount))}</Text>
           </View>
         </Card>
 
-        <Text className="text-[12px] mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">Items</Text>
+        <Text className="text-caption font-mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">Items</Text>
         <Card className="gap-3">
           {items.map((it) => (
             <View key={it.id} className="flex-row items-center justify-between">
               <View className="flex-1">
-                <Text className="text-[13px] font-medium text-ink" numberOfLines={1}>{it.productName || "Item"}</Text>
-                <Text className="text-[11px] text-ink-3">Qty {it.quantity} · {formatPrice(parseFloat(it.unitPrice))}</Text>
+                <Text className="text-sub font-sans-medium text-ink" numberOfLines={1}>{it.productName || "Item"}</Text>
+                <Text className="text-micro text-ink-3">Qty {it.quantity} · {formatPrice(parseFloat(it.unitPrice))}</Text>
               </View>
-              <Text className="mono text-[13px] font-semibold text-ink">{formatPrice(parseFloat(it.subtotal))}</Text>
+              <Text className="font-mono text-sub font-sans-semibold text-ink">{formatPrice(parseFloat(it.subtotal))}</Text>
             </View>
           ))}
         </Card>
 
-        <Text className="text-[12px] mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">Buyer</Text>
+        <Text className="text-caption font-mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">Buyer</Text>
         <Card>
-          <Text className="text-[14px] text-ink">{buyer?.name || "—"}</Text>
+          <Text className="text-body text-ink">{buyer?.name || "—"}</Text>
           {shippingAddress ? (
-            <Text className="text-[12px] text-ink-2 mt-1.5 leading-[18px]">
+            <Text className="text-caption text-ink-2 mt-1.5 leading-[18px]">
               {shippingAddress.line1}{shippingAddress.line2 ? `, ${shippingAddress.line2}` : ""}{"\n"}
               {shippingAddress.city}, {shippingAddress.state} {shippingAddress.postalCode}
               {shippingAddress.phone ? ` · ${shippingAddress.phone}` : ""}
@@ -99,7 +101,7 @@ export default function SupplierOrderDetailScreen() {
           ) : null}
         </Card>
 
-        <Text className="text-[12px] mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">Progress</Text>
+        <Text className="text-caption font-mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">Progress</Text>
         <Card><OrderStatusTimeline steps={buildTimeline(order.status)} /></Card>
 
         {dispute ? (

@@ -22,7 +22,7 @@ export default function HelpScreen() {
     <SafeAreaView edges={["top"]} className="flex-1 bg-paper">
       <TopBar title="Help & support" back />
       <ScrollView className="flex-1" contentContainerClassName="px-5 pb-12 pt-4">
-        <Text className="text-[12px] mono uppercase text-ink-3 tracking-[0.08em] mb-2">Contact us</Text>
+        <Text className="text-caption font-mono uppercase text-ink-3 tracking-[0.08em] mb-2">Contact us</Text>
         <View className="gap-2.5">
           <ContactRow
             icon="logo-whatsapp"
@@ -38,17 +38,17 @@ export default function HelpScreen() {
           />
         </View>
 
-        <Text className="text-[12px] mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">FAQ</Text>
+        <Text className="text-caption font-mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">FAQ</Text>
         <View className="gap-2.5">
           {FAQS.map((f) => (
             <Card key={f.q} className="gap-1">
-              <Text className="text-[14px] font-semibold text-ink">{f.q}</Text>
-              <Text className="text-[13px] text-ink-2 leading-[19px]">{f.a}</Text>
+              <Text className="text-body font-sans-semibold text-ink">{f.q}</Text>
+              <Text className="text-sub text-ink-2 leading-[19px]">{f.a}</Text>
             </Card>
           ))}
         </View>
 
-        <Text className="text-[11px] text-ink-3 text-center mt-8">
+        <Text className="text-micro text-ink-3 text-center mt-8">
           FindMySpare · Every part. For every car.
         </Text>
       </ScrollView>
@@ -66,8 +66,8 @@ function ContactRow({
           <Icon name={icon} size={18} color={C.accent} />
         </View>
         <View className="flex-1">
-          <Text className="text-[14px] font-semibold text-ink">{label}</Text>
-          <Text className="text-[12px] text-ink-3">{sub}</Text>
+          <Text className="text-body font-sans-semibold text-ink">{label}</Text>
+          <Text className="text-caption text-ink-3">{sub}</Text>
         </View>
         <Icon name="chevron-forward" size={16} color={C.ink3} />
       </Card>

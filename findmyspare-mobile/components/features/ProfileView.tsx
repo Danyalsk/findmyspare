@@ -88,7 +88,7 @@ export function ProfileView() {
   return (
     <PageShell>
       <View className="pt-3 pb-3">
-        <Text className="serif text-[24px] text-ink">Profile</Text>
+        <Text className="font-sans-extrabold text-title text-ink">Profile</Text>
       </View>
 
       <Card className="items-center gap-3 py-8">
@@ -97,18 +97,18 @@ export function ProfileView() {
           <View className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-accent-ink border-2 border-paper" />
         </View>
         <View className="items-center gap-1.5">
-          <Text className="text-[18px] font-semibold text-ink">{user.name}</Text>
-          <Text className="text-[12px] text-ink-3">{user.email}</Text>
+          <Text className="text-headline font-sans-semibold text-ink">{user.name}</Text>
+          <Text className="text-caption text-ink-3">{user.email}</Text>
           <View className={`px-2.5 py-1 rounded-full ${badgeCls[badge.variant]}`}>
-            <Text className={`text-[11px] font-semibold ${badgeText[badge.variant]}`}>{badge.label}</Text>
+            <Text className={`text-micro font-sans-semibold ${badgeText[badge.variant]}`}>{badge.label}</Text>
           </View>
         </View>
       </Card>
 
       {isApprovedSupplier && (
         <Card className="mt-3 gap-2">
-          <Text className="text-[11px] mono uppercase text-ink-3 tracking-[0.08em]">Business</Text>
-          <Text className="text-[15px] font-semibold text-ink">{user.businessName}</Text>
+          <Text className="text-micro font-mono uppercase text-ink-3 tracking-[0.08em]">Business</Text>
+          <Text className="text-body font-sans-semibold text-ink">{user.businessName}</Text>
           <View className="flex-row flex-wrap gap-2 mt-1">
             {user.gstNumber && <Chip label={`GST ${user.gstNumber}`} />}
             {user.phone && <Chip label={user.phone} />}
@@ -142,10 +142,10 @@ export function ProfileView() {
           disabled={upgrading}
           className="mt-5 bg-ink rounded-card p-5"
         >
-          <Text className="text-paper text-[15px] font-semibold mb-1">
+          <Text className="text-paper text-body font-sans-semibold mb-1">
             {upgrading ? "Switching…" : "Sell on FindMySpare"}
           </Text>
-          <Text className="text-paper/70 text-[12px]">
+          <Text className="text-paper/70 text-caption">
             Reach verified buyers across India. Switch your account to a supplier.
           </Text>
         </Pressable>
@@ -175,10 +175,10 @@ function Row({
       className="flex-row items-center gap-3 bg-paper border border-line rounded-card px-4 py-3.5"
     >
       <Icon name={icon} size={18} color={C.ink2} />
-      <Text className="flex-1 text-[14px] text-ink">{label}</Text>
+      <Text className="flex-1 text-body text-ink">{label}</Text>
       {badge ? (
         <View className="bg-accent-ink rounded-full min-w-[20px] h-5 px-1.5 items-center justify-center">
-          <Text className="text-paper text-[11px] font-bold">{badge > 99 ? "99+" : badge}</Text>
+          <Text className="text-paper text-micro font-sans-bold">{badge > 99 ? "99+" : badge}</Text>
         </View>
       ) : null}
       <Icon name="chevron-forward" size={16} color={C.ink3} />

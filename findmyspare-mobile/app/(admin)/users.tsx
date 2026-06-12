@@ -55,10 +55,10 @@ export default function AdminUsers() {
   return (
     <PageShell refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }}>
       <View className="pt-3 pb-3">
-        <Text className="serif text-[24px] text-ink">Users</Text>
+        <Text className="font-sans-extrabold text-title text-ink">Users</Text>
       </View>
 
-      <View className="flex-row items-center bg-paper-2 border border-line rounded-[12px] px-3 mb-3">
+      <View className="flex-row items-center bg-paper-2 border border-line rounded-input px-3 mb-3">
         <Icon name="search" size={16} color={C.ink3} />
         <TextInput
           value={search}
@@ -66,7 +66,7 @@ export default function AdminUsers() {
           placeholder="Search name or email…"
           placeholderTextColor={C.ink3}
           autoCapitalize="none"
-          className="flex-1 py-2.5 px-2 text-[14px] text-ink"
+          className="flex-1 py-2.5 px-2 text-body text-ink"
         />
       </View>
 
@@ -81,7 +81,7 @@ export default function AdminUsers() {
       ) : items.length === 0 ? (
         <View className="items-center mt-20 gap-2">
           <Icon name="people-outline" size={44} color={C.ink3} />
-          <Text className="text-ink-3 text-[14px]">No users found</Text>
+          <Text className="text-ink-3 text-body">No users found</Text>
         </View>
       ) : (
         <View className="gap-2.5">
@@ -90,16 +90,16 @@ export default function AdminUsers() {
               <Avatar name={u.name} size={40} />
               <View className="flex-1">
                 <View className="flex-row items-center gap-2">
-                  <Text className="text-[14px] font-semibold text-ink" numberOfLines={1}>{u.name}</Text>
-                  <Text className="text-[10px] mono uppercase text-ink-3">{u.role}</Text>
+                  <Text className="text-body font-sans-semibold text-ink" numberOfLines={1}>{u.name}</Text>
+                  <Text className="text-micro font-mono uppercase text-ink-3">{u.role}</Text>
                 </View>
-                <Text className="text-[12px] text-ink-3" numberOfLines={1}>{u.email}</Text>
+                <Text className="text-caption text-ink-3" numberOfLines={1}>{u.email}</Text>
               </View>
               <Pressable
                 onPress={() => toggleBlock(u)}
                 className={`px-3 py-1.5 rounded-full ${u.isBlocked ? "bg-accent-wash" : "bg-danger-wash"}`}
               >
-                <Text className={`text-[11px] font-semibold ${u.isBlocked ? "text-accent-ink" : "text-danger"}`}>
+                <Text className={`text-micro font-sans-semibold ${u.isBlocked ? "text-accent-ink" : "text-danger"}`}>
                   {u.isBlocked ? "Unblock" : "Block"}
                 </Text>
               </Pressable>

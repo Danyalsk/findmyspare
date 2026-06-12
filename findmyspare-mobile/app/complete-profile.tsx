@@ -72,8 +72,8 @@ export default function CompleteProfileScreen() {
           transition={{ type: "timing", duration: 350 }}
         >
           <View className="mt-10 mb-6 gap-1">
-            <Text className="serif text-[28px] text-ink">Almost there</Text>
-            <Text className="text-ink-3 text-[13px]">
+            <Text className="font-sans-extrabold text-display text-ink">Almost there</Text>
+            <Text className="text-ink-3 text-sub">
               Tell us a bit about you to finish setting up your account.
             </Text>
           </View>
@@ -127,7 +127,7 @@ export default function CompleteProfileScreen() {
           </Card>
 
           <Pressable onPress={handleSignOut} className="mt-6 items-center py-3">
-            <Text className="text-[13px] text-ink-3">Sign out</Text>
+            <Text className="text-sub text-ink-3">Sign out</Text>
           </Pressable>
         </MotiView>
       </PageShell>
