@@ -1,0 +1,49 @@
+# ── Dependencies ──────────────────────────────
+node_modules/
+**/node_modules/
+.pnp
+.pnp.*
+
+# ── Secrets / env ─────────────────────────────
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# ── Build output ──────────────────────────────
+.next/
+**/.next/
+out/
+dist/
+build/
+**/dist/
+**/build/
+*.tsbuildinfo
+
+# ── Expo / React Native ───────────────────────
+.expo/
+**/.expo/
+*.orig.*
+web-build/
+
+# ── Logs ──────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+bun-debug.log*
+
+# ── Editor / OS ───────────────────────────────
+.DS_Store
+.vscode/
+.idea/
+*.pem
+
+# ── Vercel ────────────────────────────────────
+.vercel/
+
+# ── Tooling ───────────────────────────────────
+.code-review-graph/
+coverage/

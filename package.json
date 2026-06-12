@@ -1,0 +1,13 @@
+{
+  "name": "findmyspare-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Run BE and FE in separate terminals:' && echo '  npm run dev:be   # backend on :8000' && echo '  npm run dev:fe   # frontend on :5001'",
+    "dev:be": "cd findmyspare-backend && bun run dev",
+    "dev:fe": "bash -c 'unset npm_config_prefix && source ~/.nvm/nvm.sh && nvm use 22 --silent && cd findmyspare && npm run dev -- -p 5001'",
+    "install:all": "cd findmyspare-backend && bun install && cd ../findmyspare && npm install",
+    "health": "bash -c 'unset npm_config_prefix && source ~/.nvm/nvm.sh && nvm use 22 --silent && node scripts/health-check.mjs'",
+    "kill": "lsof -ti:5001 | xargs kill -9 2>/dev/null; lsof -ti:8000 | xargs kill -9 2>/dev/null; echo 'Ports 5001 & 8000 cleared'"
+  }
+}

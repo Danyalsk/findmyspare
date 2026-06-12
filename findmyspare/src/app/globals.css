@@ -1,0 +1,265 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════
+   FindMySpare — Apple-quiet premium v4
+   Monochrome palette + single saffron accent (<5% use)
+   Inter throughout · hairline dividers · generous whitespace
+   ═══════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Surfaces (neutral grays) ── */
+  --paper:   #FFFFFF;
+  --paper-2: #FAFAFA;
+  --paper-3: #F5F5F5;
+
+  /* ── Text (near-black scale) ── */
+  --ink:   #0A0A0A;
+  --ink-2: #424242;
+  --ink-3: #6B6B6B;
+
+  /* ── Borders (cool hairlines) ── */
+  --line:   #E8E8E8;
+  --line-2: #D1D1D1;
+
+  /* ── Accent — single saffron, used sparingly ── */
+  --accent:        #C4500F;
+  --accent-ink:    #8F3608;
+  --accent-soft:   #E96A1F;
+  --accent-wash:   #FAF1E8;
+
+  /* ── Status (muted) ── */
+  --success:      #1F7A3D;
+  --success-wash: #ECF3EE;
+  --rating:       #1F7A3D;
+  --amber:        #8A6B0F;
+  --amber-wash:   #F4EFE0;
+  --discount:     #8B1A14;
+  --discount-wash:#F3E5E4;
+  --danger:       #8B1A14;
+  --danger-wash:  #F3E5E4;
+
+  /* ── Elevation — minimal, single subtle layer ── */
+  --shadow-sm:     0 1px 2px rgba(10, 10, 10, 0.04);
+  --shadow-card:   0 1px 3px rgba(10, 10, 10, 0.04);
+  --shadow-lifted: 0 4px 16px rgba(10, 10, 10, 0.06);
+  --shadow-sticky: 0 -1px 8px rgba(10, 10, 10, 0.04);
+
+  /* ── Shape (calm radius) ── */
+  --radius-xs:   4px;
+  --radius-sm:   6px;
+  --radius:      10px;
+  --radius-lg:   14px;
+  --radius-pill: 999px;
+
+  /* ── Spacing (generous) ── */
+  --pad:    24px;
+  --gutter: 32px;
+
+  /* ── Motion ── */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ── Font stacks — Inter only ── */
+  --font-sans:    var(--font-inter), 'Inter', system-ui, sans-serif;
+  --font-display: var(--font-inter), 'Inter', system-ui, sans-serif;
+  --font-serif:   var(--font-inter), 'Inter', system-ui, sans-serif;
+  --font-mono:    var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace;
+}
+
+[data-theme="dark"] {
+  --paper:   #141414;
+  --paper-2: #1A1A1A;
+  --paper-3: #0A0A0A;
+  --ink:     #FAFAFA;
+  --ink-2:   #B5B5B5;
+  --ink-3:   #7A7A7A;
+  --line:    #262626;
+  --line-2:  #3A3A3A;
+  --accent-wash:  #2A1A0E;
+  --success-wash: #14201A;
+  --amber-wash:   #28210F;
+  --discount-wash:#251513;
+  --danger-wash:  #251513;
+  --shadow-sm:     0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-card:   0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-lifted: 0 4px 16px rgba(0, 0, 0, 0.6);
+  --shadow-sticky: 0 -1px 8px rgba(0, 0, 0, 0.5);
+}
+
+[data-density="compact"] {
+  --pad: 16px;
+}
+
+@theme inline {
+  --color-paper:   var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-paper-3: var(--paper-3);
+  --color-ink:     var(--ink);
+  --color-ink-2:   var(--ink-2);
+  --color-ink-3:   var(--ink-3);
+  --color-line:    var(--line);
+  --color-line-2:  var(--line-2);
+  --color-accent:      var(--accent);
+  --color-accent-ink:  var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-wash: var(--accent-wash);
+  --color-success:      var(--success);
+  --color-success-wash: var(--success-wash);
+  --color-rating:       var(--rating);
+  --color-amber:        var(--amber);
+  --color-amber-wash:   var(--amber-wash);
+  --color-discount:     var(--discount);
+  --color-discount-wash:var(--discount-wash);
+  --color-danger:       var(--danger);
+  --color-danger-wash:  var(--danger-wash);
+
+  --font-sans:    var(--font-sans);
+  --font-display: var(--font-display);
+  --font-serif:   var(--font-serif);
+  --font-mono:    var(--font-mono);
+
+  --radius-card: var(--radius);
+  --radius-pill: var(--radius-pill);
+
+  --shadow-card:    var(--shadow-card);
+  --shadow-lifted:  var(--shadow-lifted);
+  --shadow-sticky:  var(--shadow-sticky);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Inter polish */
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
+  text-rendering: optimizeLegibility;
+}
+
+a { color: inherit; text-decoration: none; }
+
+/* ═══════════════════════════════════════════════════════
+   Typography type scale (Apple-quiet)
+   ═══════════════════════════════════════════════════════ */
+
+.mono       { font-family: var(--font-mono); font-feature-settings: "tnum"; }
+.serif, .display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.018em;
+}
+.tabular    { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Headline scale — weight + tight tracking, no serif */
+.h1, h1.h1 {
+  font-size: clamp(40px, 6vw, 56px);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  font-weight: 600;
+  color: var(--ink);
+}
+.h2 {
+  font-size: clamp(26px, 3vw, 32px);
+  line-height: 1.15;
+  letter-spacing: -0.018em;
+  font-weight: 600;
+  color: var(--ink);
+}
+.h3 {
+  font-size: 18px;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ═══════════════════════════════════════════════════════
+   Scroll utilities
+   ═══════════════════════════════════════════════════════ */
+
+.scroll-hidden::-webkit-scrollbar,
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+
+.scroll-hidden, .hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Motion
+   ═══════════════════════════════════════════════════════ */
+
+@keyframes fmsShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.fms-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--paper-2) 0%,
+    var(--paper-3) 40%,
+    var(--paper-2) 80%
+  );
+  background-size: 200% 100%;
+  animation: fmsShimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes fmsFadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fms-fade-up {
+  animation: fmsFadeUp 0.32s var(--ease-out) both;
+}
+
+.fms-press {
+  transition: transform 0.18s var(--ease-out),
+              box-shadow 0.18s var(--ease-out),
+              border-color 0.18s var(--ease-out),
+              background-color 0.18s var(--ease-out);
+}
+.fms-press:active {
+  transform: scale(0.987);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fms-shimmer, .fms-fade-up, .fms-press {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Forms
+   ═══════════════════════════════════════════════════════ */
+
+input, textarea, select, button {
+  font-family: inherit;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--ink);
+  color: var(--paper);
+}

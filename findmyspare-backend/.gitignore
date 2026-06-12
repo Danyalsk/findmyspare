@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.log
+
+# env files — all ignored except the example template
+.env
+.env.*
+!.env.example
