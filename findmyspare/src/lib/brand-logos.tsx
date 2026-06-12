@@ -1,62 +1,74 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 
 /* ═══════════════════════════════════════════════════════
-   Brand tiles — custom-designed monogram badges (brand-
-   evocative colors + initials). NOT official trademarked
-   logos. To use real artwork later: drop PNG/SVG files in
-   /public/logos and swap <BrandLogo> to render an <img>.
+   Brand tiles — real brand marks pulled from the Simple
+   Icons CDN (nominative use to identify brands whose parts
+   are sold). Falls back to a colored monogram tile if the
+   logo fails to load (offline / 404 / CDN down).
    ═══════════════════════════════════════════════════════ */
 
 interface BrandStyle {
-  mono: string; // 1–2 letter monogram
-  bg: string; // tile background
-  fg: string; // monogram color
+  slug: string; // simpleicons slug → https://cdn.simpleicons.org/<slug>
+  mono: string; // fallback monogram
+  bg: string; // fallback tile bg
+  fg: string; // fallback monogram color
 }
 
-// Keyed by the brand label used in VEHICLE_BRANDS / constants.
 const BRANDS: Record<string, BrandStyle> = {
-  "Maruti Suzuki": { mono: "MS", bg: "#E11B22", fg: "#FFFFFF" },
-  Maruti: { mono: "MS", bg: "#E11B22", fg: "#FFFFFF" },
-  Hyundai: { mono: "HY", bg: "#002C5F", fg: "#FFFFFF" },
-  Tata: { mono: "TA", bg: "#1A3668", fg: "#FFFFFF" },
-  "Tata Motors": { mono: "TA", bg: "#1A3668", fg: "#FFFFFF" },
-  Mahindra: { mono: "MA", bg: "#B11116", fg: "#FFFFFF" },
-  Honda: { mono: "HO", bg: "#111317", fg: "#FFFFFF" },
-  Toyota: { mono: "TO", bg: "#EB0A1E", fg: "#FFFFFF" },
-  Kia: { mono: "K", bg: "#05141F", fg: "#FFFFFF" },
-  Renault: { mono: "R", bg: "#FFCC33", fg: "#111317" },
-  Volkswagen: { mono: "VW", bg: "#001E50", fg: "#FFFFFF" },
+  "Maruti Suzuki": { slug: "suzuki", mono: "MS", bg: "#E11B22", fg: "#FFFFFF" },
+  Maruti: { slug: "suzuki", mono: "MS", bg: "#E11B22", fg: "#FFFFFF" },
+  Hyundai: { slug: "hyundai", mono: "HY", bg: "#002C5F", fg: "#FFFFFF" },
+  Tata: { slug: "tata", mono: "TA", bg: "#1A3668", fg: "#FFFFFF" },
+  "Tata Motors": { slug: "tata", mono: "TA", bg: "#1A3668", fg: "#FFFFFF" },
+  Mahindra: { slug: "mahindra", mono: "MA", bg: "#B11116", fg: "#FFFFFF" },
+  Honda: { slug: "honda", mono: "HO", bg: "#111317", fg: "#FFFFFF" },
+  Toyota: { slug: "toyota", mono: "TO", bg: "#EB0A1E", fg: "#FFFFFF" },
+  Kia: { slug: "kia", mono: "K", bg: "#05141F", fg: "#FFFFFF" },
+  Renault: { slug: "renault", mono: "R", bg: "#FFCC33", fg: "#111317" },
+  Volkswagen: { slug: "volkswagen", mono: "VW", bg: "#001E50", fg: "#FFFFFF" },
 };
 
 function styleFor(name: string): BrandStyle {
-  return (
-    BRANDS[name] ?? {
-      mono: name.slice(0, 1).toUpperCase(),
-      bg: "#2A2D36",
-      fg: "#FFFFFF",
-    }
-  );
+  return BRANDS[name] ?? { slug: "", mono: name.slice(0, 1).toUpperCase(), bg: "#2A2D36", fg: "#FFFFFF" };
 }
 
 export function BrandLogo({ name, size = 56 }: { name: string; size?: number }) {
   const s = styleFor(name);
+  const [failed, setFailed] = useState(false);
   const radius = Math.round(size * 0.28);
-  const font = Math.round(size * (s.mono.length > 1 ? 0.34 : 0.42));
+
+  // Fallback: colored monogram tile.
+  if (failed || !s.slug) {
+    const font = Math.round(size * (s.mono.length > 1 ? 0.34 : 0.42));
+    return (
+      <div
+        aria-hidden
+        style={{ width: size, height: size, borderRadius: radius, background: s.bg, color: s.fg, fontSize: font }}
+        className="flex items-center justify-center font-extrabold tracking-tight select-none shadow-[0_4px_14px_rgba(16,24,40,0.12)]"
+      >
+        {s.mono}
+      </div>
+    );
+  }
+
+  // Real brand mark on a clean light tile.
   return (
     <div
-      aria-hidden
-      style={{
-        width: size,
-        height: size,
-        borderRadius: radius,
-        background: `linear-gradient(145deg, ${s.bg} 0%, ${s.bg}cc 100%)`,
-        color: s.fg,
-        fontSize: font,
-        boxShadow: "0 4px 14px rgba(16,24,40,0.12)",
-      }}
-      className="flex items-center justify-center font-extrabold tracking-tight select-none"
+      style={{ width: size, height: size, borderRadius: radius }}
+      className="flex items-center justify-center bg-paper border border-[color:var(--line)] shadow-[0_4px_14px_rgba(16,24,40,0.10)]"
     >
-      {s.mono}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={`https://cdn.simpleicons.org/${s.slug}`}
+        alt={`${name} logo`}
+        width={Math.round(size * 0.56)}
+        height={Math.round(size * 0.56)}
+        loading="lazy"
+        onError={() => setFailed(true)}
+        style={{ width: size * 0.56, height: size * 0.56, objectFit: "contain" }}
+      />
     </div>
   );
 }
