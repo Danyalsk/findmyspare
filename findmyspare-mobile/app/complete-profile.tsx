@@ -71,9 +71,10 @@ export default function CompleteProfileScreen() {
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ type: "timing", duration: 350 }}
         >
-          <View className="mt-10 mb-6 gap-1">
-            <Text className="font-sans-extrabold text-display text-ink">Almost there</Text>
-            <Text className="text-ink-3 text-sub">
+          <View className="mt-10 mb-7 gap-1">
+            <Text className="text-overline font-mono uppercase tracking-[0.14em] text-ink-3">One last step</Text>
+            <Text className="font-sans-extrabold text-hero text-ink mt-1">Almost there.</Text>
+            <Text className="text-ink-2 text-body mt-2">
               Tell us a bit about you to finish setting up your account.
             </Text>
           </View>
