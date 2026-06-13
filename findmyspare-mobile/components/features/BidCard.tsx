@@ -29,27 +29,28 @@ export function BidCard({
   const name = bid.supplierBusinessName || bid.supplierName || "Supplier";
 
   return (
-    <Card className={best ? "border-accent-ink" : ""}>
+    <Card className={`!rounded-xl2 ${best ? "border-accent" : ""}`}>
       {best && (
-        <View className="self-start bg-accent-wash px-2 py-0.5 rounded-full mb-2">
-          <Text className="text-micro font-mono uppercase text-accent-ink font-sans-semibold">Lowest quote</Text>
+        <View className="self-start bg-accent-wash px-2.5 py-1 rounded-full mb-2.5 flex-row items-center gap-1">
+          <Icon name="checkmark-circle" size={12} color={C.accent} />
+          <Text className="text-micro font-mono uppercase text-accent-ink font-sans-bold tracking-[0.06em]">Lowest quote</Text>
         </View>
       )}
       <View className="flex-row items-center gap-3">
-        <Avatar name={name} size={40} />
+        <Avatar name={name} size={42} />
         <View className="flex-1">
-          <Text className="text-body font-sans-semibold text-ink" numberOfLines={1}>{name}</Text>
+          <Text className="text-body font-sans-bold text-ink" numberOfLines={1}>{name}</Text>
           <View className="flex-row items-center gap-2 mt-0.5">
             <Text className="text-micro text-ink-3">{CONDITION_LABEL[bid.condition] || bid.condition}</Text>
             {typeof bid.completedOrders === "number" && bid.completedOrders > 0 && (
               <View className="flex-row items-center gap-0.5">
-                <Icon name="checkmark-circle" size={11} color={C.accent} />
-                <Text className="text-micro text-accent-ink">{bid.completedOrders} deals</Text>
+                <Icon name="checkmark-circle" size={11} color={C.success} />
+                <Text className="text-micro text-success">{bid.completedOrders} deals</Text>
               </View>
             )}
           </View>
         </View>
-        <Text className="font-mono text-headline font-sans-semibold text-ink">{formatPrice(parseFloat(bid.price))}</Text>
+        <Text className="font-mono text-title font-sans-extrabold text-ink">{formatPrice(parseFloat(bid.price))}</Text>
       </View>
 
       <View className="flex-row gap-4 mt-3">

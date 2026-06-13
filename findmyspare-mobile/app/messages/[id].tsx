@@ -209,9 +209,10 @@ export default function ChatThreadScreen() {
           <Pressable
             onPress={handleSend}
             disabled={!input.trim() || sending}
-            className={`w-10 h-10 rounded-full items-center justify-center bg-ink ${(!input.trim() || sending) ? "opacity-30" : ""}`}
+            onPressIn={() => input.trim() && haptics.light()}
+            className={`w-10 h-10 rounded-full items-center justify-center bg-accent ${(!input.trim() || sending) ? "opacity-30" : ""}`}
           >
-            <Icon name="arrow-up" size={18} color={C.onInk} />
+            <Icon name="arrow-up" size={18} color={C.onAccent} />
           </Pressable>
         </View>
       </KeyboardAvoidingView>

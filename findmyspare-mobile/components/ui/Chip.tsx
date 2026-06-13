@@ -7,17 +7,21 @@ import { haptics } from "@/lib/haptics";
 export interface ChipProps {
   label: string;
   active?: boolean;
+  /** Active styling: "ink" solid pill (default) or "accent" cobalt-wash (filters). */
+  tone?: "ink" | "accent";
   onPress?: () => void;
   className?: string;
 }
 
 const base = "px-3.5 py-2 rounded-full border";
-// Active = espresso pill (premium restraint), idle = white surface.
-const activeCls = "bg-ink border-ink";
 const idleCls = "bg-paper-2 border-line-2";
 
-export function Chip({ label, active, onPress, className = "" }: ChipProps) {
-  const textCls = active ? "text-paper-2" : "text-ink-2";
+export function Chip({ label, active, tone = "ink", onPress, className = "" }: ChipProps) {
+  // Active: ink → near-black solid · accent → cobalt-wash tinted (reads as selection).
+  const activeCls = tone === "accent" ? "bg-accent-wash border-accent" : "bg-ink border-ink";
+  const textCls = active
+    ? tone === "accent" ? "text-accent-ink" : "text-paper-2"
+    : "text-ink-2";
   const reduced = useReducedMotion();
   if (onPress) {
     return (

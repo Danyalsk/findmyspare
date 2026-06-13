@@ -96,9 +96,10 @@ export default function OnboardingScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1">
       <PageShell>
-        <View className="pt-4 pb-3">
-          <Text className="font-sans-extrabold text-display text-ink">Verify your business</Text>
-          <Text className="text-ink-3 text-sub mt-1">
+        <View className="pt-3 pb-4">
+          <Text className="text-overline font-mono uppercase tracking-[0.14em] text-ink-3">Become a supplier</Text>
+          <Text className="font-sans-extrabold text-hero text-ink mt-1">Verify your{"\n"}business</Text>
+          <Text className="text-ink-2 text-body mt-2">
             GST + PAN are required to list parts. Review takes ~24 hours.
           </Text>
         </View>

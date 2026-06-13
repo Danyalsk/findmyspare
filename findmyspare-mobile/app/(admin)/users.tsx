@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, Alert } from "react-native";
+import { View, Text, Pressable, Alert } from "react-native";
 import { Icon } from "@/components/ui/Icon";
 import { PageShell } from "@/components/layout/PageShell";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
+import { SearchBar } from "@/components/ui/SearchBar";
 import { Avatar } from "@/components/ui/Avatar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { adminApi } from "@/lib/api/admin";
@@ -54,20 +55,13 @@ export default function AdminUsers() {
 
   return (
     <PageShell refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }}>
-      <View className="pt-3 pb-3">
-        <Text className="font-sans-extrabold text-title text-ink">Users</Text>
+      <View className="pt-2 pb-4">
+        <Text className="text-overline font-mono uppercase tracking-[0.14em] text-ink-3">Directory</Text>
+        <Text className="font-sans-extrabold text-hero text-ink mt-1">Users</Text>
       </View>
 
-      <View className="flex-row items-center bg-paper-2 border border-line rounded-input px-3 mb-3">
-        <Icon name="search" size={16} color={C.ink3} />
-        <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search name or email…"
-          placeholderTextColor={C.ink3}
-          autoCapitalize="none"
-          className="flex-1 py-2.5 px-2 text-body text-ink"
-        />
+      <View className="mb-3">
+        <SearchBar value={search} onChangeText={setSearch} placeholder="Search name or email…" autoCapitalize="none" />
       </View>
 
       <View className="flex-row gap-2 mb-4">

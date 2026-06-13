@@ -1,16 +1,18 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
 import { Icon } from "@/components/ui/Icon";
 import { MotiView } from "moti";
 import { PageShell } from "@/components/layout/PageShell";
 import { Avatar } from "@/components/ui/Avatar";
+import { Touchable } from "@/components/ui/Touchable";
 import { getConversations } from "@/lib/api/messages";
 import { useSocket } from "@/lib/socket";
 import { useAuthStore } from "@/lib/store";
 import { AuthGate } from "@/components/features/AuthGate";
 import type { Conversation } from "@/lib/types";
 import { C } from "@/lib/theme";
+import { EASE, DURATION, stagger } from "@/lib/motion";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -66,8 +68,9 @@ export default function MessagesScreen() {
       refreshing={refreshing}
       onRefresh={() => { setRefreshing(true); load(); }}
     >
-      <View className="pt-3 pb-3">
-        <Text className="font-sans-extrabold text-title text-ink">Messages</Text>
+      <View className="pt-2 pb-4">
+        <Text className="text-overline font-mono uppercase tracking-[0.14em] text-ink-3">Inbox</Text>
+        <Text className="font-sans-extrabold text-hero text-ink mt-1">Messages</Text>
       </View>
 
       {loading ? (
@@ -86,29 +89,35 @@ export default function MessagesScreen() {
           {convos.map((c, i) => (
             <MotiView
               key={c.userId}
-              from={{ opacity: 0, translateY: 6 }}
+              from={{ opacity: 0, translateY: 10 }}
               animate={{ opacity: 1, translateY: 0 }}
-              transition={{ type: "timing", duration: 200, delay: i * 25 }}
+              transition={{ type: "timing", duration: DURATION.base, delay: stagger(i, 30), easing: EASE.out }}
             >
-              <Pressable
+              <Touchable
                 onPress={() => router.push(`/messages/${c.userId}` as never)}
+                scaleTo={0.98}
                 className="flex-row items-center gap-3 py-3.5 border-b border-line"
               >
-                <Avatar name={c.name} image={c.image} size={44} />
+                <View>
+                  <Avatar name={c.name} image={c.image} size={48} />
+                  {c.unreadCount > 0 && (
+                    <View className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-accent border-2 border-paper" />
+                  )}
+                </View>
                 <View className="flex-1">
                   <View className="flex-row justify-between items-center">
-                    <Text className="text-body font-sans-semibold text-ink" numberOfLines={1}>
+                    <Text className={`text-body text-ink ${c.unreadCount > 0 ? "font-sans-extrabold" : "font-sans-semibold"}`} numberOfLines={1}>
                       {c.name}
                     </Text>
-                    <Text className="text-micro text-ink-3">{timeAgo(c.lastMessageAt)}</Text>
+                    <Text className="text-micro text-ink-3 font-mono">{timeAgo(c.lastMessageAt)}</Text>
                   </View>
                   <View className="flex-row justify-between items-center mt-0.5">
-                    <Text className="text-sub text-ink-3 flex-1 mr-2" numberOfLines={1}>
+                    <Text className={`text-sub flex-1 mr-2 ${c.unreadCount > 0 ? "text-ink-2 font-sans-medium" : "text-ink-3"}`} numberOfLines={1}>
                       {c.lastMessage}
                     </Text>
                     {c.unreadCount > 0 && (
-                      <View className="min-w-[18px] h-[18px] px-1 rounded-full bg-ink items-center justify-center">
-                        <Text className="text-paper text-micro font-sans-semibold">
+                      <View className="min-w-[20px] h-5 px-1.5 rounded-full bg-accent items-center justify-center">
+                        <Text className="text-white text-micro font-sans-bold">
                           {c.unreadCount > 99 ? "99+" : c.unreadCount}
                         </Text>
                       </View>
@@ -120,7 +129,7 @@ export default function MessagesScreen() {
                     </Text>
                   )}
                 </View>
-              </Pressable>
+              </Touchable>
             </MotiView>
           ))}
         </View>

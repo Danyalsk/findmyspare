@@ -18,24 +18,24 @@ export function OrderCard({
 }) {
   const meta = statusMeta(order.status);
   return (
-    <Card onPress={onPress} className="!p-3.5">
-      <View className="flex-row items-center gap-3">
-          <View className="w-12 h-12 rounded-input bg-paper-3 items-center justify-center">
-            <Icon name="cube" size={20} color={C.ink3} />
+    <Card onPress={onPress} className="!p-4 !rounded-xl2">
+      <View className="flex-row items-center gap-3.5">
+          <View className="w-12 h-12 rounded-full bg-accent-wash items-center justify-center">
+            <Icon name="cube" size={20} color={C.accent} />
           </View>
           <View className="flex-1">
             <View className="flex-row items-center justify-between">
-              <Text className="text-micro font-sans-bold text-accent-ink uppercase tracking-wider">#{order.id.slice(0, 8)}</Text>
-              <View style={{ backgroundColor: meta.bg }} className="px-2 py-0.5 rounded-full">
-                <Text style={{ color: meta.color }} className="text-micro font-sans-semibold">{meta.label}</Text>
+              <Text className="text-micro font-mono font-sans-bold text-ink-3 uppercase tracking-wider">#{order.id.slice(0, 8)}</Text>
+              <View style={{ backgroundColor: meta.bg }} className="px-2.5 py-1 rounded-full">
+                <Text style={{ color: meta.color }} className="text-micro font-sans-bold">{meta.label}</Text>
               </View>
             </View>
-            <Text className="text-body font-sans-semibold text-ink mt-0.5" numberOfLines={1}>
+            <Text className="text-body font-sans-bold text-ink mt-1" numberOfLines={1}>
               {order.primaryItemName || "Order"}
             </Text>
-            <View className="flex-row items-center justify-between mt-0.5">
-              <Text className="text-micro text-ink-3" numberOfLines={1}>{counterparty}</Text>
-              <Text className="font-mono text-caption font-sans-semibold text-ink">{formatPrice(parseFloat(order.totalAmount))}</Text>
+            <View className="flex-row items-center justify-between mt-1">
+              <Text className="text-caption text-ink-3" numberOfLines={1}>{counterparty}</Text>
+              <Text className="font-mono text-body font-sans-extrabold text-ink">{formatPrice(parseFloat(order.totalAmount))}</Text>
             </View>
           </View>
         </View>

@@ -31,11 +31,13 @@ export function Skeleton({ width = "100%", height = 16, radius = 8, className = 
 
 export function ProductCardSkeleton() {
   return (
-    <View className="bg-paper-2 border border-line rounded-card p-3">
-      <Skeleton height={120} radius={10} className="mb-2.5" />
-      <Skeleton height={12} width="75%" className="mb-1.5" />
-      <Skeleton height={10} width="50%" className="mb-2" />
-      <Skeleton height={14} width="40%" />
+    <View className="bg-paper-2 rounded-xl2 overflow-hidden">
+      <Skeleton height={210} radius={0} />
+      <View className="p-3">
+        <Skeleton height={12} width="80%" className="mb-1.5" />
+        <Skeleton height={10} width="55%" className="mb-2.5" />
+        <Skeleton height={16} width="45%" />
+      </View>
     </View>
   );
 }

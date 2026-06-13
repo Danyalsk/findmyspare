@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
 import { Image } from "expo-image";
 import { Icon } from "@/components/ui/Icon";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -7,6 +7,7 @@ import { PageShell } from "@/components/layout/PageShell";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
+import { Touchable } from "@/components/ui/Touchable";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { StockBadge } from "@/components/features/StockBadge";
 import { MotiView } from "moti";
@@ -14,7 +15,7 @@ import { EASE, DURATION, stagger } from "@/lib/motion";
 import { inventoryApi, type InventoryListParams } from "@/lib/api/inventory";
 import type { InventoryItem } from "@/lib/types";
 import { formatPrice } from "@/lib/constants";
-import { C } from "@/lib/theme";
+import { C, glowAccent } from "@/lib/theme";
 
 const FILTERS = ["All", "Drafts", "Active", "Low stock"] as const;
 type FilterLabel = (typeof FILTERS)[number];
@@ -46,19 +47,25 @@ export default function SupplierInventory() {
 
   return (
     <PageShell refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(filter); }}>
-      <View className="pt-3 pb-3 flex-row items-center justify-between">
-        <Text className="font-sans-extrabold text-title text-ink">Inventory</Text>
-        <Pressable
+      <View className="pt-2 pb-4 flex-row items-end justify-between">
+        <View className="flex-1">
+          <Text className="text-overline font-mono uppercase tracking-[0.14em] text-ink-3">Your shop</Text>
+          <Text className="font-sans-extrabold text-hero text-ink mt-1">Inventory</Text>
+        </View>
+        <Touchable
           onPress={() => router.push("/supplier/products/new?draft=1" as never)}
-          className="bg-ink rounded-full w-10 h-10 items-center justify-center"
+          scaleTo={0.9}
+          haptic="medium"
+          style={glowAccent}
+          className="bg-accent rounded-full w-12 h-12 items-center justify-center"
         >
-          <Icon name="add" size={22} color={C.onInk} />
-        </Pressable>
+          <Icon name="add" size={24} color={C.onAccent} />
+        </Touchable>
       </View>
 
-      <View className="flex-row flex-wrap gap-2 pb-3">
+      <View className="flex-row flex-wrap gap-2 pb-4">
         {FILTERS.map((f) => (
-          <Chip key={f} label={f} active={f === filter} onPress={() => { setFilter(f); setLoading(true); }} />
+          <Chip key={f} label={f} tone="accent" active={f === filter} onPress={() => { setFilter(f); setLoading(true); }} />
         ))}
       </View>
 

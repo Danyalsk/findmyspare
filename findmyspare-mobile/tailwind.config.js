@@ -8,30 +8,32 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // ── "Warm Porcelain" premium LIGHT theme ──
-        // Warm neutral axis so the saffron accent harmonizes (Zomato/Airbnb).
-        paper: "#F8F6F2",        // canvas — warm porcelain, not white
+        // ── "Titanium" premium cool-LIGHT theme ──
+        // Cool neutral axis so the cobalt accent reads crisp and expensive.
+        paper: "#F4F5F7",        // canvas — cool titanium grey
         "paper-2": "#FFFFFF",    // surface: cards, sheets, inputs
-        "paper-3": "#F1EDE7",    // inset: image wells, skeletons
-        "paper-4": "#E9E4DC",    // pressed
-        ink: "#1C1814",          // espresso near-black (warm)
-        "ink-2": "#6E6258",      // secondary
-        "ink-3": "#9D9285",      // tertiary / placeholder
-        line: "#EDE8E1",         // warm hairline
-        "line-2": "#DCD5CB",     // stronger border
-        accent: "#F25C05",       // signature saffron (holds on white)
-        "accent-2": "#E03E00",   // gradient end
-        "accent-ink": "#BC4708", // accent text on light (AA)
-        "accent-wash": "#FDEEE2",
+        "paper-3": "#ECEEF1",    // inset: image wells, skeletons
+        "paper-4": "#E2E5EA",    // pressed
+        ink: "#15171A",          // cool near-black
+        "ink-2": "#5B6068",      // slate secondary
+        "ink-3": "#9AA0A8",      // tertiary / placeholder
+        line: "#E8EAEE",         // cool hairline
+        "line-2": "#D6DAE0",     // stronger border
+        accent: "#2E5BFF",       // signature cobalt (holds on white)
+        "accent-2": "#1E45E8",   // gradient end
+        "accent-ink": "#1E45E8", // accent text on light (AA)
+        "accent-wash": "#EAEEFF",
         gold: "#F5A623",         // ratings only
         amber: "#B45309",
         "amber-wash": "#FCF3E3",
-        success: "#1B8A4C",
-        "success-wash": "#E5F4EA",
-        danger: "#D93025",
-        "danger-wash": "#FBEAE7",
+        success: "#18794E",
+        "success-wash": "#E7F4EE",
+        danger: "#DC2626",
+        "danger-wash": "#FCEBEA",
       },
       fontSize: {
+        mega: ["44px", { lineHeight: "44px", letterSpacing: "-1.6px" }],
+        hero: ["34px", { lineHeight: "36px", letterSpacing: "-1px" }],
         display: ["28px", { lineHeight: "34px", letterSpacing: "-0.5px" }],
         title: ["22px", { lineHeight: "28px", letterSpacing: "-0.3px" }],
         headline: ["17px", { lineHeight: "22px" }],

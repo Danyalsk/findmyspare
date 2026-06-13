@@ -1,19 +1,18 @@
 import React from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { Image } from "expo-image";
 import { MotiView } from "moti";
 import { useRouter } from "expo-router";
 import { Icon } from "@/components/ui/Icon";
+import { Touchable } from "@/components/ui/Touchable";
 import { formatPrice } from "@/lib/constants";
 import { C, shadowCard } from "@/lib/theme";
-import { SPRING, EASE, DURATION, stagger, useReducedMotion } from "@/lib/motion";
-import { haptics } from "@/lib/haptics";
+import { EASE, DURATION, stagger } from "@/lib/motion";
 import type { ProductSummary } from "@/lib/types";
 
-/** Swiggy-style horizontal product row — big image left, details right. */
+/** Horizontal product row — big image left, details right. */
 export function ListCard({ product, index = 0 }: { product: ProductSummary; index?: number }) {
   const router = useRouter();
-  const reduced = useReducedMotion();
   const inStock = product.stockQuantity > 0;
   return (
     <MotiView
@@ -21,15 +20,13 @@ export function ListCard({ product, index = 0 }: { product: ProductSummary; inde
       animate={{ opacity: 1, translateY: 0 }}
       transition={{ type: "timing", duration: DURATION.slow, delay: stagger(index), easing: EASE.out }}
     >
-      <Pressable onPress={() => router.push(`/product/${product.id}` as never)} onPressIn={() => haptics.light()}>
-        {({ pressed }) => (
-          <MotiView
-            animate={{ scale: pressed && !reduced ? 0.98 : 1 }}
-            transition={SPRING.press}
-            style={shadowCard}
-            className="flex-row bg-paper-2 border border-line rounded-card p-2.5 gap-3"
-          >
-            <View className="w-24 h-24 rounded-card overflow-hidden bg-paper-3">
+      <Touchable
+        onPress={() => router.push(`/product/${product.id}` as never)}
+        scaleTo={0.98}
+        style={shadowCard}
+        className="flex-row bg-paper-2 border border-line rounded-card p-2.5 gap-3"
+      >
+        <View className="w-24 h-24 rounded-card overflow-hidden bg-paper-3">
               {product.images?.[0] ? (
                 <Image source={{ uri: product.images[0] }} style={{ width: "100%", height: "100%" }} contentFit="cover" transition={250} />
               ) : (
@@ -64,9 +61,7 @@ export function ListCard({ product, index = 0 }: { product: ProductSummary; inde
                 </View>
               </View>
             </View>
-          </MotiView>
-        )}
-      </Pressable>
+      </Touchable>
     </MotiView>
   );
 }

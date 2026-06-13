@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, Alert } from "react-native";
+import { View, Text, Alert } from "react-native";
 import { useRouter } from "expo-router";
+import { MotiView } from "moti";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { PageShell } from "@/components/layout/PageShell";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { Chip } from "@/components/ui/Chip";
+import { Touchable } from "@/components/ui/Touchable";
 import { useAuthStore, getPostLoginPath } from "@/lib/store";
 import { signOut, becomeSupplier } from "@/lib/api/auth";
 import { notificationsApi } from "@/lib/api/notifications";
-import { C } from "@/lib/theme";
+import { C, shadowCard } from "@/lib/theme";
+import { EASE, DURATION, stagger } from "@/lib/motion";
 
 type Variant = "ok" | "warn" | "danger" | "accent";
 
@@ -87,28 +90,34 @@ export function ProfileView() {
 
   return (
     <PageShell>
-      <View className="pt-3 pb-3">
-        <Text className="font-sans-extrabold text-title text-ink">Profile</Text>
-      </View>
+      <Text className="text-overline font-mono uppercase tracking-[0.14em] text-ink-3 pt-2">Account</Text>
+      <Text className="font-sans-extrabold text-hero text-ink mb-5">Profile</Text>
 
-      <Card className="items-center gap-3 py-8">
+      {/* Identity block */}
+      <MotiView
+        from={{ opacity: 0, translateY: 12 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: "timing", duration: DURATION.slow, easing: EASE.out }}
+        style={shadowCard}
+        className="bg-paper-2 rounded-xl2 p-5 flex-row items-center gap-4"
+      >
         <View>
-          <Avatar name={user.name} image={user.image} size={72} />
-          <View className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-accent-ink border-2 border-paper" />
+          <Avatar name={user.name} image={user.image} size={64} />
+          <View className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-success border-2 border-paper-2" />
         </View>
-        <View className="items-center gap-1.5">
-          <Text className="text-headline font-sans-semibold text-ink">{user.name}</Text>
-          <Text className="text-caption text-ink-3">{user.email}</Text>
-          <View className={`px-2.5 py-1 rounded-full ${badgeCls[badge.variant]}`}>
-            <Text className={`text-micro font-sans-semibold ${badgeText[badge.variant]}`}>{badge.label}</Text>
+        <View className="flex-1">
+          <Text className="text-title font-sans-extrabold text-ink" numberOfLines={1}>{user.name}</Text>
+          <Text className="text-caption text-ink-3 mt-0.5" numberOfLines={1}>{user.email}</Text>
+          <View className={`self-start mt-2 px-2.5 py-1 rounded-full ${badgeCls[badge.variant]}`}>
+            <Text className={`text-micro font-sans-bold ${badgeText[badge.variant]}`}>{badge.label}</Text>
           </View>
         </View>
-      </Card>
+      </MotiView>
 
       {isApprovedSupplier && (
         <Card className="mt-3 gap-2">
           <Text className="text-micro font-mono uppercase text-ink-3 tracking-[0.08em]">Business</Text>
-          <Text className="text-body font-sans-semibold text-ink">{user.businessName}</Text>
+          <Text className="text-body font-sans-bold text-ink">{user.businessName}</Text>
           <View className="flex-row flex-wrap gap-2 mt-1">
             {user.gstNumber && <Chip label={`GST ${user.gstNumber}`} />}
             {user.phone && <Chip label={user.phone} />}
@@ -116,39 +125,40 @@ export function ProfileView() {
         </Card>
       )}
 
-      <View className="mt-4 gap-2">
-        <Row icon="person-outline" label="Edit profile" onPress={() => router.push("/profile/edit" as never)} />
-        {isBuyer && (
-          <Row icon="cube-outline" label="My orders" onPress={() => router.push("/buyer/orders" as never)} />
-        )}
-        {isApprovedSupplier && (
-          <Row icon="cube-outline" label="Orders" onPress={() => router.push("/supplier/orders" as never)} />
-        )}
-        {isBuyer && (
-          <Row icon="location-outline" label="Addresses" onPress={() => router.push("/profile/addresses" as never)} />
-        )}
-        <Row
-          icon="notifications-outline"
-          label="Notifications"
-          badge={unread}
-          onPress={() => router.push("/profile/notifications" as never)}
-        />
-        <Row icon="help-circle-outline" label="Help & support" onPress={() => router.push("/profile/help" as never)} />
+      <View className="mt-5 gap-2.5">
+        {[
+          { icon: "person-outline" as IconName, label: "Edit profile", onPress: () => router.push("/profile/edit" as never), show: true },
+          { icon: "cube-outline" as IconName, label: "My orders", onPress: () => router.push("/buyer/orders" as never), show: isBuyer },
+          { icon: "cube-outline" as IconName, label: "Orders", onPress: () => router.push("/supplier/orders" as never), show: isApprovedSupplier },
+          { icon: "location-outline" as IconName, label: "Addresses", onPress: () => router.push("/profile/addresses" as never), show: isBuyer },
+          { icon: "notifications-outline" as IconName, label: "Notifications", onPress: () => router.push("/profile/notifications" as never), show: true, badge: unread },
+          { icon: "help-circle-outline" as IconName, label: "Help & support", onPress: () => router.push("/profile/help" as never), show: true },
+        ].filter((r) => r.show).map((r, i) => (
+          <Row key={r.label} icon={r.icon} label={r.label} badge={r.badge} onPress={r.onPress} index={i} />
+        ))}
       </View>
 
       {isBuyer && (
-        <Pressable
+        <Touchable
           onPress={upgrade}
           disabled={upgrading}
-          className="mt-5 bg-ink rounded-card p-5"
+          haptic="medium"
+          style={shadowCard}
+          className="mt-5 bg-ink rounded-xl2 p-5 flex-row items-center gap-4"
         >
-          <Text className="text-paper text-body font-sans-semibold mb-1">
-            {upgrading ? "Switching…" : "Sell on FindMySpare"}
-          </Text>
-          <Text className="text-paper/70 text-caption">
-            Reach verified buyers across India. Switch your account to a supplier.
-          </Text>
-        </Pressable>
+          <View className="w-11 h-11 rounded-full bg-white/10 items-center justify-center">
+            <Icon name="storefront-outline" size={22} color={C.onInk} />
+          </View>
+          <View className="flex-1">
+            <Text className="text-onInk text-body font-sans-bold mb-0.5" style={{ color: C.onInk }}>
+              {upgrading ? "Switching…" : "Sell on FindMySpare"}
+            </Text>
+            <Text className="text-caption" style={{ color: "rgba(255,255,255,0.7)" }}>
+              Reach verified buyers across India.
+            </Text>
+          </View>
+          <Icon name="arrow-forward" size={18} color={C.onInk} />
+        </Touchable>
       )}
 
       <View className="mt-6">
@@ -163,25 +173,37 @@ function Row({
   label,
   badge,
   onPress,
+  index = 0,
 }: {
   icon: IconName;
   label: string;
   badge?: number;
   onPress?: () => void;
+  index?: number;
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      className="flex-row items-center gap-3 bg-paper border border-line rounded-card px-4 py-3.5"
+    <MotiView
+      from={{ opacity: 0, translateY: 8 }}
+      animate={{ opacity: 1, translateY: 0 }}
+      transition={{ type: "timing", duration: DURATION.base, delay: 80 + stagger(index, 35), easing: EASE.out }}
     >
-      <Icon name={icon} size={18} color={C.ink2} />
-      <Text className="flex-1 text-body text-ink">{label}</Text>
-      {badge ? (
-        <View className="bg-accent-ink rounded-full min-w-[20px] h-5 px-1.5 items-center justify-center">
-          <Text className="text-paper text-micro font-sans-bold">{badge > 99 ? "99+" : badge}</Text>
+      <Touchable
+        onPress={onPress}
+        scaleTo={0.98}
+        style={shadowCard}
+        className="flex-row items-center gap-3 bg-paper-2 rounded-card px-4 py-3.5"
+      >
+        <View className="w-9 h-9 rounded-full bg-accent-wash items-center justify-center">
+          <Icon name={icon} size={18} color={C.accent} />
         </View>
-      ) : null}
-      <Icon name="chevron-forward" size={16} color={C.ink3} />
-    </Pressable>
+        <Text className="flex-1 text-body font-sans-medium text-ink">{label}</Text>
+        {badge ? (
+          <View className="bg-accent rounded-full min-w-[20px] h-5 px-1.5 items-center justify-center">
+            <Text className="text-white text-micro font-sans-bold">{badge > 99 ? "99+" : badge}</Text>
+          </View>
+        ) : null}
+        <Icon name="chevron-forward" size={16} color={C.ink3} />
+      </Touchable>
+    </MotiView>
   );
 }

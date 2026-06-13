@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, Pressable, TextInput } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { Icon } from "@/components/ui/Icon";
 import { MotiView } from "moti";
 import { useRouter } from "expo-router";
 import { PageShell } from "@/components/layout/PageShell";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
+import { SearchBar } from "@/components/ui/SearchBar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { inquiriesApi } from "@/lib/api/inquiries";
 import { useSocket } from "@/lib/socket";
@@ -54,28 +55,22 @@ export default function SupplierLeads() {
 
   return (
     <PageShell refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }}>
-      <View className="pt-3 pb-3">
-        <View className="flex-row items-center gap-2">
-          <Text className="font-sans-extrabold text-title text-ink">Live leads</Text>
+      <View className="pt-2 pb-4">
+        <View className="flex-row items-center gap-2.5">
+          <Text className="text-overline font-mono uppercase tracking-[0.14em] text-ink-3">Marketplace</Text>
           <View className={`flex-row items-center gap-1 px-2 py-0.5 rounded-full ${live ? "bg-accent-wash" : "bg-paper-2"}`}>
-            <View className={`w-1.5 h-1.5 rounded-full ${live ? "bg-accent-ink" : "bg-ink-3"}`} />
+            <View className={`w-1.5 h-1.5 rounded-full ${live ? "bg-accent" : "bg-ink-3"}`} />
             <Text className={`text-micro font-mono ${live ? "text-accent-ink" : "text-ink-3"}`}>
               {live ? "LIVE" : "OFFLINE"}
             </Text>
           </View>
         </View>
-        <Text className="text-ink-3 text-caption mt-1">{filtered.length} open requests</Text>
+        <Text className="font-sans-extrabold text-hero text-ink mt-1">Live leads</Text>
+        <Text className="text-ink-2 text-body mt-1">{filtered.length} open requests</Text>
       </View>
 
-      <View className="flex-row items-center bg-paper-2 border border-line rounded-input px-3 mb-4">
-        <Icon name="search" size={16} color={C.ink3} />
-        <TextInput
-          value={q}
-          onChangeText={setQ}
-          placeholder="Search leads…"
-          placeholderTextColor={C.ink3}
-          className="flex-1 py-2.5 px-2 text-body text-ink"
-        />
+      <View className="mb-4">
+        <SearchBar value={q} onChangeText={setQ} placeholder="Search leads…" />
       </View>
 
       {loading ? (

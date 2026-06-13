@@ -52,8 +52,9 @@ export default function MessagesScreen() {
       refreshing={refreshing}
       onRefresh={() => { setRefreshing(true); load(); }}
     >
-      <View className="pt-3 pb-3">
-        <Text className="font-sans-extrabold text-title text-ink">Messages</Text>
+      <View className="pt-2 pb-4">
+        <Text className="text-overline font-mono uppercase tracking-[0.14em] text-ink-3">Inbox</Text>
+        <Text className="font-sans-extrabold text-hero text-ink mt-1">Messages</Text>
       </View>
 
       {loading ? (

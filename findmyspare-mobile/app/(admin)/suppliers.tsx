@@ -32,8 +32,9 @@ export default function AdminSuppliers() {
 
   return (
     <PageShell refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }}>
-      <View className="pt-3 pb-3">
-        <Text className="font-sans-extrabold text-title text-ink">Suppliers</Text>
+      <View className="pt-2 pb-4">
+        <Text className="text-overline font-mono uppercase tracking-[0.14em] text-ink-3">Verification</Text>
+        <Text className="font-sans-extrabold text-hero text-ink mt-1">Suppliers</Text>
       </View>
 
       <View className="flex-row gap-2 mb-4">

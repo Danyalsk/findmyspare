@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
+import { Touchable } from "@/components/ui/Touchable";
 import { inquiriesApi } from "@/lib/api/inquiries";
 import { haptics } from "@/lib/haptics";
 import { pickAndUploadImage } from "@/lib/api/upload";
@@ -16,7 +17,8 @@ import { vehicleData, makes } from "@/lib/constants";
 import { useAuthStore } from "@/lib/store";
 import { AuthGate } from "@/components/features/AuthGate";
 import type { Inquiry } from "@/lib/types";
-import { C } from "@/lib/theme";
+import { C, shadowCard, glowAccent } from "@/lib/theme";
+import { EASE, DURATION, stagger } from "@/lib/motion";
 
 export default function RequestsScreen() {
   const router = useRouter();
@@ -49,14 +51,20 @@ export default function RequestsScreen() {
 
   return (
     <PageShell refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }}>
-      <View className="pt-3 pb-3 flex-row items-center justify-between">
-        <Text className="font-sans-extrabold text-title text-ink">My requests</Text>
-        <Pressable
+      <View className="pt-2 pb-5 flex-row items-end justify-between">
+        <View className="flex-1">
+          <Text className="text-overline font-mono uppercase tracking-[0.14em] text-ink-3">Sourcing</Text>
+          <Text className="font-sans-extrabold text-hero text-ink mt-1">My requests</Text>
+        </View>
+        <Touchable
           onPress={() => setOpen(true)}
-          className="bg-ink rounded-full w-10 h-10 items-center justify-center"
+          scaleTo={0.9}
+          haptic="medium"
+          style={glowAccent}
+          className="bg-accent rounded-full w-12 h-12 items-center justify-center"
         >
-          <Icon name="add" size={22} color={C.onInk} />
-        </Pressable>
+          <Icon name="add" size={24} color={C.onAccent} />
+        </Touchable>
       </View>
 
       {loading ? (
@@ -72,42 +80,46 @@ export default function RequestsScreen() {
           <Button label="Post a request" onPress={() => setOpen(true)} />
         </View>
       ) : (
-        <View className="gap-2.5">
+        <View className="gap-3">
           {items.map((it, i) => (
             <MotiView
               key={it.id}
-              from={{ opacity: 0, translateY: 6 }}
+              from={{ opacity: 0, translateY: 12 }}
               animate={{ opacity: 1, translateY: 0 }}
-              transition={{ type: "timing", duration: 200, delay: i * 25 }}
+              transition={{ type: "timing", duration: DURATION.slow, delay: stagger(i, 35), easing: EASE.out }}
             >
-              <Pressable onPress={() => router.push(`/buyer/requests/${it.id}` as never)}>
-                <Card>
-                  <View className="flex-row items-center justify-between mb-1">
-                    <Text className="text-body font-sans-semibold text-ink flex-1" numberOfLines={1}>
-                      {it.partName}
-                    </Text>
-                    <Chip
-                      label={`${it.bidCount ?? 0} ${(it.bidCount ?? 0) === 1 ? "quote" : "quotes"}`}
-                      active={(it.bidCount ?? 0) > 0}
-                    />
-                  </View>
-                  <Text className="text-caption text-ink-3">
-                    {it.make} · {it.model} · {it.year}
+              <Touchable
+                onPress={() => router.push(`/buyer/requests/${it.id}` as never)}
+                scaleTo={0.98}
+                style={shadowCard}
+                className="bg-paper-2 rounded-xl2 p-4"
+              >
+                <View className="flex-row items-center justify-between mb-1.5">
+                  <Text className="text-headline font-sans-bold text-ink flex-1 pr-2" numberOfLines={1}>
+                    {it.partName}
                   </Text>
-                  {it.description && (
-                    <Text className="text-caption text-ink-2 mt-1" numberOfLines={2}>
-                      {it.description}
-                    </Text>
-                  )}
-                  <View className="flex-row items-center justify-between mt-2">
-                    <Text className="text-micro text-ink-3 font-mono uppercase">{it.status}</Text>
-                    <View className="flex-row items-center gap-1">
-                      <Text className="text-micro text-accent-ink font-sans-semibold">View quotes</Text>
-                      <Icon name="chevron-forward" size={13} color={C.accent} />
-                    </View>
+                  <Chip
+                    label={`${it.bidCount ?? 0} ${(it.bidCount ?? 0) === 1 ? "quote" : "quotes"}`}
+                    tone="accent"
+                    active={(it.bidCount ?? 0) > 0}
+                  />
+                </View>
+                <Text className="text-caption text-ink-3 font-mono uppercase tracking-[0.04em]">
+                  {it.make} · {it.model} · {it.year}
+                </Text>
+                {it.description && (
+                  <Text className="text-sub text-ink-2 mt-2" numberOfLines={2}>
+                    {it.description}
+                  </Text>
+                )}
+                <View className="flex-row items-center justify-between mt-3 pt-3 border-t border-line">
+                  <Text className="text-micro text-ink-3 font-mono uppercase tracking-[0.06em]">{it.status}</Text>
+                  <View className="flex-row items-center gap-1">
+                    <Text className="text-caption text-accent-ink font-sans-bold">View quotes</Text>
+                    <Icon name="chevron-forward" size={14} color={C.accentInk} />
                   </View>
-                </Card>
-              </Pressable>
+                </View>
+              </Touchable>
             </MotiView>
           ))}
         </View>

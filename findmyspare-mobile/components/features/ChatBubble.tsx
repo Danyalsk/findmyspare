@@ -27,8 +27,8 @@ export function ChatBubble({ message, timestamp, direction, attachments }: ChatB
       <View
         className={`px-3.5 py-2.5 ${
           isOut
-            ? "bg-ink rounded-tl-[16px] rounded-tr-[16px] rounded-bl-[16px] rounded-br-[4px]"
-            : "bg-paper-2 border border-line rounded-tl-[16px] rounded-tr-[16px] rounded-br-[16px] rounded-bl-[4px]"
+            ? "bg-accent rounded-tl-[18px] rounded-tr-[18px] rounded-bl-[18px] rounded-br-[5px]"
+            : "bg-paper-2 border border-line rounded-tl-[18px] rounded-tr-[18px] rounded-br-[18px] rounded-bl-[5px]"
         }`}
       >
         {media.map((m, i) => (
@@ -44,10 +44,10 @@ export function ChatBubble({ message, timestamp, direction, attachments }: ChatB
           </View>
         ))}
         {message ? (
-          <Text className={`text-sub ${isOut ? "text-paper-2" : "text-ink"}`}>{message}</Text>
+          <Text className="text-sub" style={{ color: isOut ? C.onAccent : C.ink }}>{message}</Text>
         ) : null}
         {timestamp && (
-          <Text className={`text-micro mt-1 ${isOut ? "text-paper-3 text-right" : "text-ink-3"}`}>
+          <Text className={`text-micro mt-1 ${isOut ? "text-right" : ""}`} style={{ color: isOut ? "rgba(255,255,255,0.7)" : C.ink3 }}>
             {timestamp}
           </Text>
         )}

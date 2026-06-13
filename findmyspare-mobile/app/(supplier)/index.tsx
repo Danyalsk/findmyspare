@@ -1,16 +1,19 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { MotiView } from "moti";
 import { useRouter } from "expo-router";
 import { PageShell } from "@/components/layout/PageShell";
 import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { Touchable } from "@/components/ui/Touchable";
+import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
 import { supplierApi } from "@/lib/api/supplier";
 import { notificationsApi } from "@/lib/api/notifications";
 import { useAuthStore } from "@/lib/store";
 import type { SupplierDashboard } from "@/lib/types";
-import { C } from "@/lib/theme";
+import { C, shadowCard } from "@/lib/theme";
+import { EASE } from "@/lib/motion";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -44,25 +47,27 @@ export default function SupplierHome() {
 
   return (
     <PageShell refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }}>
-      <View className="pt-3 pb-4 flex-row items-start justify-between">
-        <View className="flex-1">
-          {user?.businessName && (
-            <Text className="text-ink-3 text-micro font-mono uppercase tracking-[0.08em]">{user.businessName}</Text>
-          )}
-          <Text className="font-sans-extrabold text-display text-ink mt-1">{greeting()}, {firstName} 👋</Text>
-          <Text className="text-ink-3 text-caption mt-1">Here&apos;s your shop today</Text>
+      <View className="pt-2 pb-5 flex-row items-start justify-between">
+        <View className="flex-1 pr-3">
+          <Text className="text-overline font-mono uppercase tracking-[0.14em] text-ink-3">
+            {greeting()}{user?.businessName ? ` · ${user.businessName}` : ""}
+          </Text>
+          <Text className="font-sans-extrabold text-hero text-ink mt-1">Hey {firstName}.</Text>
+          <Text className="text-ink-2 text-body mt-1.5">Here&apos;s your shop today.</Text>
         </View>
-        <Pressable
+        <Touchable
+          scaleTo={0.92}
           onPress={() => router.push("/profile/notifications" as never)}
-          className="w-10 h-10 rounded-full bg-paper-2 border border-line items-center justify-center"
+          style={shadowCard}
+          className="w-11 h-11 rounded-full bg-paper-2 items-center justify-center"
         >
-          <Icon name="notifications-outline" size={18} color={C.ink} />
+          <Icon name="notifications-outline" size={19} color={C.ink} />
           {unread > 0 && (
-            <View className="absolute -top-1 -right-1 bg-accent-ink rounded-full min-w-[18px] h-[18px] px-1 items-center justify-center">
-              <Text className="text-paper text-micro font-sans-bold">{unread > 9 ? "9+" : unread}</Text>
+            <View className="absolute -top-1 -right-1 bg-accent rounded-full min-w-[18px] h-[18px] px-1 items-center justify-center">
+              <Text className="text-white text-micro font-sans-bold">{unread > 9 ? "9+" : unread}</Text>
             </View>
           )}
-        </Pressable>
+        </Touchable>
       </View>
 
       {loading ? (
@@ -92,18 +97,17 @@ export default function SupplierHome() {
 function Kpi({ label, value, icon, delay }: { label: string; value: number; icon: IconName; delay: number }) {
   return (
     <MotiView
-      from={{ opacity: 0, translateY: 8 }}
+      from={{ opacity: 0, translateY: 12 }}
       animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: "timing", duration: 280, delay }}
-      style={{ width: "47%" }}
+      transition={{ type: "timing", duration: 320, delay, easing: EASE.out }}
+      style={[{ width: "47%" }, shadowCard]}
+      className="bg-paper-2 rounded-xl2 p-4"
     >
-      <Card>
-        <View className="w-8 h-8 rounded-input bg-accent-wash items-center justify-center">
-          <Icon name={icon} size={17} color={C.accentInk} />
-        </View>
-        <Text className="font-sans-extrabold text-title text-ink mt-2.5">{value}</Text>
-        <Text className="text-caption text-ink-3 mt-0.5">{label}</Text>
-      </Card>
+      <View className="w-9 h-9 rounded-full bg-accent-wash items-center justify-center">
+        <Icon name={icon} size={18} color={C.accent} />
+      </View>
+      <AnimatedCounter value={value} className="font-sans-extrabold text-mega text-ink mt-3" />
+      <Text className="text-caption text-ink-3 mt-0.5">{label}</Text>
     </MotiView>
   );
 }

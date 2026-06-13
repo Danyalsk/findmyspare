@@ -1,14 +1,15 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, ScrollView, TextInput } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Icon } from "@/components/ui/Icon";
 import { Chip } from "@/components/ui/Chip";
+import { SearchBar } from "@/components/ui/SearchBar";
 import { ListCard } from "@/components/features/ListCard";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { productsApi } from "@/lib/api";
 import { categories } from "@/lib/constants";
-import { C, shadowCard } from "@/lib/theme";
+import { C } from "@/lib/theme";
 import type { ProductSummary } from "@/lib/types";
 
 export default function SearchScreen() {
@@ -40,29 +41,18 @@ export default function SearchScreen() {
       {/* Header + search */}
       <View className="px-5 pt-2 pb-3">
         <Text className="text-title font-sans-extrabold text-ink mb-3">Browse parts</Text>
-        <View className="flex-row items-center bg-paper-2 border border-line-2 rounded-card px-4 py-3" style={shadowCard}>
-          <Icon name="search" size={20} color={C.accent} />
-          <TextInput
-            value={q}
-            onChangeText={setQ}
-            placeholder="Search parts, OEM, brand…"
-            placeholderTextColor={C.ink3}
-            selectionColor={C.accent}
-            autoFocus={!q}
-            className="flex-1 ml-2.5 text-body text-ink"
-          />
-          {q ? (
-            <Text onPress={() => setQ("")}>
-              <Icon name="close-circle-outline" size={18} color={C.ink3} />
-            </Text>
-          ) : null}
-        </View>
+        <SearchBar
+          value={q}
+          onChangeText={setQ}
+          placeholder="Search parts, OEM, brand…"
+          autoFocus={!q}
+        />
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="px-5 gap-2" className="mb-1 max-h-12">
-        <Chip label="All" active={!category} onPress={() => setCategory(null)} />
+        <Chip label="All" tone="accent" active={!category} onPress={() => setCategory(null)} />
         {categories.map((c) => (
-          <Chip key={c.label} label={c.label} active={category === c.label} onPress={() => setCategory(c.label)} />
+          <Chip key={c.label} label={c.label} tone="accent" active={category === c.label} onPress={() => setCategory(c.label)} />
         ))}
       </ScrollView>
 
