@@ -150,7 +150,7 @@ export default function LeadDetailScreen() {
                   <Text className="text-caption font-sans-medium text-ink-2 mb-2">Condition</Text>
                   <View className="flex-row flex-wrap gap-2">
                     {CONDITIONS.map((c) => (
-                      <Chip key={c.value} label={c.label} active={condition === c.value} onPress={() => setCondition(c.value)} />
+                      <Chip key={c.value} label={c.label} tone="accent" active={condition === c.value} onPress={() => setCondition(c.value)} />
                     ))}
                   </View>
                 </View>

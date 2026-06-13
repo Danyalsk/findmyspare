@@ -57,28 +57,29 @@ export default function RequestDetailScreen() {
     <SafeAreaView edges={["top"]} className="flex-1 bg-paper">
       <TopBar title={inquiry.partName} back />
       <ScrollView className="flex-1" contentContainerClassName="px-5 pb-12 pt-3">
-        <Card className="gap-2">
+        <Card className="gap-2 !rounded-xl2">
           <View className="flex-row items-center justify-between">
-            <Text className="font-sans-extrabold text-title text-ink flex-1">{inquiry.partName}</Text>
+            <Text className="font-sans-extrabold text-title text-ink flex-1 pr-2">{inquiry.partName}</Text>
             <Chip
               label={`${bids.length} ${bids.length === 1 ? "quote" : "quotes"}`}
+              tone="accent"
               active={bids.length > 0}
             />
           </View>
-          <Text className="text-sub text-ink-2">{inquiry.make} · {inquiry.model} · {inquiry.year}</Text>
+          <Text className="text-sub text-ink-3 font-mono uppercase tracking-[0.04em]">{inquiry.make} · {inquiry.model} · {inquiry.year}</Text>
           {inquiry.description ? (
             <Text className="text-sub text-ink-2 mt-1 leading-[19px]">{inquiry.description}</Text>
           ) : null}
           {inquiry.imageUrl ? (
             <Image
               source={{ uri: inquiry.imageUrl }}
-              style={{ width: "100%", height: 180, borderRadius: 12, marginTop: 8 }}
+              style={{ width: "100%", height: 180, borderRadius: 16, marginTop: 8 }}
               contentFit="cover"
             />
           ) : null}
         </Card>
 
-        <Text className="text-caption font-mono uppercase text-ink-3 tracking-[0.08em] mt-6 mb-2">
+        <Text className="text-caption font-mono uppercase text-ink-3 tracking-[0.1em] mt-6 mb-3 font-sans-bold">
           Supplier quotes
         </Text>
 

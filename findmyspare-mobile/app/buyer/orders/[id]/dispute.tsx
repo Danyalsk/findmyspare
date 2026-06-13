@@ -53,7 +53,7 @@ export default function RaiseDisputeScreen() {
               <Text className="text-caption font-sans-medium text-ink-2 mb-2">What went wrong?</Text>
               <View className="flex-row flex-wrap gap-2">
                 {ISSUES.map((i) => (
-                  <Chip key={i.value} label={i.label} active={issueType === i.value} onPress={() => setIssueType(i.value)} />
+                  <Chip key={i.value} label={i.label} tone="accent" active={issueType === i.value} onPress={() => setIssueType(i.value)} />
                 ))}
               </View>
             </View>

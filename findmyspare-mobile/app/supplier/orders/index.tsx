@@ -46,7 +46,7 @@ export default function SupplierOrdersScreen() {
       <ScrollView className="flex-1" contentContainerClassName="px-5 pb-12 pt-3">
         <View className="flex-row flex-wrap gap-2 pb-3">
           {FILTERS.map((f) => (
-            <Chip key={f} label={f} active={f === filter} onPress={() => setFilter(f)} />
+            <Chip key={f} label={f} tone="accent" active={f === filter} onPress={() => setFilter(f)} />
           ))}
         </View>
         {loading ? (

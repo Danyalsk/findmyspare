@@ -98,7 +98,7 @@ export default function SupplierLeads() {
                     <Text className="text-body font-sans-semibold text-ink flex-1" numberOfLines={1}>
                       {it.partName}
                     </Text>
-                    <Chip label={`${it.bidCount ?? 0} bids`} active={(it.bidCount ?? 0) > 0} />
+                    <Chip label={`${it.bidCount ?? 0} bids`} tone="accent" active={(it.bidCount ?? 0) > 0} />
                   </View>
                   <Text className="text-caption text-ink-3">
                     {it.make} · {it.model} · {it.year}

@@ -39,7 +39,7 @@ export default function AdminSuppliers() {
 
       <View className="flex-row gap-2 mb-4">
         {FILTERS.map((f) => (
-          <Chip key={f} label={f[0].toUpperCase() + f.slice(1)} active={filter === f} onPress={() => setFilter(f)} />
+          <Chip key={f} label={f[0].toUpperCase() + f.slice(1)} tone="accent" active={filter === f} onPress={() => setFilter(f)} />
         ))}
       </View>
 

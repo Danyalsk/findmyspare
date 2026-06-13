@@ -66,7 +66,7 @@ export default function AdminUsers() {
 
       <View className="flex-row gap-2 mb-4">
         {ROLES.map((r) => (
-          <Chip key={r} label={r[0].toUpperCase() + r.slice(1)} active={role === r} onPress={() => setRole(r)} />
+          <Chip key={r} label={r[0].toUpperCase() + r.slice(1)} tone="accent" active={role === r} onPress={() => setRole(r)} />
         ))}
       </View>
 
