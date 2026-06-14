@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MotiView } from "moti";
@@ -29,19 +29,38 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
     return () => { socket.off("message:new", refresh); socket.off("message:read", refresh); };
   }, [socket, user]);
 
-  const routes = state.routes.filter(
-    (r) => (descriptors[r.key].options as { href?: string | null }).href !== null
-  );
+  // expo-router hides `href: null` screens by setting tabBarItemStyle.display = "none"
+  // (it strips the `href` key off options), so filter on that marker.
+  const routes = state.routes.filter((r) => {
+    const itemStyle = descriptors[r.key].options.tabBarItemStyle as { display?: string } | undefined;
+    return itemStyle?.display !== "none";
+  });
 
   return (
     <View
       pointerEvents="box-none"
-      style={{ position: "absolute", left: 0, right: 0, bottom: 0 }}
-      className="items-center"
+      style={{ position: "absolute", left: 0, right: 0, bottom: 0, alignItems: "center" }}
     >
-      <View style={[shadowFloat, { marginBottom: insets.bottom > 0 ? insets.bottom : 14 }]} className="rounded-full overflow-hidden">
-        <BlurView intensity={70} tint="light" className="flex-row items-center px-2 py-2 rounded-full" style={{ backgroundColor: C.glassTab, borderWidth: 1, borderColor: C.line }}>
-          {routes.map((route) => {
+      <View
+        style={[
+          shadowFloat,
+          {
+            alignSelf: "center",
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: 8,
+            paddingVertical: 8,
+            borderRadius: 999,
+            overflow: "hidden",
+            borderWidth: 1,
+            borderColor: C.line,
+            backgroundColor: C.glassTab,
+            marginBottom: insets.bottom > 0 ? insets.bottom : 14,
+          },
+        ]}
+      >
+        <BlurView intensity={70} tint="light" style={StyleSheet.absoluteFill} />
+        {routes.map((route) => {
             const { options } = descriptors[route.key];
             const realIndex = state.routes.findIndex((r) => r.key === route.key);
             const focused = state.index === realIndex;
@@ -90,7 +109,6 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
               </Pressable>
             );
           })}
-        </BlurView>
       </View>
     </View>
   );

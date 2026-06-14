@@ -79,6 +79,7 @@ export default function RootLayout() {
             <Stack.Screen name="supplier/leads/[id]" />
             <Stack.Screen name="supplier/products/new" options={{ presentation: "modal" }} />
             <Stack.Screen name="supplier/products/[id]/edit" />
+            <Stack.Screen name="supplier/marketplace" />
             <Stack.Screen name="profile/edit" options={{ presentation: "modal" }} />
             <Stack.Screen name="profile/addresses" />
             <Stack.Screen name="profile/addresses/new" options={{ presentation: "modal" }} />
