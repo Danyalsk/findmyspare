@@ -4,12 +4,55 @@ import { jwtVerify } from "jose";
 import { db } from "../db";
 import { users } from "../db/schema";
 import { eq } from "drizzle-orm";
+import { auth } from "./auth";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "dev-only-secret-change-me"
 );
 
 let _io: IOServer | null = null;
+
+type SocketUser = { id: string; role: string; name: string; isActive: boolean };
+
+// Resolve the connecting user from the handshake token. Mirrors the REST
+// `authGuard` order: BetterAuth session bearer is primary (web + current Expo
+// app, where the token is an opaque DB-backed session token — NOT a JWT, so
+// `jwtVerify` would always reject it), with the deprecated stateless JWT as a
+// fallback for any old mobile build still issuing legacy tokens.
+async function resolveSocketUser(token: string): Promise<SocketUser | null> {
+  // Primary: BetterAuth session (bearer token → DB session row).
+  try {
+    const headers = new Headers({ authorization: `Bearer ${token}` });
+    const session = await auth.api.getSession({ headers });
+    const u = session?.user as
+      | { id: string; role?: string; name?: string; isActive?: boolean }
+      | undefined;
+    if (u?.id) {
+      return {
+        id: u.id,
+        role: u.role ?? "buyer",
+        name: u.name ?? "",
+        isActive: u.isActive !== false,
+      };
+    }
+  } catch {
+    // Not a BetterAuth session — fall through to the legacy JWT path.
+  }
+
+  // Fallback: legacy stateless JWT (deprecated /auth/* Expo path).
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    if (typeof payload?.sub !== "string") return null;
+    const [u] = await db
+      .select({ id: users.id, role: users.role, name: users.name, isActive: users.isActive })
+      .from(users)
+      .where(eq(users.id, payload.sub))
+      .limit(1);
+    return u ? { id: u.id, role: u.role, name: u.name ?? "", isActive: u.isActive !== false } : null;
+  } catch {
+    return null;
+  }
+}
 
 // Call once from index.ts, passing the shared http.Server and the same
 // CORS origin list the REST API uses. Without this, socket connections
@@ -35,15 +78,7 @@ export function initSocketServer(
 
       if (!token) return next(new Error("Unauthorized: missing token"));
 
-      const { payload } = await jwtVerify(token, JWT_SECRET);
-      if (!payload?.sub) return next(new Error("Unauthorized: invalid token"));
-
-      const [u] = await db
-        .select({ id: users.id, role: users.role, name: users.name, isActive: users.isActive })
-        .from(users)
-        .where(eq(users.id, payload.sub as string))
-        .limit(1);
-
+      const u = await resolveSocketUser(token);
       if (!u || !u.isActive) return next(new Error("Unauthorized: user inactive"));
 
       socket.data.userId = u.id;
