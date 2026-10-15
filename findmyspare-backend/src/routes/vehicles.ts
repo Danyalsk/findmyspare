@@ -15,7 +15,8 @@ import {
   fitments,
 } from "../db/schema";
 import { authGuard } from "../middleware/auth";
-import { normalizeRegNo, lookupRegNo, token, formatRegNo, vehicleLabel } from "../lib/garage";
+import { normalizeRegNo, lookupRegNo, token, formatRegNo,
+  idDisplay, vehicleLabel } from "../lib/garage";
 import { rateLimit } from "../lib/rate-limit";
 
 // ─── Public: vehicle catalog for pickers ─────────────
@@ -66,7 +67,7 @@ export async function buildPassport(vehicleId: string) {
     ...jobs.filter((j) => j.job.odometerKm).map((j) => ({ at: j.job.createdAt, km: j.job.odometerKm!, source: j.garageName })),
   ].sort((a, b) => +new Date(a.at) - +new Date(b.at));
   return {
-    vehicle: { ...v, regNoDisplay: formatRegNo(v.regNo), label: vehicleLabel(v) },
+    vehicle: { ...v, regNoDisplay: idDisplay(v!), label: vehicleLabel(v) },
     services: jobs
       .filter((j) => ["invoiced", "paid"].includes(j.job.status))
       .map((j) => ({
@@ -144,7 +145,7 @@ export const vehicleRoutes = new Elysia({ prefix: "/vehicles" })
       return {
         vehicles: list.map((v) => ({
           ...v,
-          regNoDisplay: formatRegNo(v.regNo),
+          regNoDisplay: idDisplay(v!),
           label: vehicleLabel(v),
           stats: statsFor(v.id),
           pendingAccess: pending.filter((p) => p.vehicleId === v.id),
@@ -158,6 +159,23 @@ export const vehicleRoutes = new Elysia({ prefix: "/vehicles" })
   .post(
     "/",
     async ({ body, user, set }) => {
+      // Machines without a plate (pump, AC, genset, tractor implement…): identified by brand/model/serial.
+      if (!body.regNo) {
+        if (!body.makeName || !body.modelName) { set.status = 400; return { error: "Add the brand and model" }; }
+        const [v] = await db.insert(vehicles).values({
+          ownerId: user.id,
+          industrySlug: body.industrySlug ?? "automotive",
+          machineType: body.machineType ?? null,
+          serialNo: body.serialNo?.trim() || null,
+          nickname: body.nickname ?? null,
+          makeName: body.makeName,
+          modelName: body.modelName,
+          variantName: body.variantName ?? null,
+          year: body.year ?? null,
+        }).returning();
+        set.status = 201;
+        return { vehicle: v, claimed: false };
+      }
       const reg = normalizeRegNo(body.regNo);
       if (!reg) { set.status = 400; return { error: "That doesn't look like a valid registration number" }; }
       const [existing] = await db.select().from(vehicles).where(eq(vehicles.regNo, reg)).limit(1);
@@ -192,7 +210,10 @@ export const vehicleRoutes = new Elysia({ prefix: "/vehicles" })
     },
     {
       body: t.Object({
-        regNo: t.String(),
+        regNo: t.Optional(t.String()),
+        industrySlug: t.Optional(t.String({ maxLength: 40 })),
+        machineType: t.Optional(t.String({ maxLength: 80 })),
+        serialNo: t.Optional(t.String({ maxLength: 60 })),
         nickname: t.Optional(t.String({ maxLength: 60 })),
         variantId: t.Optional(t.String()),
         makeName: t.Optional(t.String()),
@@ -201,7 +222,7 @@ export const vehicleRoutes = new Elysia({ prefix: "/vehicles" })
         fuel: t.Optional(t.String()),
         year: t.Optional(t.Number()),
       }),
-      detail: { summary: "Add or claim a vehicle", tags: ["Vehicles"] },
+      detail: { summary: "Add or claim a vehicle, or add any machine by brand/model/serial", tags: ["Vehicles"] },
     }
   )
 

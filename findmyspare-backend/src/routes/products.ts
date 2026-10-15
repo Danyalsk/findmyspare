@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia";
 import { db } from "../db";
-import { products, users, stockMovements } from "../db/schema";
+import { products, users, stockMovements, searchEvents } from "../db/schema";
 import { eq, ilike, and, gte, lte, ne, notInArray, sql, desc, asc } from "drizzle-orm";
 import { authGuard, requireApprovedSupplier } from "../middleware/auth";
 
@@ -14,6 +14,9 @@ export const publicProductRoutes = new Elysia({ prefix: "/products" })
     "/",
     async ({ query }) => {
       const {
+        industry,
+        machineType,
+        city,
         search,
         category,
         minPrice,
@@ -39,9 +42,12 @@ export const publicProductRoutes = new Elysia({ prefix: "/products" })
           sql`(${ilike(products.name, `%${search}%`)} OR ${ilike(
             products.partNumber,
             `%${search}%`
-          )} OR ${ilike(products.description, `%${search}%`)})`
+          )} OR ${ilike(products.description, `%${search}%`)} OR ${ilike(products.brand, `%${search}%`)} OR ${ilike(products.category, `%${search}%`)})`
         );
       }
+      if (industry) conditions.push(eq(products.industrySlug, industry));
+      if (machineType) conditions.push(eq(products.machineType, machineType));
+      if (city) conditions.push(ilike(users.city, city));
       if (category) conditions.push(eq(products.category, category));
       if (minPrice) conditions.push(gte(products.price, minPrice));
       if (maxPrice) conditions.push(lte(products.price, maxPrice));
@@ -86,6 +92,9 @@ export const publicProductRoutes = new Elysia({ prefix: "/products" })
           partType: products.partType,
           mrp: products.mrp,
           compatibleVehicles: products.compatibleVehicles,
+          industrySlug: products.industrySlug,
+          machineType: products.machineType,
+          moq: products.moq,
           rating: sql<string | null>`(SELECT round(avg(r.rating)::numeric, 1)::text FROM reviews r WHERE r.product_id = ${products.id})`,
           reviewCount: sql<number>`(SELECT count(*)::int FROM reviews r WHERE r.product_id = ${products.id})`,
           fitConfirmations: sql<number>`(SELECT count(*)::int FROM fitments f WHERE f.product_id = ${products.id})`,
@@ -101,7 +110,16 @@ export const publicProductRoutes = new Elysia({ prefix: "/products" })
       const [{ count }] = await db
         .select({ count: sql<number>`count(*)::int` })
         .from(products)
+        .leftJoin(users, eq(products.supplierId, users.id))
         .where(and(...conditions));
+
+      // Demand radar: remember what people looked for (first page only, never blocks the response).
+      if (pageNum === 1 && (search || category)) {
+        void db.insert(searchEvents).values({
+          query: search?.slice(0, 200) ?? null, industrySlug: industry ?? null, category: category ?? null,
+          brand: brand ?? null, model: model ?? null, city: city ?? null, resultCount: count,
+        }).catch(() => {});
+      }
 
       return {
         products: items,
@@ -115,6 +133,9 @@ export const publicProductRoutes = new Elysia({ prefix: "/products" })
     },
     {
       query: t.Object({
+        industry: t.Optional(t.String()),
+        machineType: t.Optional(t.String()),
+        city: t.Optional(t.String()),
         search: t.Optional(t.String()),
         category: t.Optional(t.String()),
         minPrice: t.Optional(t.String()),
@@ -304,6 +325,10 @@ export const productRoutes = new Elysia({ prefix: "/products" })
           brand: body.brand,
           partType: body.partType ?? "aftermarket",
           mrp: body.mrp,
+          industrySlug: body.industrySlug ?? "automotive",
+          machineType: body.machineType,
+          attributes: body.attributes ?? {},
+          moq: body.moq ?? 1,
           status: body.status ?? "active",
         })
         .returning();
@@ -348,6 +373,10 @@ export const productRoutes = new Elysia({ prefix: "/products" })
         brand: t.Optional(t.String()),
         mrp: t.Optional(t.String()),
         partType: t.Optional(t.Union([t.Literal("genuine"), t.Literal("oes"), t.Literal("aftermarket"), t.Literal("used"), t.Literal("refurbished")])),
+        industrySlug: t.Optional(t.String({ maxLength: 40 })),
+        machineType: t.Optional(t.String({ maxLength: 80 })),
+        attributes: t.Optional(t.Record(t.String(), t.String())),
+        moq: t.Optional(t.Number({ minimum: 1 })),
         // "draft" keeps the item private (inventory only); default "active" lists it.
         status: t.Optional(t.Union([t.Literal("draft"), t.Literal("active")])),
       }),
@@ -406,6 +435,10 @@ export const productRoutes = new Elysia({ prefix: "/products" })
           brand: t.String(),
           mrp: t.String(),
           partType: t.Union([t.Literal("genuine"), t.Literal("oes"), t.Literal("aftermarket"), t.Literal("used"), t.Literal("refurbished")]),
+          industrySlug: t.String({ maxLength: 40 }),
+          machineType: t.String({ maxLength: 80 }),
+          attributes: t.Record(t.String(), t.String()),
+          moq: t.Number({ minimum: 1 }),
           status: t.Union([
             t.Literal("active"),
             t.Literal("paused"),

@@ -41,7 +41,11 @@ export const vehicleVariants = pgTable("vehicle_variants", {
 export const vehicles = pgTable("vehicles", {
   id: uuid("id").defaultRandom().primaryKey(),
   // Normalised: uppercase, no spaces (e.g. MH12AB3456).
-  regNo: varchar("reg_no", { length: 15 }).notNull(),
+  // Vehicles: plate. Other machines (pump, AC, genset…): null, identified by serialNo.
+  regNo: varchar("reg_no", { length: 15 }),
+  industrySlug: varchar("industry_slug", { length: 40 }).notNull().default("automotive"),
+  machineType: varchar("machine_type", { length: 80 }),
+  serialNo: varchar("serial_no", { length: 60 }),
   vin: varchar("vin", { length: 20 }),
   variantId: uuid("variant_id").references(() => vehicleVariants.id),
   // Denormalised labels so passports read without joins and survive catalog edits.
@@ -81,6 +85,8 @@ export const garages = pgTable("garages", {
   invoicePrefix: varchar("invoice_prefix", { length: 10 }).notNull().default("INV"),
   nextInvoiceNo: integer("next_invoice_no").notNull().default(1),
   specialisations: jsonb("specialisations").$type<string[]>().default([]),
+  // Industries this workshop / technician services (automotive, pumps, appliances…).
+  industrySlugs: jsonb("industry_slugs").$type<string[]>().default(["automotive"]),
   verified: boolean("verified").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => ({ byOwner: uniqueIndex("garages_owner_uq").on(t.ownerId) }));

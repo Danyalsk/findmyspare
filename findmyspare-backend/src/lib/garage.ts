@@ -13,9 +13,17 @@ export function normalizeRegNo(input: string): string | null {
 }
 
 /** Pretty-print for display: MH12AB3456 → MH 12 AB 3456. */
-export function formatRegNo(s: string): string {
+export function formatRegNo(s: string | null | undefined): string {
+  if (!s) return "";
   const m = s.match(/^([A-Z]{2})(\d{1,2})([A-Z]{0,3})(\d{1,4})$/);
   return m ? [m[1], m[2], m[3], m[4]].filter(Boolean).join(" ") : s;
+}
+
+/** How a machine is identified on screen: plate for vehicles, else serial no. */
+export function idDisplay(v: { regNo: string | null; serialNo?: string | null; nickname?: string | null }): string {
+  if (v.regNo) return formatRegNo(v.regNo);
+  if (v.serialNo) return `S/N ${v.serialNo}`;
+  return v.nickname ?? "Machine";
 }
 
 export const token = (bytes = 18) => randomBytes(bytes).toString("base64url");

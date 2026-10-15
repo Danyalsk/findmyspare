@@ -2,7 +2,8 @@ import { Elysia, t } from "elysia";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../db";
 import { garages, jobCards, jobItems, vehicles, invoices, payments, notifications } from "../db/schema";
-import { computeInvoice, invoiceHash, formatRegNo, vehicleLabel } from "../lib/garage";
+import { computeInvoice, invoiceHash, formatRegNo,
+  idDisplay, vehicleLabel } from "../lib/garage";
 import { completeMockPayment, PAYMENTS_MODE, PAYMENTS_OFF_MESSAGE } from "../lib/commerce";
 import { rateLimit, rateLimitKey } from "../lib/rate-limit";
 import { buildPassport } from "./vehicles";
@@ -40,7 +41,7 @@ export const publicGarageRoutes = new Elysia({ prefix: "/public" })
       const all = computeInvoice(items);
       return {
         garage: { name: row.garage.name, city: row.garage.city, phone: row.garage.phone, verified: row.garage.verified },
-        vehicle: { regNoDisplay: formatRegNo(row.vehicle.regNo), label: vehicleLabel(row.vehicle) },
+        vehicle: { regNoDisplay: idDisplay(row.vehicle), label: vehicleLabel(row.vehicle) },
         job: { number: row.job.number, status: row.job.status, complaint: row.job.complaint, inspection: row.job.inspection, odometerKm: row.job.odometerKm, approvedAt: row.job.approvedAt, customerName: row.job.customerName },
         items: items.map((i, idx) => ({ id: i.id, kind: i.kind, name: i.name, brand: i.brand, quantity: i.quantity, unitPrice: i.unitPrice, gstRate: i.gstRate, approved: i.approved, total: all.lines[idx]!.total, warrantyMonths: i.warrantyMonths })),
         total: all.total,
@@ -64,7 +65,7 @@ export const publicGarageRoutes = new Elysia({ prefix: "/public" })
       await db.update(jobCards).set({ status: "approved", approvedAt: new Date(), updatedAt: new Date() }).where(eq(jobCards.id, row.job.id));
       await db.insert(notifications).values({
         userId: row.garage.ownerId, type: "estimate_approved",
-        title: `Estimate approved · ${formatRegNo(row.vehicle.regNo)}`,
+        title: `Estimate approved · ${idDisplay(row.vehicle)}`,
         message: declined.length ? `${keep.size} approved, ${declined.length} declined.` : "All items approved. You can start work.",
         metadata: { jobCardId: row.job.id },
       });

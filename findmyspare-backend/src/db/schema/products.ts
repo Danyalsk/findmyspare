@@ -42,6 +42,12 @@ export const products = pgTable("products", {
   mrp: numeric("mrp", { precision: 12, scale: 2 }),
   brand: varchar("brand", { length: 100 }),
   partType: partTypeEnum("part_type").notNull().default("aftermarket"),
+  industrySlug: varchar("industry_slug", { length: 40 }).notNull().default("automotive"),
+  machineType: varchar("machine_type", { length: 80 }),
+  // Category-specific specs, e.g. { hp: "1", phase: "single" } for a pump part.
+  attributes: jsonb("attributes").$type<Record<string, string>>().default({}),
+  // Minimum order quantity for B2B buyers (1 = retail).
+  moq: integer("moq").notNull().default(1),
   stockQuantity: integer("stock_quantity").notNull().default(0),
   lowStockThreshold: integer("low_stock_threshold").notNull().default(5),
   images: jsonb("images").$type<string[]>().default([]),
@@ -57,6 +63,7 @@ export const products = pgTable("products", {
 }, (t) => ({
   bySupplier: index("products_supplier_idx").on(t.supplierId),
   byStatus: index("products_status_idx").on(t.status),
+  byIndustry: index("products_industry_idx").on(t.industrySlug),
 }));
 
 // ─── Relations ───────────────────────────────────────
