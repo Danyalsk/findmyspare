@@ -165,7 +165,7 @@ Order matters: **the database first, then code.** The new API reads columns the 
    ```bash
    psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f findmyspare-backend/drizzle/manual/0002_v3_network_every_industry.sql
    ```
-2. **Seed the catalog** (vehicle makes + the 10-industry taxonomy). Production-safe and idempotent; no demo users or products:
+2. **Seed the catalog** (vehicle makes + the 10-industry taxonomy). Production-safe and idempotent; no demo users or products. Either run `drizzle/manual/0003_v3_taxonomy_seed.sql` (plain SQL, works in the Neon SQL editor) or:
    ```bash
    cd findmyspare-backend && DATABASE_URL=… bun run src/scripts/seed-catalog.ts
    ```
