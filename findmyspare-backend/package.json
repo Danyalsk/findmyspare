@@ -8,7 +8,7 @@
     "db:generate": "bun --env-file=.env x drizzle-kit generate",
     "db:push": "bun --env-file=.env x drizzle-kit push",
     "db:studio": "bun --env-file=.env x drizzle-kit studio",
-    "db:seed": "bun --env-file=.env run src/scripts/seed.ts"
+    "db:seed": "bun --env-file=.env run src/scripts/seed.ts && bun --env-file=.env run src/scripts/seed-v2.ts"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.2.0",

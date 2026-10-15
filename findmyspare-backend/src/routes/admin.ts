@@ -56,6 +56,41 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
     { detail: { summary: "Platform statistics overview", tags: ["Admin"] } }
   )
 
+  // ─── Marketplace health (north-star + funnel) ───────
+  .get(
+    "/marketplace-health",
+    async () => {
+      const [m] = await db.execute<Record<string, string | number | null>>(sql`
+        SELECT
+          (SELECT coalesce(sum(total_amount),0)::numeric(14,2)::text FROM orders WHERE payment_status = 'paid') AS gmv,
+          (SELECT count(*)::int FROM orders WHERE payment_status = 'paid') AS paid_orders,
+          (SELECT count(*)::int FROM orders WHERE payment_status = 'paid' AND status IN ('delivered','completed')) AS delivered_orders,
+          (SELECT count(*)::int FROM orders WHERE payment_status = 'pending') AS unpaid_orders,
+          (SELECT count(*)::int FROM inquiries) AS requests,
+          (SELECT count(*)::int FROM inquiries i WHERE EXISTS (SELECT 1 FROM bids b WHERE b.inquiry_id = i.id)) AS requests_quoted,
+          (SELECT count(*)::int FROM bids WHERE status = 'accepted') AS quotes_accepted,
+          (SELECT round(avg(extract(epoch FROM (fb.first_at - i.created_at)) / 60)::numeric, 1)::text
+             FROM inquiries i JOIN LATERAL (SELECT min(created_at) AS first_at FROM bids b WHERE b.inquiry_id = i.id) fb ON fb.first_at IS NOT NULL) AS avg_minutes_to_first_quote,
+          (SELECT count(*)::int FROM fitments) AS confirmed_fits,
+          (SELECT count(*)::int FROM reviews WHERE fit_confirmed = false) AS wrong_fit_reports,
+          (SELECT round(avg(rating)::numeric,2)::text FROM reviews) AS avg_rating,
+          (SELECT count(*)::int FROM garages) AS garages,
+          (SELECT count(*)::int FROM job_cards) AS job_cards,
+          (SELECT count(*)::int FROM invoices) AS invoices,
+          (SELECT coalesce(sum(total),0)::numeric(14,2)::text FROM invoices WHERE status = 'paid') AS invoice_collections,
+          (SELECT count(*)::int FROM vehicles) AS vehicles,
+          (SELECT count(*)::int FROM vehicles WHERE owner_id IS NOT NULL) AS owned_vehicles,
+          (SELECT count(*)::int FROM fitted_parts) AS fitted_parts
+      `);
+      const requests = Number(m?.requests ?? 0);
+      return {
+        ...m,
+        fillRate: requests ? Math.round((Number(m?.requests_quoted ?? 0) / requests) * 100) : null,
+      };
+    },
+    { detail: { summary: "Marketplace + Garage OS health metrics", tags: ["Admin"] } }
+  )
+
   // ─── Suppliers ───────────────────────────────────────
   .get(
     "/suppliers",

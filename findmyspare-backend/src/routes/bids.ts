@@ -4,12 +4,13 @@ import {
   bids,
   inquiries,
   orders,
-  escrowTransactions,
   users,
   notifications,
+  jobItems,
 } from "../db/schema";
 import { eq, and, ne, desc, sql } from "drizzle-orm";
 import { authGuard } from "../middleware/auth";
+import { createQuoteCheckout } from "../lib/commerce";
 
 export const bidRoutes = new Elysia()
   .use(authGuard)
@@ -61,6 +62,8 @@ export const bidRoutes = new Elysia()
           warrantyMonths: body.warrantyMonths ?? 0,
           etaDays: body.etaDays ?? 3,
           notes: body.notes,
+          brand: body.brand || null,
+          partNumber: body.partNumber || null,
         })
         .returning();
 
@@ -92,6 +95,8 @@ export const bidRoutes = new Elysia()
         warrantyMonths: t.Optional(t.Number()),
         etaDays: t.Optional(t.Number()),
         notes: t.Optional(t.String()),
+        brand: t.Optional(t.String()),
+        partNumber: t.Optional(t.String()),
       }),
       detail: { summary: "Submit a bid on an inquiry (supplier only)", tags: ["Bids"] },
     }
@@ -131,12 +136,21 @@ export const bidRoutes = new Elysia()
           warrantyMonths: bids.warrantyMonths,
           etaDays: bids.etaDays,
           notes: bids.notes,
+          brand: bids.brand,
+          partNumber: bids.partNumber,
           status: bids.status,
           orderId: bids.orderId,
           createdAt: bids.createdAt,
           supplierId: bids.supplierId,
           supplierName: users.name,
           supplierBusinessName: users.businessName,
+          supplierCity: users.city,
+          supplierRating: sql<string | null>`(
+            SELECT round(avg(rating)::numeric, 1)::text FROM reviews WHERE supplier_id = ${bids.supplierId}
+          )`,
+          supplierReviewCount: sql<number>`(
+            SELECT COUNT(*)::int FROM reviews WHERE supplier_id = ${bids.supplierId}
+          )`,
           completedOrders: sql<number>`(
             SELECT COUNT(*)::int FROM orders
             WHERE supplier_id = ${bids.supplierId}
@@ -247,24 +261,30 @@ export const bidRoutes = new Elysia()
       const autoCloseAt = new Date();
       autoCloseAt.setDate(autoCloseAt.getDate() + 14);
 
-      // Create order
+      // Create the order unpaid; escrow is held when the (mock) payment succeeds.
       const [order] = await db
         .insert(orders)
         .values({
           buyerId: user.id,
           supplierId: bid.supplierId,
           status: "placed",
+          paymentStatus: "pending",
+          source: inquiry.jobCardId ? "job" : "quote",
+          jobCardId: inquiry.jobCardId ?? null,
           totalAmount: bid.price,
           autoCloseAt,
         })
         .returning();
+      const checkout = await createQuoteCheckout(user.id, order.id, bid.price);
 
-      // Create escrow
-      await db.insert(escrowTransactions).values({
-        orderId: order.id,
-        amount: bid.price,
-        status: "held",
-      });
+      // A garage sourcing a part for a job: link the job line to this order.
+      if (inquiry.jobCardId) {
+        const [seller] = await db.select({ name: users.businessName }).from(users).where(eq(users.id, bid.supplierId)).limit(1);
+        await db
+          .update(jobItems)
+          .set({ orderId: order.id, source: "marketplace", sellerName: seller?.name ?? null, brand: bid.brand ?? undefined, partNumber: bid.partNumber ?? undefined, warrantyMonths: bid.warrantyMonths })
+          .where(eq(jobItems.inquiryId, inquiry.id));
+      }
 
       // Accept this bid, reject others
       await db
@@ -299,7 +319,7 @@ export const bidRoutes = new Elysia()
       });
 
       set.status = 201;
-      return { order, orderId: order.id };
+      return { order, orderId: order.id, checkoutId: checkout.id };
     },
     {
       params: t.Object({ id: t.String() }),

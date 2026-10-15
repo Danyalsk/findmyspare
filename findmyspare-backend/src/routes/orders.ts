@@ -27,8 +27,12 @@ export const orderRoutes = new Elysia({ prefix: "/orders" })
       const offset = (pageNum - 1) * limitNum;
 
       // Show orders where user is buyer or supplier
+      // Sellers only see an order once it is paid (unpaid checkouts are the buyer's).
       const conditions = [
-        or(eq(orders.buyerId, user.id), eq(orders.supplierId, user.id)),
+        or(
+          eq(orders.buyerId, user.id),
+          and(eq(orders.supplierId, user.id), eq(orders.paymentStatus, "paid"))
+        ),
       ];
 
       if (status) {
@@ -40,6 +44,10 @@ export const orderRoutes = new Elysia({ prefix: "/orders" })
           id: orders.id,
           status: orders.status,
           totalAmount: orders.totalAmount,
+          paymentStatus: orders.paymentStatus,
+          source: orders.source,
+          checkoutId: orders.checkoutId,
+          jobCardId: orders.jobCardId,
           trackingNumber: orders.trackingNumber,
           courierService: orders.courierService,
           estimatedDelivery: orders.estimatedDelivery,
@@ -118,7 +126,10 @@ export const orderRoutes = new Elysia({ prefix: "/orders" })
         .where(
           and(
             eq(orders.id, params.id),
-            or(eq(orders.buyerId, user.id), eq(orders.supplierId, user.id))
+            or(
+              eq(orders.buyerId, user.id),
+              and(eq(orders.supplierId, user.id), eq(orders.paymentStatus, "paid"))
+            )
           )
         )
         .limit(1);
@@ -303,6 +314,9 @@ export const orderRoutes = new Elysia({ prefix: "/orders" })
           buyerId: user.id,
           supplierId: orderSupplierId!,
           status: "placed",
+          // Legacy direct-order path (mobile app): escrow is held immediately,
+          // so treat it as paid. Web uses /checkout + /payments instead.
+          paymentStatus: "paid",
           totalAmount: totalAmount.toFixed(2),
           shippingAddressId: shippingAddressId || null,
           autoCloseAt,
@@ -398,6 +412,10 @@ export const orderRoutes = new Elysia({ prefix: "/orders" })
       };
 
       if (user.role === "supplier" && order.supplierId === user.id) {
+        if (order.paymentStatus !== "paid") {
+          set.status = 400;
+          return { error: "Order is not paid yet" };
+        }
         const allowed = supplierTransitions[order.status] || [];
         if (!allowed.includes(status)) {
           set.status = 400;
@@ -425,11 +443,13 @@ export const orderRoutes = new Elysia({ prefix: "/orders" })
       };
 
       if (status === "shipped") {
-        updateFields.trackingNumber = body.trackingNumber || null;
-        updateFields.courierService = body.courierService || null;
+        // Mock logistics: auto-assign an AWB when the seller doesn't enter one.
+        updateFields.trackingNumber =
+          body.trackingNumber || `FMS${Date.now().toString().slice(-8)}${Math.floor(Math.random() * 90 + 10)}`;
+        updateFields.courierService = body.courierService || "FMS Express (mock)";
         updateFields.estimatedDelivery = body.estimatedDelivery
           ? new Date(body.estimatedDelivery)
-          : null;
+          : new Date(Date.now() + 2 * 864e5);
       }
 
       if (status === "delivered") {
@@ -451,6 +471,7 @@ export const orderRoutes = new Elysia({ prefix: "/orders" })
 
       if (status === "cancelled") {
         updateFields.closedAt = new Date();
+        if (order.paymentStatus === "paid") updateFields.paymentStatus = "refunded";
         // Refund escrow
         await db
           .update(escrowTransactions)

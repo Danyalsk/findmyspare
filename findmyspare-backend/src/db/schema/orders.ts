@@ -27,6 +27,9 @@ export const orderStatusEnum = pgEnum("order_status", [
   "cancelled",
 ]);
 
+export const orderPaymentStatusEnum = pgEnum("order_payment_status", ["pending", "paid", "refunded"]);
+export const orderSourceEnum = pgEnum("order_source", ["cart", "quote", "job"]);
+
 // ─── Orders Table ────────────────────────────────────
 export const orders = pgTable("orders", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -39,6 +42,13 @@ export const orders = pgTable("orders", {
   status: orderStatusEnum("status").notNull().default("placed"),
   totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
   shippingAddressId: uuid("shipping_address_id").references(() => addresses.id),
+  // Orders exist as soon as checkout starts; suppliers only act once paid.
+  paymentStatus: orderPaymentStatusEnum("payment_status").notNull().default("pending"),
+  checkoutId: uuid("checkout_id"),
+  source: orderSourceEnum("source").notNull().default("cart"),
+  // Set when a garage orders parts from inside a job card.
+  jobCardId: uuid("job_card_id"),
+  deliveryFee: numeric("delivery_fee", { precision: 12, scale: 2 }).notNull().default("0"),
   trackingNumber: varchar("tracking_number", { length: 100 }),
   courierService: varchar("courier_service", { length: 100 }),
   estimatedDelivery: timestamp("estimated_delivery", { withTimezone: true }),

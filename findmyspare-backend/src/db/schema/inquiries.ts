@@ -26,6 +26,10 @@ export const inquiries = pgTable("inquiries", {
   
   // They might provide an image of the part
   imageUrl: text("image_url"),
+  // Optional links: the passport vehicle and the garage job this request is for.
+  vehicleId: uuid("vehicle_id"),
+  jobCardId: uuid("job_card_id"),
+  city: varchar("city", { length: 100 }),
   
   status: inquiryStatusEnum("status").notNull().default("pending"),
   isActive: boolean("is_active").default(true),

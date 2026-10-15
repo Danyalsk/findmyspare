@@ -35,6 +35,8 @@ export const bids = pgTable("bids", {
   warrantyMonths: integer("warranty_months").notNull().default(0),
   etaDays: integer("eta_days").notNull().default(3),
   notes: text("notes"),
+  brand: varchar("brand", { length: 100 }),
+  partNumber: varchar("part_number", { length: 100 }),
   status: bidStatusEnum("status").notNull().default("pending"),
   // Set when buyer accepts this bid — plain UUID, no FK to avoid circular import
   orderId: uuid("order_id"),

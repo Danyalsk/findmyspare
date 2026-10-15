@@ -19,6 +19,10 @@ export const publicProductRoutes = new Elysia({ prefix: "/products" })
         minPrice,
         maxPrice,
         supplierId,
+        make,
+        model,
+        partType,
+        brand,
         page = "1",
         limit = "20",
         sort = "newest",
@@ -42,12 +46,26 @@ export const publicProductRoutes = new Elysia({ prefix: "/products" })
       if (minPrice) conditions.push(gte(products.price, minPrice));
       if (maxPrice) conditions.push(lte(products.price, maxPrice));
       if (supplierId) conditions.push(eq(products.supplierId, supplierId));
+      if (partType) conditions.push(sql`${products.partType} = ${partType}`);
+      if (brand) conditions.push(ilike(products.brand, brand));
+      // Fitment filter: the seller declared it fits, or a buyer confirmed it.
+      if (make && model) {
+        conditions.push(sql`(
+          ${products.compatibleVehicles} @> ${JSON.stringify([{ make, model }])}::jsonb
+          OR EXISTS (SELECT 1 FROM fitments f WHERE f.product_id = ${products.id}
+                     AND lower(f.make_name) = lower(${make}) AND lower(f.model_name) = lower(${model}))
+        )`);
+      } else if (make) {
+        conditions.push(sql`${products.compatibleVehicles} @> ${JSON.stringify([{ make }])}::jsonb`);
+      }
 
       const orderBy =
         sort === "price_asc"
           ? asc(products.price)
           : sort === "price_desc"
           ? desc(products.price)
+          : sort === "popular"
+          ? desc(products.viewCount)
           : desc(products.createdAt);
 
       const items = await db
@@ -62,6 +80,15 @@ export const publicProductRoutes = new Elysia({ prefix: "/products" })
           status: products.status,
           supplierId: products.supplierId,
           supplierName: users.name,
+          supplierBusinessName: users.businessName,
+          supplierCity: users.city,
+          brand: products.brand,
+          partType: products.partType,
+          mrp: products.mrp,
+          compatibleVehicles: products.compatibleVehicles,
+          rating: sql<string | null>`(SELECT round(avg(r.rating)::numeric, 1)::text FROM reviews r WHERE r.product_id = ${products.id})`,
+          reviewCount: sql<number>`(SELECT count(*)::int FROM reviews r WHERE r.product_id = ${products.id})`,
+          fitConfirmations: sql<number>`(SELECT count(*)::int FROM fitments f WHERE f.product_id = ${products.id})`,
           createdAt: products.createdAt,
         })
         .from(products)
@@ -93,6 +120,10 @@ export const publicProductRoutes = new Elysia({ prefix: "/products" })
         minPrice: t.Optional(t.String()),
         maxPrice: t.Optional(t.String()),
         supplierId: t.Optional(t.String()),
+        make: t.Optional(t.String()),
+        model: t.Optional(t.String()),
+        partType: t.Optional(t.String()),
+        brand: t.Optional(t.String()),
         page: t.Optional(t.String()),
         limit: t.Optional(t.String()),
         sort: t.Optional(t.String()),
@@ -124,6 +155,12 @@ export const publicProductRoutes = new Elysia({ prefix: "/products" })
           supplierId: products.supplierId,
           supplierName: users.name,
           supplierBusinessName: users.businessName,
+          supplierCity: users.city,
+          supplierSince: users.createdAt,
+          supplierVerified: sql<boolean>`${users.verificationStatus} = 'approved'`,
+          brand: products.brand,
+          partType: products.partType,
+          mrp: products.mrp,
           createdAt: products.createdAt,
           updatedAt: products.updatedAt,
         })
@@ -144,7 +181,33 @@ export const publicProductRoutes = new Elysia({ prefix: "/products" })
         .set({ viewCount: sql`${products.viewCount} + 1` })
         .where(eq(products.id, params.id));
 
-      return { product };
+      const [ratings] = await db.execute<{ rating: string | null; count: number; supplier_rating: string | null; supplier_count: number; supplier_orders: number }>(sql`
+        SELECT
+          (SELECT round(avg(rating)::numeric,1)::text FROM reviews WHERE product_id = ${product.id}) AS rating,
+          (SELECT count(*)::int FROM reviews WHERE product_id = ${product.id}) AS count,
+          (SELECT round(avg(rating)::numeric,1)::text FROM reviews WHERE supplier_id = ${product.supplierId}) AS supplier_rating,
+          (SELECT count(*)::int FROM reviews WHERE supplier_id = ${product.supplierId}) AS supplier_count,
+          (SELECT count(*)::int FROM orders WHERE supplier_id = ${product.supplierId} AND status IN ('delivered','completed')) AS supplier_orders
+      `);
+      const recentReviews = await db.execute<{ rating: number; comment: string | null; fit_confirmed: boolean | null; vehicle: unknown; created_at: string; buyer_name: string | null }>(sql`
+        SELECT r.rating, r.comment, r.fit_confirmed, r.vehicle, r.created_at, u.name AS buyer_name
+        FROM reviews r LEFT JOIN users u ON u.id = r.buyer_id
+        WHERE r.product_id = ${product.id} ORDER BY r.created_at DESC LIMIT 5
+      `);
+      const fitsOn = await db.execute<{ make_name: string; model_name: string; n: number }>(sql`
+        SELECT make_name, model_name, count(*)::int AS n FROM fitments
+        WHERE product_id = ${product.id} GROUP BY 1, 2 ORDER BY n DESC LIMIT 6
+      `);
+      return {
+        product,
+        rating: ratings?.rating ?? null,
+        reviewCount: ratings?.count ?? 0,
+        supplierRating: ratings?.supplier_rating ?? null,
+        supplierReviewCount: ratings?.supplier_count ?? 0,
+        supplierOrders: ratings?.supplier_orders ?? 0,
+        reviews: [...recentReviews],
+        confirmedFits: [...fitsOn],
+      };
     },
     {
       params: t.Object({ id: t.String() }),
@@ -238,6 +301,9 @@ export const productRoutes = new Elysia({ prefix: "/products" })
           specifications: body.specifications ?? {},
           compatibleVehicles: body.compatibleVehicles ?? [],
           warrantyInfo: body.warrantyInfo,
+          brand: body.brand,
+          partType: body.partType ?? "aftermarket",
+          mrp: body.mrp,
           status: body.status ?? "active",
         })
         .returning();
@@ -279,6 +345,9 @@ export const productRoutes = new Elysia({ prefix: "/products" })
           )
         ),
         warrantyInfo: t.Optional(t.String()),
+        brand: t.Optional(t.String()),
+        mrp: t.Optional(t.String()),
+        partType: t.Optional(t.Union([t.Literal("genuine"), t.Literal("oes"), t.Literal("aftermarket"), t.Literal("used"), t.Literal("refurbished")])),
         // "draft" keeps the item private (inventory only); default "active" lists it.
         status: t.Optional(t.Union([t.Literal("draft"), t.Literal("active")])),
       }),
@@ -334,6 +403,9 @@ export const productRoutes = new Elysia({ prefix: "/products" })
             })
           ),
           warrantyInfo: t.String(),
+          brand: t.String(),
+          mrp: t.String(),
+          partType: t.Union([t.Literal("genuine"), t.Literal("oes"), t.Literal("aftermarket"), t.Literal("used"), t.Literal("refurbished")]),
           status: t.Union([
             t.Literal("active"),
             t.Literal("paused"),

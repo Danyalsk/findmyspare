@@ -25,6 +25,8 @@ export const productStatusEnum = pgEnum("product_status", [
   "draft",
 ]);
 
+export const partTypeEnum = pgEnum("part_type", ["genuine", "oes", "aftermarket", "used", "refurbished"]);
+
 // ─── Products Table ──────────────────────────────────
 export const products = pgTable("products", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -36,6 +38,10 @@ export const products = pgTable("products", {
   partNumber: varchar("part_number", { length: 100 }),
   category: varchar("category", { length: 100 }),
   price: numeric("price", { precision: 12, scale: 2 }).notNull(),
+  // MRP printed on the box; shown struck-through when price is lower.
+  mrp: numeric("mrp", { precision: 12, scale: 2 }),
+  brand: varchar("brand", { length: 100 }),
+  partType: partTypeEnum("part_type").notNull().default("aftermarket"),
   stockQuantity: integer("stock_quantity").notNull().default(0),
   lowStockThreshold: integer("low_stock_threshold").notNull().default(5),
   images: jsonb("images").$type<string[]>().default([]),

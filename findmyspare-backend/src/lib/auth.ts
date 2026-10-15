@@ -39,8 +39,11 @@ const DEMO_LOGINS: Record<string, string> = {
 };
 const DEMO_ENABLED = process.env.DEMO_LOGIN === "1";
 function demoOtpFor(email: string): string | undefined {
-  if (!DEMO_ENABLED) return undefined;
-  return DEMO_LOGINS[email.toLowerCase()];
+  if (!DEMO_ENABLED || NODE_ENV === "production") return undefined;
+  const e = email.toLowerCase();
+  // Seeded prototype accounts (seed.ts / seed-v2.ts) all use @findmyspare.test.
+  if (e.endsWith("@findmyspare.test")) return "123456";
+  return DEMO_LOGINS[e];
 }
 
 export const auth = betterAuth({

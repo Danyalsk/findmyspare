@@ -22,6 +22,10 @@ import { adminSuperRoutes } from "./routes/admin-super";
 import { bannerRoutes } from "./routes/banners";
 import { uploadRoutes } from "./routes/upload";
 import { messageRoutes } from "./routes/messages";
+import { checkoutRoutes } from "./routes/checkout";
+import { vehicleRoutes, vehicleCatalogRoutes } from "./routes/vehicles";
+import { garageRoutes } from "./routes/garage";
+import { publicGarageRoutes } from "./routes/public-garage";
 import { db, closeConnection } from "./db";
 import { sql } from "drizzle-orm";
 import { initSocketServer, closeSocketServer } from "./lib/io";
@@ -87,6 +91,11 @@ const app = new Elysia()
           { name: "Banners", description: "Homepage banners" },
           { name: "Upload", description: "File upload (Vercel Blob)" },
           { name: "Messages", description: "Real-time 1:1 chat" },
+          { name: "Checkout", description: "Multi-seller checkout" },
+          { name: "Payments", description: "Payments (mock gateway in the prototype)" },
+          { name: "Vehicles", description: "My Garage + Vehicle Passport" },
+          { name: "Garage", description: "Garage OS: job cards, estimates, invoices" },
+          { name: "Public", description: "Token-scoped public pages (estimate, verify, pay, share)" },
         ],
         components: {
           securitySchemes: {
@@ -148,6 +157,8 @@ const app = new Elysia()
   // derive (authRoutes). Elysia's global derive applies to everything mounted
   // AFTER it, so guest-browsable routes must be registered ahead of it.
   .use(publicProductRoutes)
+  .use(vehicleCatalogRoutes)
+  .use(publicGarageRoutes)
   .use(bannerRoutes)
   .use(authRoutes)
   .use(productRoutes)
@@ -164,7 +175,10 @@ const app = new Elysia()
   .use(adminRoutes)
   .use(adminSuperRoutes)
   .use(uploadRoutes)
-  .use(messageRoutes);
+  .use(messageRoutes)
+  .use(checkoutRoutes)
+  .use(vehicleRoutes)
+  .use(garageRoutes);
 
 // ─── Shared HTTP Server (Elysia + Socket.io on same port) ───
 // Bun's node:http is fully compatible. Socket.io intercepts WebSocket

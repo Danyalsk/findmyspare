@@ -108,7 +108,7 @@ export const adminSuperRoutes = new Elysia({ prefix: "/admin" })
       const series = await db.execute(sql`
         WITH days AS (
           SELECT generate_series(
-            date_trunc('day', ${from}::timestamp),
+            date_trunc('day', ${from.toISOString()}::timestamp),
             date_trunc('day', now()),
             interval '1 day'
           )::date AS d

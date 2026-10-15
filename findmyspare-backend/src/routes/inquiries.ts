@@ -57,6 +57,8 @@ export const inquiryRoutes = new Elysia({ prefix: "/inquiries" })
           year: body.year,
           description: body.description || null,
           imageUrl: body.imageUrl || null,
+          vehicleId: body.vehicleId || null,
+          city: ("city" in user ? (user.city as string | null) : null) ?? null,
         })
         .returning();
 
@@ -77,6 +79,7 @@ export const inquiryRoutes = new Elysia({ prefix: "/inquiries" })
         year: t.String(),
         description: t.Optional(t.String()),
         imageUrl: t.Optional(t.String()),
+        vehicleId: t.Optional(t.String()),
       }),
       detail: { summary: "Create a new part inquiry (buyer only)", tags: ["Inquiries"] },
     }
