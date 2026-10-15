@@ -59,6 +59,7 @@ export const partCategories = pgTable("part_categories", {
 
 // ─── Supply-chain roles ──────────────────────────────
 export const BUSINESS_ROLES = [
+  "raw_material_supplier",
   "manufacturer",
   "super_stockist",
   "distributor",

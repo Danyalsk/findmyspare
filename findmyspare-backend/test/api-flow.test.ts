@@ -56,9 +56,9 @@ describe("marketplace: browse → multi-seller checkout → pay → deliver → 
   });
 
   test("cart from two sellers is split with per-seller delivery fee", async () => {
-    const list = (await anon("GET", `/products?limit=50`)).data.products;
-    const a = list.find((p: any) => p.partNumber === "F002H23415"); // raza ₹245 → below free-delivery
-    const b = list.find((p: any) => p.partNumber === "CUK1919"); // ayman ₹610
+    const byPart = async (pn: string) => (await anon("GET", `/products?search=${pn}`)).data.products.find((p: any) => p.partNumber === pn);
+    const a = await byPart("F002H23415"); // raza ₹245 → below free-delivery
+    const b = await byPart("CUK1919"); // ayman ₹610
     const items = [{ productId: a.id, quantity: 2 }, { productId: b.id, quantity: 1 }];
     const prev = await owner("POST", "/checkout/preview", { items });
     expect(prev.status).toBe(200);

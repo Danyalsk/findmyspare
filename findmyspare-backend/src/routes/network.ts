@@ -47,9 +47,14 @@ async function priceFor(supplierId: string, buyerId: string, productIds: string[
   return {
     link,
     list,
-    price: (p: { id: string; price: string }) => {
+    // Tier price applies once the quantity reaches the price-list item's minimum.
+    price: (p: { id: string; price: string }, qty = 1) => {
       const o = overrides.find((x) => x.productId === p.id);
-      return o ? parseFloat(o.price) : r2(parseFloat(p.price) * (1 - disc / 100));
+      return o && qty >= o.minQty ? parseFloat(o.price) : r2(parseFloat(p.price) * (1 - disc / 100));
+    },
+    tier: (p: { id: string }) => {
+      const o = overrides.find((x) => x.productId === p.id);
+      return o ? { price: o.price, minQty: o.minQty } : null;
     },
   };
 }
@@ -104,7 +109,7 @@ export const networkRoutes = new Elysia({ prefix: "/biz" })
         .returning({ businessRoles: users.businessRoles, industries: users.industries });
       return { profile: u };
     },
-    { body: t.Object({ businessRoles: t.Array(t.String(), { maxItems: 11 }), industries: t.Array(t.String(), { maxItems: 20 }) }), detail: { tags: ["Business"] } }
+    { body: t.Object({ businessRoles: t.Array(t.String(), { maxItems: 12 }), industries: t.Array(t.String(), { maxItems: 20 }) }), detail: { tags: ["Business"] } }
   )
 
   // ─── Directory: find suppliers / buyers to trade with ───
@@ -248,7 +253,7 @@ export const networkRoutes = new Elysia({ prefix: "/biz" })
       return {
         supplier: { id: params.supplierId, ...sup },
         terms: { creditDays: pr.link.creditDays, creditLimit: pr.link.creditLimit, priceList: priced.list?.name ?? null },
-        products: list.map((p) => ({ id: p.id, name: p.name, brand: p.brand, partNumber: p.partNumber, category: p.category, industrySlug: p.industrySlug, stockQuantity: p.stockQuantity, moq: p.moq, listPrice: p.price, yourPrice: m(priced.price(p)) })),
+        products: list.map((p) => ({ id: p.id, name: p.name, brand: p.brand, partNumber: p.partNumber, category: p.category, industrySlug: p.industrySlug, stockQuantity: p.stockQuantity, moq: p.moq, listPrice: p.price, yourPrice: m(priced.price(p)), tier: priced.tier(p) })),
       };
     },
     { params: t.Object({ supplierId: t.String() }), query: t.Object({ q: t.Optional(t.String()) }), detail: { tags: ["Business"] } }
@@ -268,7 +273,7 @@ export const networkRoutes = new Elysia({ prefix: "/biz" })
       for (const l of body.lines) {
         const p = list.find((x) => x.id === l.productId)!;
         if (l.quantity < p.moq) { set.status = 400; return { error: `Minimum order for ${p.name} is ${p.moq}` }; }
-        const unit = pr.price(p);
+        const unit = pr.price(p, l.quantity);
         lines.push({ productId: p.id, name: p.name, partNumber: p.partNumber, brand: p.brand, quantity: l.quantity, unitPrice: m(unit), gstRate: 18, total: m(unit * l.quantity * 1.18) });
       }
       const tot = lineTotals(lines);
@@ -334,7 +339,8 @@ export const networkRoutes = new Elysia({ prefix: "/biz" })
         receive: [false, ["shipped"]], cancel: [false, ["sent"]],
       };
       const [needSeller, from] = allowed[body.action]!;
-      if (needSeller !== asSeller || !from.includes(po.status)) { set.status = 400; return { error: `Can't ${body.action} a PO that is ${po.status}` }; }
+      if (needSeller !== asSeller) { set.status = 403; return { error: `Only the ${needSeller ? "seller" : "buyer"} can ${body.action} this PO` }; }
+      if (!from.includes(po.status)) { set.status = 400; return { error: `Can't ${body.action} a PO that is ${po.status}` }; }
       const next = { accept: "accepted", reject: "rejected", ship: "shipped", receive: "received", cancel: "cancelled" }[body.action] as typeof po.status;
       const patch: Partial<typeof purchaseOrders.$inferInsert> = { status: next, updatedAt: new Date() };
       if (body.note) patch[asSeller ? "sellerNote" : "note"] = body.note;
