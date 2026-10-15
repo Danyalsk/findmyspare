@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { clsx } from "clsx";
 import { ordersApi } from "@/lib/api";
 import { checkoutApi, vehiclesApi, inr, type Vehicle } from "@/lib/api/v2";
+import { useVehicleStore } from "@/lib/vehicle-store";
 import type { OrderDetail } from "@/lib/types";
 import { Timeline, StatusChip, PartThumb, Skel } from "@/components/shop/ui";
 import { toast } from "@/lib/toast";
@@ -27,7 +28,16 @@ export default function OrderDetailPage() {
   const [error, setError] = useState("");
 
   const load = useCallback(() => ordersApi.get(id).then(setD).catch((e) => setError(getErrorMessage(e, "Something went wrong"))), [id]);
-  useEffect(() => { load(); vehiclesApi.mine().then((r) => { setVehicles(r.vehicles); if (r.vehicles[0]) setVehicleId(r.vehicles[0].id); }).catch(() => {}); }, [load]);
+  const selectedVehicleId = useVehicleStore((s) => s.selected?.vehicleId);
+  // Default the fit question to the vehicle the shopper was buying for.
+  useEffect(() => {
+    load();
+    vehiclesApi.mine().then((r) => {
+      setVehicles(r.vehicles);
+      const pick = r.vehicles.find((v) => v.id === selectedVehicleId) ?? r.vehicles[0];
+      if (pick) setVehicleId(pick.id);
+    }).catch(() => {});
+  }, [load, selectedVehicleId]);
 
   async function submitReview() {
     setBusy(true);

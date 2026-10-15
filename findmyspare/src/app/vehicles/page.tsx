@@ -100,7 +100,7 @@ export default function VehiclesPage() {
       </div>
 
       <Sheet open={open} onClose={() => { setOpen(false); setRc(null); setErr(""); }} title="Add a vehicle">
-        <Field label="Registration number" hint="Prototype: details come from a mock RC lookup. Any valid-looking plate works.">
+        <Field label="Registration number" group hint="Prototype: details come from a mock RC lookup. Any valid-looking plate works.">
           <div className="flex gap-2">
             <input className={`${inputCls} mono uppercase tracking-wider`} value={reg} onChange={(e) => { setReg(e.target.value.toUpperCase()); setRc(null); }} placeholder="MH 12 AB 3456" aria-label="Registration number" />
             <button onClick={lookup} disabled={reg.replace(/\s/g, "").length < 6 || busy} className="h-12 px-5 rounded-[12px] bg-ink text-paper font-extrabold disabled:opacity-40">Find</button>

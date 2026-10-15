@@ -165,7 +165,7 @@ export default function CartPage() {
           <Field label="PIN code"><input className={inputCls} inputMode="numeric" value={form.postalCode} onChange={(e) => setForm({ ...form, postalCode: e.target.value })} /></Field>
           <Field label="State"><input className={inputCls} value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} /></Field>
           <Field label="Phone"><input className={inputCls} inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
-          <div className="col-span-2"><Field label="Save as"><div className="flex gap-2">{["Home", "Work", "Garage"].map((l) => <button key={l} type="button" className="chip" data-on={form.label === l} onClick={() => setForm({ ...form, label: l })}>{l}</button>)}</div></Field></div>
+          <div className="col-span-2"><Field label="Save as" group><div className="flex gap-2">{["Home", "Work", "Garage"].map((l) => <button key={l} type="button" className="chip" data-on={form.label === l} onClick={() => setForm({ ...form, label: l })}>{l}</button>)}</div></Field></div>
         </div>
         <button onClick={saveAddress} disabled={!form.line1 || !form.city || !form.state || !form.postalCode} className="mt-5 w-full h-12 rounded-[14px] bg-[color:var(--accent)] text-white font-extrabold disabled:opacity-40">Save address</button>
       </Sheet>

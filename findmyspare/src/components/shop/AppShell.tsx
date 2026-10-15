@@ -99,20 +99,21 @@ export function AppHeader() {
             <span className="sm:hidden"><LogoMark size={30} /></span>
           </Link>
 
-          <button onClick={() => setPicker(true)} className="flex items-center gap-2 min-w-0 text-left group" aria-label="Choose your vehicle">
+          <button onClick={() => setPicker(true)} className="flex items-center gap-2 flex-shrink-0 text-left group" aria-label="Choose your vehicle">
             <span className="hidden md:flex w-9 h-9 rounded-full bg-[color:var(--accent-wash)] text-[color:var(--accent)] items-center justify-center flex-shrink-0">{Icon.car}</span>
             <span className="min-w-0">
               <span className="block text-[11px] font-bold text-ink-3 uppercase tracking-wide">Parts for</span>
-              <span className="flex items-center gap-1 text-[14px] font-extrabold text-ink truncate max-w-[160px] md:max-w-[200px] group-hover:text-[color:var(--accent)]">
+              <span className="flex items-center gap-1 text-[14px] font-extrabold text-ink truncate max-w-[170px] md:max-w-[230px] group-hover:text-[color:var(--accent)]">
                 {vehicle ? vehicleShortLabel(vehicle) : "Select vehicle"}
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-[color:var(--accent)] flex-shrink-0"><path d="m6 9 6 6 6-6" /></svg>
               </span>
             </span>
           </button>
 
-          <div className="hidden md:flex flex-1"><Suspense><SearchBox /></Suspense></div>
+          <div className="hidden md:flex flex-1 min-w-0"><Suspense><SearchBox /></Suspense></div>
 
-          <nav className="hidden xl:flex items-center gap-0.5">
+          {/* Wide screens: nav inline. Narrower desktops get the second row below. */}
+          <nav className="hidden min-[1440px]:flex items-center gap-0.5" aria-label="Main">
             {links.map((l) => (
               <Link key={l.href} href={l.href} className={clsx("px-2.5 h-10 inline-flex items-center rounded-[10px] text-[14px] font-bold whitespace-nowrap transition-colors", path?.startsWith(l.href) ? "text-[color:var(--accent)]" : "text-ink-2 hover:text-ink")}>
                 {l.label}
@@ -136,6 +137,13 @@ export function AppHeader() {
           </div>
         </div>
         <div className="md:hidden px-4 pb-3"><Suspense><SearchBox compact /></Suspense></div>
+        <nav className="hidden md:flex min-[1440px]:hidden max-w-[1200px] mx-auto px-4 md:px-6 h-11 items-center gap-1 overflow-x-auto scroll-hidden" aria-label="Main">
+          {links.map((l) => (
+            <Link key={l.href} href={l.href} className={clsx("relative px-3 h-11 inline-flex items-center text-[14px] font-bold whitespace-nowrap", path?.startsWith(l.href) ? "text-[color:var(--accent)] after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:rounded-full after:bg-[color:var(--accent)]" : "text-ink-2 hover:text-ink")}>
+              {l.label}
+            </Link>
+          ))}
+        </nav>
       </header>
       <VehiclePicker open={picker} onClose={() => setPicker(false)} />
     </>

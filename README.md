@@ -2,6 +2,10 @@
 
 End-to-end auto-parts marketplace for India. Three surfaces sharing one backend.
 
+> **v2 prototype (web):** marketplace + quotes + Garage OS + Vehicle Passport + verifiable invoices,
+> on the new "Nut Lens" brand. Walkthrough with screenshots: [`docs/prototype/README.md`](docs/prototype/README.md) ·
+> Strategy: [`docs/strategy/`](docs/strategy/) · Brand: [`brand/GUIDELINES.md`](brand/GUIDELINES.md)
+
 ```
 findmyspare-backend/   # Bun + Elysia + Drizzle ORM + Nhost Postgres + Socket.IO
 findmyspare/           # Next.js 16 web frontend

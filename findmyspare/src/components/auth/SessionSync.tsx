@@ -11,6 +11,11 @@ import { authApi } from "@/lib/api";
 // dies, showing a "ghost" logged-in state that collapses on the first API call.
 export function SessionSync() {
   const setUser = useAuthStore((s) => s.setUser);
+  const setHydrated = useAuthStore((s) => s.setHydrated);
+
+  useEffect(() => {
+    setHydrated();
+  }, [setHydrated]);
 
   useEffect(() => {
     if (!getAccessToken()) return; // logged out — nothing to validate

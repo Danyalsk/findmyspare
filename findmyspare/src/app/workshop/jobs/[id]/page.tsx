@@ -54,6 +54,12 @@ export default function JobCardPage() {
     garageApi.updateJob(job.id, { inspection: next }).catch(() => load());
   }
 
+  // Optimistic: tick immediately, roll back via reload if the save fails.
+  function toggleFitted(itemId: string, fitted: boolean) {
+    setD((cur) => cur && { ...cur, items: cur.items.map((x) => (x.id === itemId ? { ...x, fitted } : x)) });
+    garageApi.updateItem(job.id, itemId, { fitted }).catch((e) => { toast.error(getErrorMessage(e, "Couldn't save")); load(); });
+  }
+
   async function addLine() {
     await run("line", () => garageApi.addItem(job.id, {
       kind: line.kind, name: line.name, unitPrice: line.unitPrice, quantity: Number(line.quantity) || 1, gstRate: Number(line.gstRate),
@@ -121,7 +127,7 @@ export default function JobCardPage() {
                               <Link href={`/buyer/requests/${i.inquiryId}`} className="h-8 px-3 inline-flex items-center rounded-[10px] bg-[color:var(--info-wash)] text-[color:var(--info)] text-[12.5px] font-extrabold">{i.quotes ? `${i.quotes.n} quote${i.quotes.n > 1 ? "s" : ""} · best ${inr(i.quotes.best)} →` : "Waiting for quotes…"}</Link>
                             )}
                             <label className="h-8 px-3 inline-flex items-center gap-1.5 rounded-[10px] bg-paper-2 text-[12.5px] font-bold cursor-pointer">
-                              <input type="checkbox" checked={i.fitted} onChange={(e) => run(`f${i.id}`, () => garageApi.updateItem(job.id, i.id, { fitted: e.target.checked }))} className="accent-[color:var(--success)]" /> Fitted
+                              <input type="checkbox" checked={i.fitted} onChange={(e) => toggleFitted(i.id, e.target.checked)} className="accent-[color:var(--success)]" /> Fitted
                             </label>
                           </div>
                         )}

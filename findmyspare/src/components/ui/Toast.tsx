@@ -4,7 +4,7 @@ import { useToastStore, type ToastVariant } from "@/lib/toast";
 import { CloseIcon } from "@/lib/icons";
 
 const variantStyles: Record<ToastVariant, string> = {
-  success: "bg-accent text-white",
+  success: "bg-success text-white",
   error: "bg-danger text-white",
   info: "bg-ink text-paper",
 };

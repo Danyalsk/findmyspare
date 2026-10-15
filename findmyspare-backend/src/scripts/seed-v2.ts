@@ -77,7 +77,10 @@ const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(
 
 async function upsertUser(u: { email: string; name: string; role: "buyer" | "supplier"; businessName?: string; city: string; pincode: string; phone: string; verificationStatus?: "approved" }) {
   const [ex] = await db.select().from(users).where(eq(users.email, u.email)).limit(1);
+  // Sellers/garages read better with some tenure on the demo.
+  const since = new Date(Date.now() - (u.role === "supplier" ? 2 * 365 : 200) * 864e5);
   const values = {
+    createdAt: since,
     name: u.name, role: u.role, businessName: u.businessName ?? null, city: u.city, pincode: u.pincode,
     profileCompleted: true, emailVerified: true, isActive: true,
     verificationStatus: u.verificationStatus ?? ("not_submitted" as const),

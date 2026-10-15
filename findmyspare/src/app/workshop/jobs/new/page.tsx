@@ -36,7 +36,7 @@ export default function NewJobPage() {
       <h1 className="text-[28px] font-extrabold tracking-tight">New job card</h1>
       <p className="text-[14.5px] text-ink-2 mt-1">Check the vehicle in. The owner gets a request to link this service to their Vehicle Passport.</p>
       <div className="card p-5 md:p-6 mt-6 space-y-5">
-        <Field label="Registration number">
+        <Field label="Registration number" group>
           <div className="flex gap-2">
             <input className={`${inputCls} mono uppercase tracking-wider`} value={reg} onChange={(e) => { setReg(e.target.value.toUpperCase()); setRc(null); }} onBlur={() => reg.length >= 6 && !rc && lookup()} placeholder="MH 12 AB 3456" aria-label="Registration number" />
             <button onClick={lookup} className="h-12 px-5 rounded-[12px] bg-ink text-paper font-extrabold">Find</button>
@@ -54,9 +54,9 @@ export default function NewJobPage() {
           <Field label="Customer mobile"><input className={inputCls} inputMode="tel" value={f.customerPhone} onChange={(e) => setF({ ...f, customerPhone: e.target.value })} placeholder="+91" /></Field>
           <Field label="Odometer (km)"><input className={inputCls} inputMode="numeric" value={f.odometerKm} onChange={(e) => setF({ ...f, odometerKm: e.target.value.replace(/\D/g, "") })} /></Field>
         </div>
-        <Field label="Customer complaint">
+        <Field label="Customer complaint" group>
           <div className="flex flex-wrap gap-2 mb-2">{COMPLAINTS.map((c) => <button key={c} className="chip !h-8 !text-[12.5px]" data-on={f.complaint.includes(c)} onClick={() => setF({ ...f, complaint: f.complaint ? (f.complaint.includes(c) ? f.complaint : `${f.complaint}, ${c}`) : c })}>{c}</button>)}</div>
-          <textarea className={`${inputCls} !h-24 py-3`} value={f.complaint} onChange={(e) => setF({ ...f, complaint: e.target.value })} />
+          <textarea className={`${inputCls} !h-24 py-3`} value={f.complaint} onChange={(e) => setF({ ...f, complaint: e.target.value })} aria-label="Complaint details" />
         </Field>
         {err && <div className="rounded-[12px] bg-[color:var(--danger-wash)] text-[color:var(--danger)] text-[13.5px] font-bold p-3">{err}</div>}
         <button disabled={reg.replace(/\s/g, "").length < 6 || busy} onClick={create} className="w-full h-12 rounded-[14px] bg-[color:var(--accent)] text-white font-extrabold disabled:opacity-40">{busy ? "Opening…" : "Open job card"}</button>

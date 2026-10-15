@@ -188,12 +188,17 @@ export function Skel({ className }: { className?: string }) {
   return <div className={clsx("fms-shimmer rounded-[12px]", className)} />;
 }
 
-export const Field = ({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) => (
-  <label className="block">
-    <span className="block text-[12.5px] font-bold text-ink-2 mb-1.5">{label}</span>
-    {children}
-    {hint && <span className="block text-[12px] text-ink-3 mt-1">{hint}</span>}
-  </label>
-);
+/** Form field. `group` renders a <div role="group"> for chip sets / multiple controls
+ *  (a <label> would merge its text into every button's accessible name). */
+export const Field = ({ label, hint, children, group }: { label: string; hint?: string; children: React.ReactNode; group?: boolean }) => {
+  const body = (
+    <>
+      <span className="block text-[12.5px] font-bold text-ink-2 mb-1.5">{label}</span>
+      {children}
+      {hint && <span className="block text-[12px] text-ink-3 mt-1">{hint}</span>}
+    </>
+  );
+  return group ? <div role="group" aria-label={label} className="block">{body}</div> : <label className="block">{body}</label>;
+};
 export const inputCls =
   "w-full h-12 px-4 rounded-[12px] bg-paper-2 border border-transparent text-[15px] font-medium text-ink placeholder:text-ink-4 focus:bg-paper focus:border-[color:var(--accent)] outline-none transition-colors";

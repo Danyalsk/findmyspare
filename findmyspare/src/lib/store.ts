@@ -46,7 +46,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   accessToken: readInitial(K_ACCESS, (v) => v, null),
   refreshToken: readInitial(K_REFRESH, (v) => v, null),
   sessionId: readInitial(K_SID, (v) => v, null),
-  isHydrated: hasWindow(),
+  // Flipped by SessionSync after mount so the first client render matches SSR
+  // (auth gates render null on both, then the real UI).
+  isHydrated: false,
 
   setHydrated: () => set({ isHydrated: true }),
 
