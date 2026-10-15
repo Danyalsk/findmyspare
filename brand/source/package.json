@@ -1,0 +1,12 @@
+{
+  "name": "findmyspare-brand-source",
+  "private": true,
+  "type": "module",
+  "description": "Generates FindMySpare logo SVGs (wordmarks outlined from OFL fonts).",
+  "scripts": { "build": "node generate.mjs" },
+  "devDependencies": {
+    "@fontsource/outfit": "^5.0.0",
+    "@fontsource/plus-jakarta-sans": "^5.0.0",
+    "opentype.js": "^1.3.4"
+  }
+}

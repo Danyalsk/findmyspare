@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "package": "tech-branding-logo",
+  "version": "1.1.0",
+  "installedAt": "2026-10-15T17:19:37.669Z",
+  "cwd": "/home/user/findmyspare",
+  "installs": [
+    {
+      "agent": "claude",
+      "target": ".claude/skills/tech-branding-logo",
+      "createdDirectory": true,
+      "files": [
+        ".claude/skills/tech-branding-logo/SKILL.md",
+        ".claude/skills/tech-branding-logo/references/brand-application.md",
+        ".claude/skills/tech-branding-logo/references/brand-strategy.md",
+        ".claude/skills/tech-branding-logo/references/campaign-direction.md",
+        ".claude/skills/tech-branding-logo/references/deliverable-schemas.md",
+        ".claude/skills/tech-branding-logo/references/domains/fashion-apparel.md",
+        ".claude/skills/tech-branding-logo/references/domains/food-hospitality.md",
+        ".claude/skills/tech-branding-logo/references/domains/real-estate.md",
+        ".claude/skills/tech-branding-logo/references/domains/technology.md",
+        ".claude/skills/tech-branding-logo/references/evaluation.md",
+        ".claude/skills/tech-branding-logo/references/identity-workflow.md",
+        ".claude/skills/tech-branding-logo/references/logo-workflow.md",
+        ".claude/skills/tech-branding-logo/references/naming.md",
+        ".claude/skills/tech-branding-logo/references/overlays/b2b.md",
+        ".claude/skills/tech-branding-logo/references/overlays/packaging.md",
+        ".claude/skills/tech-branding-logo/references/qc.md",
+        ".claude/skills/tech-branding-logo/references/rebrand-audit.md",
+        ".claude/skills/tech-branding-logo/references/research-method.md",
+        ".claude/skills/tech-branding-logo/references/specialist-contract.md"
+      ]
+    }
+  ]
+}

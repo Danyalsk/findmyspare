@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "project": "FindMySpare",
+  "scope": "brand-identity",
+  "mode": "brand-evolution",
+  "domains": ["technology"],
+  "overlays": ["b2b"],
+  "moduleRoles": {
+    "technology": "app icon, favicon, UI header, light/dark, monochrome tests",
+    "b2b": "garage/fleet invoices and verification proof hierarchy; no invented claims"
+  },
+  "stage": "delivered",
+  "completedStages": ["brief", "foundation", "nouns", "concepts", "directions", "bw-refinement", "color-type", "applications", "qc", "package"],
+  "selectedDirection": "d1-nut-lens",
+  "activeWork": null,
+  "updatedAt": "2026-10-15"
+}

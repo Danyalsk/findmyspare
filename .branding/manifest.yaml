@@ -1,0 +1,26 @@
+project: {name: FindMySpare, scope: brand-identity, mode: brand-evolution, date: 2026-10-15}
+routing: {primary_domain: technology, supporting_domains: [], overlays: [b2b], reasons: {b2b: "garages/fleets/suppliers buy and need invoice proof"}}
+foundation:
+  audience: [vehicle owners (2W/4W), mechanics & independent garages, parts sellers, fleets]
+  problem: "wrong-fit, fake, overpriced parts found slowly with no proof of what was fitted"
+  promise: "Sahi part. Pakka record."
+  proof: [GSTIN-verified sellers, multi-seller quotes, confirmed-fit data, QR-verifiable invoices, Vehicle Passport]
+  role: "dependable finder and keeper of proof"
+  personality: [friendly, fast, mechanically credible, honest]
+  tensions: ["credible not greasy", "friendly not toy-like", "fast not careless", "street-smart not cluttered"]
+  anti_positioning: [dark luxury auto, cold enterprise blue, discount bazaar]
+  territories: [The Find, The Part, The Record]
+naming: {status: not_applicable, candidates: [], recommendation: "retain FindMySpare"}
+nouns: {generated: 24, approved: [hex nut, bolt, spanner, socket, location pin, magnifier lens, tick, stamp/seal, card/passport, receipt, number plate, click-into-place, delivery arrow, shelf, spark plug], rejected: [gear, piston, tyre, headlight, QR, crate, mechanic hand, map grid]}
+concepts: "see .branding/outputs/identity/01-nouns-and-concepts.md (50 concepts, 13 shortlisted)"
+directions:
+  - {id: d1-nut-lens, concept_ids: [C01, C49], rationale: "the part is the search", logo_assets: [brand/exploration/d1-nut-lens/], selected: true}
+  - {id: d2-part-pin, concept_ids: [C02, C43], rationale: "the part near you", logo_assets: [brand/exploration/d2-part-pin/], selected: false}
+  - {id: d3-friendly-f, concept_ids: [C50, C15], rationale: "type-led friendliness", logo_assets: [brand/exploration/d3-friendly-f/], selected: false}
+qc: {average: 4.43, blockers: [], open_risks: [trademark clearance, 16px hexagon softness, physical print untested], decision: pass}
+delivery:
+  files: [brand/logo/*.svg, brand/tokens/tokens.json, brand/applications/*.svg, brand/GUIDELINES.md, brand/source/*.mjs, findmyspare/src/app/globals.css]
+  usage_rules: brand/GUIDELINES.md
+  touchpoints: [web app, favicon, app icon, WhatsApp DP, GST invoice, Vehicle Passport card, Verified Garage sticker]
+  migration: "brand/GUIDELINES.md#migration-from-v1"
+  open_decisions: [user sign-off on D1, trademark search, mobile migration timing]
