@@ -150,6 +150,7 @@ export interface AdminBiz { id: string; name: string | null; businessName: strin
 export const adminNetworkApi = {
   overview: () => fetchApi<NetworkOverview>("/admin/network/overview"),
   businesses: (p: { role?: string; industry?: string; q?: string } = {}) => fetchApi<{ businesses: AdminBiz[] }>(`/admin/network/businesses${qs(p)}`),
+  taxonomy: () => fetchApi<{ industries: Omit<Industry, "parts" | "sellers">[] }>("/admin/network/taxonomy"),
   addIndustry: (p: { name: string; tagline?: string; icon?: string; identifierLabel?: string }) => fetchApi<{ industry: Industry }>("/admin/network/industries", json(p)),
   updateIndustry: (id: string, p: Partial<{ name: string; tagline: string; icon: string; identifierLabel: string; sortOrder: number; active: boolean }>) => fetchApi(`/admin/network/industries/${id}`, json(p, "PATCH")),
   addMachineType: (industryId: string, p: { name: string; brands?: string[] }) => fetchApi(`/admin/network/industries/${industryId}/machine-types`, json(p)),

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { MachineId } from "@/components/service/MachineId";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { useAuthStore } from "@/lib/store";
@@ -58,7 +59,7 @@ export function VehiclePicker({ open, onClose }: { open: boolean; onClose: () =>
                   onClick={() => { select({ make: v.makeName, model: v.modelName, variant: v.variantName, year: v.year, regNoDisplay: v.regNoDisplay, vehicleId: v.id }); done(); }}
                   className={clsx("text-left p-3.5 rounded-[14px] border-2 transition-colors", on ? "border-[color:var(--accent)] bg-[color:var(--accent-wash)]" : "border-line hover:border-line-2")}
                 >
-                  <span className="reg-plate text-[12px]">{v.regNoDisplay}</span>
+                  <MachineId display={v.regNoDisplay} regNo={v.regNo} />
                   <div className="mt-2 text-[14.5px] font-extrabold">{v.nickname || `${v.makeName} ${v.modelName}`}</div>
                   <div className="text-[12.5px] text-ink-3 font-semibold">{v.label}</div>
                 </button>

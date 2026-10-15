@@ -27,6 +27,10 @@ export function useBiz() {
   return c;
 }
 
+// Set while signing out so the gate doesn't bounce to /login before "/" loads.
+let leaving = false;
+export function markSigningOut() { leaving = true; }
+
 type NavItem = { href: string; label: string; icon: React.ComponentType<{ size?: number; className?: string }>; badge?: number; match?: (p: string) => boolean };
 
 function isActive(item: NavItem, path: string) {
@@ -47,7 +51,8 @@ export function BizShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isHydrated) return;
-    if (!user) { router.replace(`/login?next=${encodeURIComponent(pathname)}`); return; }
+    if (!user) { if (!leaving) router.replace(`/login?next=${encodeURIComponent(pathname)}`); return; }
+    leaving = false;
     if (!user.profileCompleted) { router.replace("/complete-profile"); return; }
     if (role === "admin" || role === "super_admin") { router.replace("/admin"); return; }
     if (role === "supplier" && user.verificationStatus !== "approved") router.replace(getPostLoginPath(user));

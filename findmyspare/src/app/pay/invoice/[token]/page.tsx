@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { MachineId } from "@/components/service/MachineId";
 import { useParams } from "next/navigation";
 import { publicApi, inr, type Invoice, type PayMethod } from "@/lib/api/v2";
 import { PublicFrame } from "@/components/shop/PublicFrame";
@@ -48,7 +49,7 @@ export default function PayInvoicePage() {
           <div className="card p-5">
             <div className="text-[13px] font-bold text-ink-3">Invoice {inv.number}</div>
             <div className="text-[20px] font-extrabold mt-0.5">{inv.seller.name}</div>
-            <div className="mt-2 flex items-center gap-2"><span className="reg-plate text-[12px]">{inv.vehicle.regNo}</span><span className="text-[13px] font-semibold text-ink-3">{inv.vehicle.label}</span></div>
+            <div className="mt-2 flex items-center gap-2"><MachineId display={inv.vehicle.regNo} /><span className="text-[13px] font-semibold text-ink-3">{inv.vehicle.label}</span></div>
             <ul className="mt-4 divide-y divide-line text-[13.5px]">{inv.lines.map((l, i) => <li key={i} className="flex justify-between py-2"><span>{l.name}</span><b>{inr(l.total, { decimals: true })}</b></li>)}</ul>
             <div className="flex justify-between border-t border-dashed border-line-2 pt-3 text-[16px]"><span className="font-extrabold">Total</span><span className="price">{inr(inv.total, { decimals: true })}</span></div>
           </div>

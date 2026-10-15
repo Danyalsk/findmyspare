@@ -130,15 +130,11 @@ export default function TaxonomyStudioPage() {
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // The public taxonomy only returns active industries; keep ones we hid this
-  // session in the list (marked inactive) so they can be switched back on.
+  // Admin tree includes inactive industries; counts come from the public tree.
   const reload = useCallback(async () => {
-    const t = await taxonomyApi.refresh();
-    setList((prev) => {
-      const live = new Set(t.industries.map((i) => i.id));
-      const hidden = (prev ?? []).filter((p) => !live.has(p.id)).map((p) => ({ ...p, active: false }));
-      return [...t.industries, ...hidden];
-    });
+    const [all, pub] = await Promise.all([adminNetworkApi.taxonomy(), taxonomyApi.refresh()]);
+    const counts = new Map(pub.industries.map((i) => [i.id, i]));
+    setList(all.industries.map((i) => ({ ...i, parts: counts.get(i.id)?.parts ?? 0, sellers: counts.get(i.id)?.sellers ?? 0 })));
   }, []);
   useEffect(() => { reload().catch((e) => { toast.error(getErrorMessage(e, "Couldn't load taxonomy")); setList([]); }); }, [reload]);
 

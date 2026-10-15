@@ -6,9 +6,9 @@
 // counter bill on credit, Fix request → technician accepts → job card,
 // machines without plates, admin network overview, public storefront.
 import { beforeAll, describe, expect, test } from "bun:test";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "../src/db";
-import { products, users } from "../src/db/schema";
+import { products, searchEvents, users } from "../src/db/schema";
 
 const BASE = process.env.API_URL || "http://localhost:8000";
 const ORIGIN = "http://localhost:3000";
@@ -72,6 +72,7 @@ describe("taxonomy + search across industries", () => {
     await Bun.sleep(200);
     const gaps = await admin("GET", "/admin/network/overview");
     expect(gaps.data.searchGaps.some((g: any) => g.term.startsWith("hovercraft-skirt"))).toBe(true);
+    await db.delete(searchEvents).where(sql`${searchEvents.query} LIKE 'hovercraft-skirt-%'`);
   });
 });
 

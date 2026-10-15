@@ -168,11 +168,13 @@ export const fixRoutes = new Elysia({ prefix: "/fix" })
         .returning();
       if (!r) { set.status = 409; return { error: "Someone else took this job, or it was cancelled" }; }
       const [customer] = await db.select({ name: users.name, phone: users.phone }).from(users).where(eq(users.id, r.customerId)).limit(1);
+      const [indRow] = await db.select({ name: industries.name }).from(industries).where(eq(industries.slug, r.industrySlug)).limit(1);
+      const industryName = indRow?.name ?? "Machine";
       let [machine] = r.vehicleId ? await db.select().from(vehicles).where(eq(vehicles.id, r.vehicleId)).limit(1) : [];
       if (!machine) {
         [machine] = await db.insert(vehicles).values({
           ownerId: r.customerId, industrySlug: r.industrySlug, machineType: r.machineType,
-          makeName: r.brand ?? "Unknown", modelName: r.model ?? r.machineType ?? "Machine",
+          makeName: r.brand ?? industryName, modelName: r.model ?? r.machineType ?? "Machine",
         }).returning();
       }
       // The customer asked for this service, so consent to write the record is implied.
@@ -193,6 +195,11 @@ export const fixRoutes = new Elysia({ prefix: "/fix" })
   );
 
 // ─── Admin: the whole network on one screen + taxonomy studio ───
+const INDUSTRY_ICONS = ["car", "pump", "motor", "appliance", "power", "tractor", "gear", "excavator", "phone", "boat"];
+const TILE_PALETTE: [string, string][] = [
+  ["#FFF1EB", "#A32D0C"], ["#EAF0FD", "#2457C5"], ["#FFF6E0", "#9A6700"], ["#E6F6FA", "#0B6E85"],
+  ["#E7F5EF", "#0B7A53"], ["#F1ECFB", "#5B3CC4"], ["#EEF0F3", "#3E434E"], ["#FFF8D6", "#8A6100"],
+];
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
 
 export const adminNetworkRoutes = new Elysia({ prefix: "/admin/network" })
@@ -253,13 +260,31 @@ export const adminNetworkRoutes = new Elysia({ prefix: "/admin/network" })
     { query: t.Object({ role: t.Optional(t.String()), industry: t.Optional(t.String()), q: t.Optional(t.String()) }), detail: { tags: ["Admin"] } },
   )
 
+  // Taxonomy studio sees inactive industries too (the public tree hides them).
+  .get(
+    "/taxonomy",
+    async () => {
+      const [inds, types, cats] = await Promise.all([
+        db.select().from(industries).orderBy(asc(industries.sortOrder)),
+        db.select().from(machineTypes).orderBy(asc(machineTypes.sortOrder)),
+        db.select().from(partCategories).orderBy(asc(partCategories.sortOrder)),
+      ]);
+      return { industries: inds.map((i) => ({ ...i, machineTypes: types.filter((m) => m.industryId === i.id), categories: cats.filter((c) => c.industryId === i.id) })) };
+    },
+    { detail: { tags: ["Admin"] } },
+  )
+
   // Taxonomy studio: adding an industry is data, not a deploy.
   .post(
     "/industries",
     async ({ body, set }) => {
       const slug = slugify(body.slug ?? body.name);
       if (!slug) { set.status = 400; return { error: "Invalid name" }; }
-      const [i] = await db.insert(industries).values({ ...body, slug }).onConflictDoNothing().returning();
+      // Rotate through the brand's tile palette so new industries don't all look alike.
+      const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(industries);
+      const [tint, ink] = TILE_PALETTE[n % TILE_PALETTE.length]!;
+      const icon = body.icon && INDUSTRY_ICONS.includes(body.icon) ? body.icon : "gear";
+      const [i] = await db.insert(industries).values({ ...body, icon, tint, ink, slug }).onConflictDoNothing().returning();
       if (!i) { set.status = 409; return { error: "An industry with that slug exists" }; }
       set.status = 201;
       return { industry: i };
@@ -277,6 +302,7 @@ export const adminNetworkRoutes = new Elysia({ prefix: "/admin/network" })
   .patch(
     "/industries/:id",
     async ({ params, body, set }) => {
+      if (body.icon && !INDUSTRY_ICONS.includes(body.icon)) { set.status = 400; return { error: "Unknown icon" }; }
       const [i] = await db.update(industries).set(body).where(eq(industries.id, params.id)).returning();
       if (!i) { set.status = 404; return { error: "Not found" }; }
       return { industry: i };

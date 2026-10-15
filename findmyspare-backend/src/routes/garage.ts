@@ -176,6 +176,9 @@ export const garageRoutes = new Elysia({ prefix: "/garage" })
         .select({
           job: jobCards,
           regNo: vehicles.regNo,
+          serialNo: vehicles.serialNo,
+          nickname: vehicles.nickname,
+          industrySlug: vehicles.industrySlug,
           makeName: vehicles.makeName,
           modelName: vehicles.modelName,
           variantName: vehicles.variantName,
@@ -529,8 +532,8 @@ export const garageRoutes = new Elysia({ prefix: "/garage" })
   .get(
     "/customers",
     async ({ garage }) => {
-      const rows = await db.execute<{ vehicle_id: string; reg_no: string; make_name: string; model_name: string; customer_name: string | null; customer_phone: string | null; visits: number; last_visit: string; spent: string }>(sql`
-        SELECT v.id AS vehicle_id, v.reg_no, v.make_name, v.model_name,
+      const rows = await db.execute<{ vehicle_id: string; reg_no: string | null; serial_no: string | null; nickname: string | null; industry_slug: string; make_name: string; model_name: string; customer_name: string | null; customer_phone: string | null; visits: number; last_visit: string; spent: string }>(sql`
+        SELECT v.id AS vehicle_id, v.reg_no, v.serial_no, v.nickname, v.industry_slug, v.make_name, v.model_name,
                (array_agg(j.customer_name ORDER BY j.created_at DESC))[1] AS customer_name,
                (array_agg(j.customer_phone ORDER BY j.created_at DESC))[1] AS customer_phone,
                count(j.id)::int AS visits, max(j.created_at) AS last_visit,
@@ -538,7 +541,7 @@ export const garageRoutes = new Elysia({ prefix: "/garage" })
         FROM job_cards j JOIN vehicles v ON v.id = j.vehicle_id
         WHERE j.garage_id = ${garage!.id}
         GROUP BY v.id ORDER BY last_visit DESC LIMIT 200`);
-      return { customers: [...rows].map((r) => ({ ...r, reg_no_display: formatRegNo(r.reg_no) })) };
+      return { customers: [...rows].map((r) => ({ ...r, reg_no_display: idDisplay({ regNo: r.reg_no, serialNo: r.serial_no, nickname: r.nickname }) })) };
     },
     { detail: { tags: ["Garage"] } }
   );
