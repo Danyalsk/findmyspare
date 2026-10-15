@@ -7,6 +7,7 @@ import {
   ElectricalIcon, FilterIcon, TyreIcon, AcIcon, WiperIcon, InteriorIcon,
 } from "@/lib/category-icons";
 import { LogoMark } from "@/components/brand/Logo";
+import { NetIcon, INDUSTRY_STYLE, iconForCategory } from "@/components/net/NetIcon";
 import { PART_TYPE_LABEL, type PartType } from "@/lib/api/v2";
 
 /* Small building blocks for the v2 shop (Swiggy-clean). */
@@ -28,13 +29,16 @@ export const CATEGORIES: { key: string; label: string; Icon: React.ComponentType
 export const categoryStyle = (c?: string | null) => CATEGORIES.find((x) => x.key === c) ?? CATEGORIES[2]!;
 
 /** Product image placeholder: tinted tile with the category glyph + brand. */
-export function PartThumb({ category, brand, size = "md", className }: { category?: string | null; brand?: string | null; size?: "sm" | "md" | "lg"; className?: string }) {
-  const c = categoryStyle(category);
+export function PartThumb({ category, brand, industry, size = "md", className }: { category?: string | null; brand?: string | null; industry?: string | null; size?: "sm" | "md" | "lg"; className?: string }) {
   const px = size === "sm" ? 28 : size === "lg" ? 72 : 44;
+  // Vehicle parts keep their category look; every other industry uses its own tint + a matching glyph.
+  const other = industry && industry !== "automotive" ? INDUSTRY_STYLE[industry] : null;
+  const c = categoryStyle(category);
+  const tint = other?.tint ?? c.tint, ink = other?.ink ?? c.ink;
   return (
-    <div className={clsx("relative flex items-center justify-center overflow-hidden", className)} style={{ background: c.tint, color: c.ink }}>
+    <div className={clsx("relative flex items-center justify-center overflow-hidden", className)} style={{ background: tint, color: ink }}>
       <LogoMark size={px * 2.6} color="rgba(255,255,255,.55)" className="absolute -right-[18%] -bottom-[22%]" />
-      <c.Icon size={px} className="relative" />
+      {other ? <NetIcon name={iconForCategory(category)} size={px} className="relative" /> : <c.Icon size={px} className="relative" />}
       {brand && size !== "sm" && (
         <span className="absolute left-2 top-2 text-[10.5px] font-extrabold tracking-tight px-2 h-5 inline-flex items-center rounded-full bg-white/85 text-ink">
           {brand}

@@ -9,7 +9,10 @@ import { ProductTile } from "@/components/shop/ProductTile";
 import { CATEGORIES, EmptyState, Skel } from "@/components/shop/ui";
 import { VehiclePicker } from "@/components/shop/VehiclePicker";
 import { useVehicleStore, vehicleShortLabel } from "@/lib/vehicle-store";
-import { shopApi, PART_TYPE_LABEL, type PartType, type ShopProduct } from "@/lib/api/v2";
+import { PART_TYPE_LABEL, type PartType } from "@/lib/api/v2";
+import { marketApi, type NetProduct } from "@/lib/api/v3";
+import { useTaxonomy } from "@/components/net/useTaxonomy";
+import { NetIcon, INDUSTRY_STYLE } from "@/components/net/NetIcon";
 
 const SORTS = [
   { v: "popular", l: "Relevance" },
@@ -27,21 +30,26 @@ function SearchInner() {
   const category = sp.get("category") ?? "";
   const partType = sp.get("partType") ?? "";
   const sort = sp.get("sort") ?? "popular";
-  // A make/model in the URL wins (shareable links); else the selected vehicle.
-  const make = sp.get("make") ?? vehicle?.make ?? "";
-  const model = sp.get("model") ?? (sp.get("make") ? "" : vehicle?.model ?? "");
+  const industry = sp.get("industry") ?? "";
+  const industries = useTaxonomy();
+  const ind = industries?.find((i) => i.slug === industry);
+  // A make/model in the URL wins (shareable links); the selected vehicle only
+  // narrows vehicle-part searches (a pump search must not be filtered by a car).
+  const vehicleApplies = industry === "automotive";
+  const make = sp.get("make") ?? (vehicleApplies ? vehicle?.make ?? "" : "");
+  const model = sp.get("model") ?? (sp.get("make") ? "" : vehicleApplies ? vehicle?.model ?? "" : "");
 
   const [picker, setPicker] = useState(false);
-  const key = JSON.stringify([q, category, partType, make, model, sort]);
-  const [res, setRes] = useState<{ key: string; items: ShopProduct[]; total: number } | null>(null);
+  const key = JSON.stringify([q, category, partType, make, model, sort, industry]);
+  const [res, setRes] = useState<{ key: string; items: NetProduct[]; total: number } | null>(null);
   const loading = res?.key !== key;
   const items = res?.items ?? [];
   const total = res?.total ?? 0;
 
   useEffect(() => {
-    const [q, category, partType, make, model, sort] = JSON.parse(key) as string[];
-    shopApi
-      .list({ search: q || undefined, category: category || undefined, partType: partType || undefined, make: make || undefined, model: model || undefined, sort, limit: 48 })
+    const [q, category, partType, make, model, sort, industry] = JSON.parse(key) as string[];
+    marketApi
+      .list({ search: q || undefined, category: category || undefined, partType: partType || undefined, make: make || undefined, model: model || undefined, industry: industry || undefined, sort, limit: 48 })
       .then((r) => setRes({ key, items: r.products, total: r.pagination.total }))
       .catch(() => setRes({ key, items: [], total: 0 }));
   }, [key]);
@@ -49,6 +57,7 @@ function SearchInner() {
   const setParam = (k: string, v: string | null) => {
     const n = new URLSearchParams(sp.toString());
     if (v) n.set(k, v); else n.delete(k);
+    if (k === "industry") { n.delete("category"); n.delete("make"); n.delete("model"); }
     router.push(`/search?${n.toString()}`);
   };
   const clearVehicle = () => {
@@ -58,7 +67,10 @@ function SearchInner() {
     router.push(`/search?${n.toString()}`);
   };
 
-  const heading = q ? `Results for “${q}”` : category ? (CATEGORIES.find((c) => c.key === category)?.label ?? category) : partType ? PART_TYPE_LABEL[partType as PartType] : "All parts";
+  const heading = q ? `Results for “${q}”` : category ? (CATEGORIES.find((c) => c.key === category)?.label ?? category) : partType ? PART_TYPE_LABEL[partType as PartType] : ind ? ind.name : "All parts";
+  const catChips = ind && industry !== "automotive"
+    ? ind.categories.map((c) => ({ key: c.name, label: c.name, icon: <NetIcon name={c.icon} size={15} /> }))
+    : CATEGORIES.map((c) => ({ key: c.key, label: c.label, icon: <c.Icon size={15} /> }));
 
   return (
     <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-6 md:py-8">
@@ -68,7 +80,7 @@ function SearchInner() {
           <p className="text-[14px] text-ink-3 font-semibold mt-1">{loading ? "Searching…" : `${total} part${total === 1 ? "" : "s"} from verified sellers`}</p>
         </div>
         <div className="flex items-center gap-2">
-          {make ? (
+          {(industry && industry !== "automotive") ? null : make ? (
             <span className="inline-flex items-center gap-2 h-10 pl-4 pr-1.5 rounded-full bg-[color:var(--success-wash)] text-[color:var(--success)] text-[13.5px] font-extrabold">
               Fits {model ? `${make} ${model}` : make}{vehicle && !sp.get("make") && vehicle.year ? ` ${vehicle.year}` : ""}
               <button onClick={clearVehicle} aria-label="Clear vehicle filter" className="w-7 h-7 rounded-full bg-white/70 flex items-center justify-center">×</button>
@@ -79,8 +91,18 @@ function SearchInner() {
         </div>
       </div>
 
+      {/* Industry */}
+      <div className="mt-5 flex gap-2 overflow-x-auto scroll-hidden pb-1 -mx-4 px-4 md:mx-0 md:px-0" role="group" aria-label="Industry">
+        <button className="chip" data-on={!industry} onClick={() => setParam("industry", null)}>All industries</button>
+        {Object.entries(INDUSTRY_STYLE).map(([slug, st]) => (
+          <button key={slug} className="chip" data-on={industry === slug} onClick={() => setParam("industry", industry === slug ? null : slug)}>
+            <span style={{ color: st.ink }}><NetIcon name={st.icon} size={15} /></span> {st.short}
+          </button>
+        ))}
+      </div>
+
       {/* Filters */}
-      <div className="mt-5 flex gap-2 overflow-x-auto scroll-hidden pb-1 -mx-4 px-4 md:mx-0 md:px-0">
+      <div className="mt-2.5 flex gap-2 overflow-x-auto scroll-hidden pb-1 -mx-4 px-4 md:mx-0 md:px-0">
         <select value={sort} onChange={(e) => setParam("sort", e.target.value)} className="chip pr-8 appearance-none cursor-pointer" aria-label="Sort">
           {SORTS.map((s) => <option key={s.v} value={s.v}>{s.l}</option>)}
         </select>
@@ -88,9 +110,9 @@ function SearchInner() {
           <button key={t} className="chip" data-on={partType === t} onClick={() => setParam("partType", partType === t ? null : t)}>{PART_TYPE_LABEL[t]}</button>
         ))}
         <span className="w-px bg-line mx-1 flex-shrink-0" />
-        {CATEGORIES.map((c) => (
+        {(industry ? catChips : []).map((c) => (
           <button key={c.key} className="chip" data-on={category === c.key} onClick={() => setParam("category", category === c.key ? null : c.key)}>
-            <c.Icon size={15} /> {c.label}
+            {c.icon} {c.label}
           </button>
         ))}
       </div>

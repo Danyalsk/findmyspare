@@ -50,6 +50,7 @@ export function ProductTile({ p, layout = "grid" }: { p: ShopProduct; layout?: "
   const vehicle = useVehicleStore((s) => s.selected);
   const fits = fitsVehicle(p.compatibleVehicles, vehicle, p.fitConfirmations);
   const off = discountPct(p.price, p.mrp);
+  const isVehiclePart = !p.industrySlug || p.industrySlug === "automotive";
 
   if (layout === "row") {
     return (
@@ -67,10 +68,10 @@ export function ProductTile({ p, layout = "grid" }: { p: ShopProduct; layout?: "
             <RatingPill rating={p.rating} count={p.reviewCount} />
             <span className="text-[12.5px] text-ink-3 font-semibold">{p.supplierBusinessName}{p.supplierCity ? ` · ${p.supplierCity}` : ""}</span>
           </div>
-          {vehicle && <FitBadge fits={fits} label={vehicleShortLabel(vehicle)} className="mt-2" />}
+          {vehicle && isVehiclePart && <FitBadge fits={fits} label={vehicleShortLabel(vehicle)} className="mt-2" />}
         </div>
         <div className="relative w-[132px] flex-shrink-0">
-          <PartThumb category={p.category} brand={null} className="w-[132px] h-[120px] rounded-[16px]" />
+          <PartThumb category={p.category} industry={p.industrySlug} brand={null} className="w-[132px] h-[120px] rounded-[16px]" />
           <div className="absolute -bottom-3 left-1/2 -translate-x-1/2"><AddButton p={p} /></div>
         </div>
       </Link>
@@ -80,7 +81,7 @@ export function ProductTile({ p, layout = "grid" }: { p: ShopProduct; layout?: "
   return (
     <Link href={`/product/${p.id}`} className="group block">
       <div className="relative">
-        <PartThumb category={p.category} brand={p.brand} className="aspect-[4/3] rounded-[18px]" />
+        <PartThumb category={p.category} industry={p.industrySlug} brand={p.brand} className="aspect-[4/3] rounded-[18px]" />
         {off > 0 && (
           <span className="absolute left-0 bottom-3 pl-2.5 pr-3 h-6 inline-flex items-center rounded-r-full bg-[color:var(--success)] text-white text-[11.5px] font-extrabold">
             {off}% OFF
@@ -102,7 +103,8 @@ export function ProductTile({ p, layout = "grid" }: { p: ShopProduct; layout?: "
         <div className="text-[12.5px] text-ink-3 font-semibold truncate mt-0.5">
           {p.supplierBusinessName}{p.supplierCity ? ` · ${p.supplierCity}` : ""}
         </div>
-        {vehicle && <FitBadge fits={fits} label={vehicleShortLabel(vehicle)} className="mt-1.5" />}
+        {vehicle && isVehiclePart && <FitBadge fits={fits} label={vehicleShortLabel(vehicle)} className="mt-1.5" />}
+        {!!p.moq && p.moq > 1 && <div className="text-[12px] font-bold text-[color:var(--info)] mt-1">Min. order {p.moq}</div>}
       </div>
     </Link>
   );

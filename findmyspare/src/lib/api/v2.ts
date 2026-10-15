@@ -34,6 +34,10 @@ export interface ShopProduct {
   rating: string | null;
   reviewCount: number;
   fitConfirmations: number;
+  // v3: every product belongs to an industry (and optionally a machine type).
+  industrySlug?: string;
+  machineType?: string | null;
+  moq?: number;
 }
 
 export interface ProductDetailV2 {
@@ -89,7 +93,11 @@ export const checkoutApi = {
 // ─── Vehicles + Passport ─────────────────────────────
 export interface Vehicle {
   id: string;
-  regNo: string;
+  // null for machines without a number plate (pump, AC, genset…): identified by serialNo.
+  regNo: string | null;
+  industrySlug?: string;
+  machineType?: string | null;
+  serialNo?: string | null;
   regNoDisplay: string;
   label: string;
   makeName: string;

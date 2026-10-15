@@ -1,8 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { clsx } from "clsx";
+import { IconTile, INDUSTRY_STYLE } from "@/components/net/NetIcon";
+import { useTaxonomy } from "@/components/net/useTaxonomy";
+import { machineApi } from "@/lib/api/v3";
 import { vehiclesApi, type RcResult, type Vehicle } from "@/lib/api/v2";
 import { useVehicleStore } from "@/lib/vehicle-store";
 import { BrandLogo } from "@/lib/brand-logos";
@@ -11,11 +15,15 @@ import { LogoMark } from "@/components/brand/Logo";
 import { toast } from "@/lib/toast";
 import { getErrorMessage } from "@/lib/errors";
 
-export default function VehiclesPage() {
+function VehiclesInner() {
   const router = useRouter();
+  const sp = useSearchParams();
   const select = useVehicleStore((s) => s.select);
+  const industries = useTaxonomy();
   const [list, setList] = useState<Vehicle[] | null>(null);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(sp.get("add") === "1");
+  const [mode, setMode] = useState<"plate" | "machine">("plate");
+  const [m, setM] = useState({ industrySlug: "", machineType: "", makeName: "", modelName: "", serialNo: "", nickname: "" });
   const [reg, setReg] = useState("");
   const [rc, setRc] = useState<RcResult | null>(null);
   const [nickname, setNickname] = useState("");
@@ -40,6 +48,18 @@ export default function VehiclesPage() {
       router.push(`/vehicles/${r.vehicle.id}`);
     } catch (e) { setErr(getErrorMessage(e, "Couldn't add vehicle")); setBusy(false); }
   }
+  async function addMachine() {
+    setBusy(true); setErr("");
+    try {
+      const r = await machineApi.add({ ...m, machineType: m.machineType || undefined, serialNo: m.serialNo || undefined, nickname: m.nickname || undefined });
+      toast.success("Machine added. Its service record starts now.");
+      setOpen(false); setM({ industrySlug: "", machineType: "", makeName: "", modelName: "", serialNo: "", nickname: "" });
+      router.push(`/vehicles/${r.vehicle.id}`);
+    } catch (e) { setErr(getErrorMessage(e, "Couldn't add machine")); setBusy(false); }
+  }
+  const mInd = industries?.find((i) => i.slug === m.industrySlug);
+  const mType = mInd?.machineTypes.find((t) => t.slug === m.machineType);
+
   async function decide(accessId: string, grant: boolean) {
     try { await vehiclesApi.decideAccess(accessId, grant); toast.success(grant ? "Garage allowed to update your Passport" : "Request declined"); load(); }
     catch (e) { toast.error(getErrorMessage(e, "Something went wrong")); }
@@ -51,10 +71,10 @@ export default function VehiclesPage() {
     <div className="max-w-[1000px] mx-auto px-4 md:px-6 py-6 md:py-10">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-[28px] md:text-[32px] font-extrabold tracking-tight">My vehicles</h1>
-          <p className="text-[15px] text-ink-2 mt-1">Each vehicle has a Passport: every service, part and warranty, verified by the garage that did the work.</p>
+          <h1 className="text-[28px] md:text-[32px] font-extrabold tracking-tight">My machines</h1>
+          <p className="text-[15px] text-ink-2 mt-1">Car, bike, pump, AC, genset or tractor: each gets a Passport with every service, part and warranty, verified by whoever did the work.</p>
         </div>
-        <button onClick={() => setOpen(true)} className="h-12 px-5 rounded-[14px] bg-[color:var(--accent)] text-white font-extrabold fms-press">+ Add vehicle</button>
+        <button onClick={() => setOpen(true)} className="h-12 px-5 rounded-[14px] bg-[color:var(--accent)] text-white font-extrabold fms-press">+ Add</button>
       </div>
 
       {pending.map((p) => (
@@ -72,15 +92,15 @@ export default function VehiclesPage() {
 
       <div className="mt-6 grid md:grid-cols-2 gap-4">
         {!list ? [0, 1].map((i) => <Skel key={i} className="h-48" />)
-          : !list.length ? <div className="md:col-span-2"><EmptyState title="Add your first vehicle" body="Enter your number plate. We fetch the model so you only see parts that fit, and start its service record." action={<button onClick={() => setOpen(true)} className="h-12 px-6 rounded-[14px] bg-[color:var(--accent)] text-white font-extrabold">Add by number plate</button>} /></div>
+          : !list.length ? <div className="md:col-span-2"><EmptyState title="Add your first vehicle or machine" body="Vehicles by number plate; pumps, ACs, gensets and anything else by brand and serial. You'll see parts that fit and keep its service record." action={<button onClick={() => setOpen(true)} className="h-12 px-6 rounded-[14px] bg-[color:var(--accent)] text-white font-extrabold">Add one</button>} /></div>
           : list.map((v) => (
             <div key={v.id} className="card overflow-hidden">
               <Link href={`/vehicles/${v.id}`} className="block p-5 relative">
                 <LogoMark size={140} color="var(--paper-2)" className="absolute -right-8 -top-8" />
                 <div className="relative flex items-start gap-4">
-                  <BrandLogo name={v.makeName} size={52} />
+                  {v.regNo ? <BrandLogo name={v.makeName} size={52} /> : (() => { const st = INDUSTRY_STYLE[v.industrySlug ?? "industrial"] ?? INDUSTRY_STYLE.industrial!; return <IconTile name={st.icon} tint={st.tint} ink={st.ink} size={52} />; })()}
                   <div className="min-w-0">
-                    <span className="reg-plate text-[13px]">{v.regNoDisplay}</span>
+                    {v.regNo ? <span className="reg-plate text-[13px]">{v.regNoDisplay}</span> : <span className="inline-flex h-6 px-2.5 items-center rounded-[8px] bg-paper-2 mono text-[12px] font-bold text-ink-2">{v.regNoDisplay}</span>}
                     <div className="mt-2 text-[18px] font-extrabold tracking-tight">{v.nickname || `${v.makeName} ${v.modelName}`}</div>
                     <div className="text-[13px] text-ink-3 font-semibold">{v.label}</div>
                   </div>
@@ -92,14 +112,51 @@ export default function VehiclesPage() {
                 </div>
               </Link>
               <div className="border-t border-line grid grid-cols-2 divide-x divide-line text-[13.5px] font-extrabold">
-                <button onClick={() => { select({ make: v.makeName, model: v.modelName, variant: v.variantName, year: v.year, regNoDisplay: v.regNoDisplay, vehicleId: v.id }); router.push("/search"); }} className="h-12 text-[color:var(--accent)] hover:bg-paper-2">Shop parts that fit</button>
-                <Link href={`/vehicles/${v.id}`} className="h-12 flex items-center justify-center hover:bg-paper-2">Open Passport →</Link>
+                {v.regNo
+                  ? <button onClick={() => { select({ make: v.makeName, model: v.modelName, variant: v.variantName, year: v.year, regNoDisplay: v.regNoDisplay, vehicleId: v.id }); router.push("/search?industry=automotive"); }} className="h-12 text-[color:var(--accent)] hover:bg-paper-2">Shop parts that fit</button>
+                  : <Link href={`/i/${v.industrySlug ?? "industrial"}${v.machineType ? `?type=${v.machineType}` : ""}`} className="h-12 flex items-center justify-center text-[color:var(--accent)] hover:bg-paper-2">Shop parts</Link>}
+                <Link href={`/fix?vehicleId=${v.id}`} className="h-12 flex items-center justify-center hover:bg-paper-2">Book service →</Link>
               </div>
             </div>
           ))}
       </div>
 
-      <Sheet open={open} onClose={() => { setOpen(false); setRc(null); setErr(""); }} title="Add a vehicle">
+      <Sheet open={open} onClose={() => { setOpen(false); setRc(null); setErr(""); }} title="Add a vehicle or machine">
+        <div className="grid grid-cols-2 gap-1 p-1 rounded-[14px] bg-paper-2 mb-5" role="tablist">
+          {([["plate", "Vehicle (number plate)"], ["machine", "Other machine"]] as const).map(([k, l]) => (
+            <button key={k} role="tab" aria-selected={mode === k} onClick={() => { setMode(k); setErr(""); }} className={clsx("h-10 rounded-[11px] text-[13.5px] font-extrabold", mode === k ? "bg-paper shadow-[var(--shadow-card)] text-ink" : "text-ink-3")}>{l}</button>
+          ))}
+        </div>
+        {mode === "machine" ? (
+          <div>
+            <Field label="What is it?" group>
+              <div className="grid grid-cols-5 gap-2">
+                {(industries ?? []).filter((i) => i.slug !== "automotive").map((i) => (
+                  <button key={i.slug} onClick={() => setM({ ...m, industrySlug: i.slug, machineType: "" })} aria-pressed={m.industrySlug === i.slug} className="flex flex-col items-center gap-1">
+                    <span className={clsx("rounded-full p-0.5 border-2", m.industrySlug === i.slug ? "border-[color:var(--accent)]" : "border-transparent")}><IconTile name={i.icon} tint={i.tint} ink={i.ink} size={46} /></span>
+                    <span className="text-[11px] font-bold text-ink-2 text-center leading-tight">{INDUSTRY_STYLE[i.slug]?.short}</span>
+                  </button>
+                ))}
+              </div>
+            </Field>
+            {mInd && (
+              <div className="mt-4 space-y-4 fms-fade-up">
+                <Field label="Type" group>
+                  <div className="flex gap-2 flex-wrap">{mInd.machineTypes.map((t) => <button key={t.id} className="chip" data-on={m.machineType === t.slug} onClick={() => setM({ ...m, machineType: t.slug })}>{t.name}</button>)}</div>
+                </Field>
+                {!!mType?.brands.length && <div className="flex gap-2 flex-wrap" role="group" aria-label="Popular brands">{mType.brands.map((b) => <button key={b} className="chip" data-on={m.makeName === b} onClick={() => setM({ ...m, makeName: b })}>{b}</button>)}</div>}
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Brand"><input className={inputCls} value={m.makeName} onChange={(e) => setM({ ...m, makeName: e.target.value })} placeholder="Crompton" /></Field>
+                  <Field label="Model"><input className={inputCls} value={m.modelName} onChange={(e) => setM({ ...m, modelName: e.target.value })} placeholder="1 HP openwell" /></Field>
+                </div>
+                <Field label="Serial no. (optional)" hint="On the name plate. Helps the technician and keeps warranties traceable."><input className={`${inputCls} mono uppercase`} value={m.serialNo} onChange={(e) => setM({ ...m, serialNo: e.target.value.toUpperCase() })} placeholder="SN 2203 4471" /></Field>
+                <Field label="Nickname (optional)"><input className={inputCls} value={m.nickname} onChange={(e) => setM({ ...m, nickname: e.target.value })} placeholder="e.g. Borewell pump" /></Field>
+              </div>
+            )}
+            {err && <div className="mt-3 rounded-[12px] bg-[color:var(--danger-wash)] text-[color:var(--danger)] text-[13.5px] font-bold p-3">{err}</div>}
+            <button onClick={addMachine} disabled={!m.industrySlug || !m.makeName.trim() || !m.modelName.trim() || busy} className="mt-5 w-full h-12 rounded-[14px] bg-[color:var(--accent)] text-white font-extrabold disabled:opacity-40">Add machine</button>
+          </div>
+        ) : (<>
         <Field label="Registration number" group hint="Prototype: details come from a mock RC lookup. Any valid-looking plate works.">
           <div className="flex gap-2">
             <input className={`${inputCls} mono uppercase tracking-wider`} value={reg} onChange={(e) => { setReg(e.target.value.toUpperCase()); setRc(null); }} placeholder="MH 12 AB 3456" aria-label="Registration number" />
@@ -123,7 +180,12 @@ export default function VehiclesPage() {
             <p className="text-[12px] text-ink-3 mt-2 text-center">In production we confirm ownership with an OTP to the RC-linked mobile.</p>
           </div>
         )}
+        </>)}
       </Sheet>
     </div>
   );
+}
+
+export default function VehiclesPage() {
+  return <Suspense><VehiclesInner /></Suspense>;
 }
