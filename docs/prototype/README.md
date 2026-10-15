@@ -1,6 +1,6 @@
-# FindMySpare v2: Working Prototype Walkthrough
+# FindMySpare v3: Working Prototype Walkthrough
 
-Web-only, end-to-end prototype of the plan in `docs/strategy/`. It covers the full marketplace, request-and-quote, Garage OS, Vehicle Passport and verifiable invoices, all on the new **"Nut Lens"** brand.
+Web-only, end-to-end prototype of the plans in `docs/strategy/` (v3: `vision-v3-every-spare-part.md`). It covers spare parts for **every machine in 10 industries**, a **supply-chain network** (raw material → manufacturer → super stockist → distributor → retailer → technician → customer), **Fix** (book a technician for any machine), the marketplace, request-and-quote, Workshop OS, machine passports and verifiable invoices, all on the **"Nut Lens"** brand.
 
 **Payments are mocked.** Nothing touches a real gateway or real money. The whole journey below is automated in `e2e/journey.mjs`, and every screenshot here comes from that run against a fresh database.
 
@@ -13,14 +13,15 @@ Web-only, end-to-end prototype of the plan in `docs/strategy/`. It covers the fu
 #    DATABASE_URL=postgresql://postgres:postgres@localhost:5432/findmyspare
 #    DEMO_LOGIN=1   ← lets the seeded @findmyspare.test accounts sign in with OTP 123456 (never in production)
 cd findmyspare-backend && bun install
-bun run db:push && bun run db:seed        # seed.ts + seed-v2.ts (catalog, parts, garage, history)
+bun run db:push && bun run db:seed        # seed.ts + seed-v2.ts + taxonomy (10 industries) + seed-v3.ts (multi-tier network)
 bun run dev                                # :8000
 
 # 2. Web
 cd ../findmyspare && npm install && npm run dev   # :3000 (NEXT_PUBLIC_API_URL=http://localhost:8000)
 
 # 3. Tests
-cd ../findmyspare-backend && bun test --env-file=.env   # 6 unit + 13 API-journey tests
+cd ../findmyspare-backend && bun test --env-file=.env test/garage-lib.test.ts test/network-flow.test.ts  # 6 unit + 16 v3 network tests
+bun test --env-file=.env test/api-flow.test.ts            # 13 v2 journey tests (restart the API between files: OTP sends are rate-limited per IP)
 cd ../e2e && npm i && node journey.mjs                  # browser journey + screenshots
 ```
 
@@ -30,7 +31,34 @@ cd ../e2e && npm i && node journey.mjs                  # browser journey + scre
 | `buyer1@findmyspare.test` | **Arjun**, car owner with a Swift (MH 12 AB 3456) and an Activa |
 | `garage@findmyspare.test` | **Vikram, Sharma Auto Works**: Garage OS user (also buys parts) |
 | `raza@` / `ayman@` / `selvam@findmyspare.test` | Sellers in Delhi / Mumbai / Chennai |
-| `admin@findmyspare.test` | Admin |
+| `admin@findmyspare.test` | Admin (Network console, Businesses, Taxonomy studio) |
+| `castings@findmyspare.test` | **Ludhiana Castings & Forgings**: raw material supplier + manufacturer |
+| `sahyadri@findmyspare.test` | **Sahyadri Pumps Manufacturing** (Kolhapur): pump manufacturer |
+| `deccan@findmyspare.test` | **Deccan Industrial Stockists** (Pune): super stockist |
+| `ganesh@findmyspare.test` | **Shree Ganesh Distributors** (Pune): distributor / wholesaler |
+| `patil@findmyspare.test` | **Patil Electricals & Pumps** (Pune): retailer with bills, khata, POs in every state |
+| `imran@findmyspare.test` | **Imran Motor Rewinding**: technician for pumps, appliances, motors (gets Fix jobs in Pune) |
+| `coolcare@` `powergen@` `krishi@` `bearings@` `earthmover@` `mobilehub@` `kochi@findmyspare.test` | Appliances, power, farm, industrial, construction, electronics and marine businesses |
+
+---
+
+## v3: every machine, every tier
+
+| Area | Where | What it does |
+|---|---|---|
+| Buyer home | `/` | One search for any part, industry carousel (10 industries), Shop / Fix / Quotes / Business doors, My machines, rails per industry |
+| Industry pages | `/i/[slug]` | Machine types, brands, part categories, products, "book a technician" |
+| Search | `/search` | Industry filters; a selected car only narrows vehicle-part searches |
+| Fix | `/fix`, `/fix/requests` | Book a technician for any machine; matching workshops in the city are notified; first to accept gets a job card |
+| My machines | `/vehicles` | Cars by number plate; pumps, ACs, gensets… by brand + serial; each has a passport |
+| Business OS | `/biz/*` | Task-driven home (live counts only), counter billing + GST bills, purchase orders in/out, trade network + directory, order stock at your price list, khata (to collect / to pay), price lists, demand radar, CSV import |
+| Storefront | `/s/[id]` | Public shop page for any seller |
+| Workshop OS | `/workshop/*` | Jobs near you, industries serviced, walk-in jobs for any machine, per-industry inspection checklists |
+| Admin | `/admin/network/*` | Network overview (roles, industries, trade, search gaps), businesses by role, taxonomy studio (add an industry = data, not a deploy) |
+
+Screenshots of every v3 area: `docs/prototype/screens/v3/` (01–07 buyer, 08–18 Business OS, 19–21 Workshop, 22–24 Admin).
+
+API: `routes/network.ts` (`/biz/*`, `/public/store/:id`), `routes/fix.ts` (`/catalog/taxonomy`, `/fix/*`, `/admin/network/*`), schema in `db/schema/network.ts`.
 
 ---
 
@@ -124,6 +152,7 @@ cd ../e2e && npm i && node journey.mjs                  # browser journey + scre
 - Schema changes are applied with `drizzle-kit push`. Generate proper migrations before touching the Nhost production database.
 - Photo upload for requests and job inspections isn't wired into the new screens (the upload API exists).
 - The RC lookup, courier and gateway are mocks behind single functions. Swap them in for production.
+- v3 gaps: bill/PO numbers are `count+1` (can collide under concurrent saves); PO GST is a flat 18%; the business directory lists sellers only; a workshop profile field can't be cleared once set; buyers can read but not record payments to a supplier.
 - Seven `react-hooks/set-state-in-effect` lint errors pre-date this work (admin/health, magic link, story, verify-email, DesktopNav, TabBar, socket). None were added.
 
 ---
@@ -132,11 +161,11 @@ cd ../e2e && npm i && node journey.mjs                  # browser journey + scre
 
 Order matters: **the database first, then code.** The new API reads columns the live database doesn't have yet.
 
-1. **Migrate the database** (add-only; one transaction; existing orders are backfilled as `paid`):
+1. **Migrate the database** (add-only; one transaction each). `0001` is already applied in production; v3 needs `0002`:
    ```bash
-   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f findmyspare-backend/drizzle/manual/0001_v2_marketplace_garage_passport.sql
+   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f findmyspare-backend/drizzle/manual/0002_v3_network_every_industry.sql
    ```
-2. **Seed the vehicle catalog.** Production-safe and idempotent; no demo users or products:
+2. **Seed the catalog** (vehicle makes + the 10-industry taxonomy). Production-safe and idempotent; no demo users or products:
    ```bash
    cd findmyspare-backend && DATABASE_URL=… bun run src/scripts/seed-catalog.ts
    ```
