@@ -10,6 +10,7 @@ import type { Address } from "@/lib/types";
 import { PartThumb, PartTypeBadge, EmptyState, Sheet, Field, inputCls } from "@/components/shop/ui";
 import { toast } from "@/lib/toast";
 import { getErrorMessage } from "@/lib/errors";
+import { usePaymentsMode, PAYMENTS_SOON } from "@/lib/use-config";
 
 const blank = { label: "Home", line1: "", city: "", state: "", postalCode: "", phone: "" };
 
@@ -24,6 +25,7 @@ export default function CartPage() {
   const [addrOpen, setAddrOpen] = useState(false);
   const [form, setForm] = useState(blank);
   const [busy, setBusy] = useState(false);
+  const payments = usePaymentsMode();
 
   const lines = useMemo(() => items.map((i) => ({ productId: i.productId ?? i.id, quantity: i.quantity })), [items]);
 
@@ -141,8 +143,9 @@ export default function CartPage() {
             <div className="border-t border-dashed border-line-2 pt-3 flex justify-between text-[16px]"><dt className="font-extrabold">To pay</dt><dd className="price">{preview ? inr(preview.total, { decimals: true }) : "…"}</dd></div>
           </dl>
           {mrpSavings > 0 && <div className="mt-3 rounded-[12px] bg-[color:var(--success-wash)] text-[color:var(--success)] text-[13px] font-extrabold p-3">You save {inr(mrpSavings)} vs MRP on this order</div>}
-          <button disabled={busy || !preview || !!previewErr} onClick={proceed} className="mt-4 w-full h-[54px] rounded-[14px] bg-[color:var(--accent)] text-white text-[16px] font-extrabold disabled:opacity-50 fms-press flex items-center justify-between px-5">
-            <span>{preview ? inr(preview.total) : ""}</span><span>{busy ? "Creating order…" : addressId ? "Proceed to pay →" : "Add address to continue"}</span>
+          {payments === "off" && <div className="mt-4 rounded-[12px] bg-[color:var(--amber-wash)] text-[color:var(--amber)] text-[13px] font-bold p-3">{PAYMENTS_SOON} Your cart is saved. Need it urgently? <Link href="/buyer/requests/new" className="underline">Request quotes</Link> and the seller will reach you.</div>}
+          <button disabled={busy || !preview || !!previewErr || payments !== "mock"} onClick={proceed} className="mt-4 w-full h-[54px] rounded-[14px] bg-[color:var(--accent)] text-white text-[16px] font-extrabold disabled:opacity-50 fms-press flex items-center justify-between px-5">
+            <span>{preview ? inr(preview.total) : ""}</span><span>{payments === "off" ? "Payments launching soon" : busy ? "Creating order…" : addressId ? "Proceed to pay →" : "Add address to continue"}</span>
           </button>
           <p className="mt-3 text-[12px] text-ink-3 text-center">Payment is held in FMS escrow until delivery. Fit or free return.</p>
         </div>

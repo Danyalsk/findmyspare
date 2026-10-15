@@ -13,6 +13,12 @@ import {
 } from "../db/schema";
 import { recordStockMovement } from "./stock";
 
+// Online payments: "mock" = simulated gateway (dev/demo), "off" = disabled until a
+// real provider is wired. Production defaults to "off" so nobody "pays" with fake money.
+export const PAYMENTS_MODE: "mock" | "off" =
+  (process.env.PAYMENTS_MODE as "mock" | "off" | undefined) ?? (process.env.NODE_ENV === "production" ? "off" : "mock");
+export const PAYMENTS_OFF_MESSAGE = "Online payments are launching soon. Your cart is saved.";
+
 // Delivery fee per seller parcel: free above the threshold (Swiggy-style).
 export const FREE_DELIVERY_ABOVE = 999;
 export const DELIVERY_FEE = 49;

@@ -19,6 +19,8 @@ import {
   priceCart,
   createCartCheckout,
   completeMockPayment,
+  PAYMENTS_MODE,
+  PAYMENTS_OFF_MESSAGE,
   money,
   FREE_DELIVERY_ABOVE,
   DELIVERY_FEE,
@@ -66,6 +68,7 @@ export const checkoutRoutes = new Elysia()
   .post(
     "/checkout",
     async ({ body, user, set }) => {
+      if (PAYMENTS_MODE === "off") { set.status = 503; return { error: PAYMENTS_OFF_MESSAGE }; }
       if (body.shippingAddressId) {
         const [addr] = await db.select({ id: addresses.id }).from(addresses)
           .where(and(eq(addresses.id, body.shippingAddressId), eq(addresses.userId, user.id))).limit(1);
@@ -111,6 +114,7 @@ export const checkoutRoutes = new Elysia()
   .post(
     "/payments",
     async ({ body, user, set }) => {
+      if (PAYMENTS_MODE === "off") { set.status = 503; return { error: PAYMENTS_OFF_MESSAGE }; }
       const [c] = await db.select().from(checkouts).where(and(eq(checkouts.id, body.checkoutId), eq(checkouts.buyerId, user.id))).limit(1);
       if (!c) { set.status = 404; return { error: "Checkout not found" }; }
       const pending = await db.select({ id: orders.id }).from(orders).where(and(eq(orders.checkoutId, c.id), eq(orders.paymentStatus, "pending")));
@@ -126,6 +130,7 @@ export const checkoutRoutes = new Elysia()
   .post(
     "/payments/:id/complete",
     async ({ params, body, user, set }) => {
+      if (PAYMENTS_MODE === "off") { set.status = 503; return { error: PAYMENTS_OFF_MESSAGE }; }
       const [p] = await db.select().from(payments).where(eq(payments.id, params.id)).limit(1);
       if (!p || p.payerId !== user.id) { set.status = 404; return { error: "Payment not found" }; }
       const result = await completeMockPayment(p.id, body.outcome, body.method);

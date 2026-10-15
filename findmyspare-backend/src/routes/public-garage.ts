@@ -3,7 +3,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../db";
 import { garages, jobCards, jobItems, vehicles, invoices, payments, notifications } from "../db/schema";
 import { computeInvoice, invoiceHash, formatRegNo, vehicleLabel } from "../lib/garage";
-import { completeMockPayment } from "../lib/commerce";
+import { completeMockPayment, PAYMENTS_MODE, PAYMENTS_OFF_MESSAGE } from "../lib/commerce";
 import { rateLimit, rateLimitKey } from "../lib/rate-limit";
 import { buildPassport } from "./vehicles";
 
@@ -115,6 +115,7 @@ export const publicGarageRoutes = new Elysia({ prefix: "/public" })
   .post(
     "/invoices/pay/:token",
     async ({ params, body, request, set }) => {
+      if (PAYMENTS_MODE === "off") { set.status = 503; return { error: PAYMENTS_OFF_MESSAGE }; }
       if (!guard(request, set, "pub-pay-do", 10)) return { error: "Too many requests" };
       const [inv] = await db.select().from(invoices).where(eq(invoices.payToken, params.token)).limit(1);
       if (!inv) { set.status = 404; return { error: "Invoice not found" }; }

@@ -10,6 +10,7 @@ import { checkoutApi, inr, type PayMethod } from "@/lib/api/v2";
 import { Logo } from "@/components/brand/Logo";
 import { MockGateway } from "@/components/shop/MockGateway";
 import { getErrorMessage } from "@/lib/errors";
+import { usePaymentsMode, PAYMENTS_SOON } from "@/lib/use-config";
 
 type Checkout = Awaited<ReturnType<typeof checkoutApi.get>>;
 
@@ -23,6 +24,7 @@ export default function PayCheckoutPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [paid, setPaid] = useState(false);
+  const payments = usePaymentsMode();
 
   useEffect(() => {
     if (!mounted) return;
@@ -76,7 +78,7 @@ export default function PayCheckoutPage() {
                 ))}
               </div>
             </div>
-            <MockGateway amount={data.checkout.total} onPay={pay} busy={busy} error={error} />
+            {payments === "mock" ? <MockGateway amount={data.checkout.total} onPay={pay} busy={busy} error={error} /> : <div className="card p-6 text-center"><div className="text-[18px] font-extrabold">{PAYMENTS_SOON}</div><p className="text-[14px] text-ink-3 mt-1">We&apos;ll notify you the moment you can complete this order.</p></div>}
           </div>
         )}
       </div>

@@ -30,6 +30,7 @@ import { db, closeConnection } from "./db";
 import { sql } from "drizzle-orm";
 import { initSocketServer, closeSocketServer } from "./lib/io";
 import { auth } from "./lib/auth";
+import { PAYMENTS_MODE } from "./lib/commerce";
 
 // ─── App Configuration ──────────────────────────────
 const PORT = parseInt(process.env.PORT || "8000");
@@ -131,6 +132,9 @@ const app = new Elysia()
     status: "running",
     timestamp: new Date().toISOString(),
   }))
+
+  // Feature flags the web reads at runtime (no secrets).
+  .get("/config", () => ({ payments: PAYMENTS_MODE }))
 
   .get("/health", async ({ set }) => {
     let dbStatus: "connected" | "error" = "connected";

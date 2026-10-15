@@ -10,7 +10,7 @@ import {
 } from "../db/schema";
 import { eq, and, ne, desc, sql } from "drizzle-orm";
 import { authGuard } from "../middleware/auth";
-import { createQuoteCheckout } from "../lib/commerce";
+import { createQuoteCheckout, PAYMENTS_MODE, PAYMENTS_OFF_MESSAGE } from "../lib/commerce";
 
 export const bidRoutes = new Elysia()
   .use(authGuard)
@@ -231,6 +231,7 @@ export const bidRoutes = new Elysia()
   .post(
     "/bids/:id/accept",
     async ({ params, user, set }) => {
+      if (PAYMENTS_MODE === "off") { set.status = 503; return { error: PAYMENTS_OFF_MESSAGE }; }
       if (user.role !== "buyer") {
         set.status = 403;
         return { error: "Only buyers can accept bids" };

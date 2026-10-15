@@ -125,3 +125,25 @@ cd ../e2e && npm i && node journey.mjs                  # browser journey + scre
 - Photo upload for requests and job inspections isn't wired into the new screens (the upload API exists).
 - The RC lookup, courier and gateway are mocks behind single functions. Swap them in for production.
 - Seven `react-hooks/set-state-in-effect` lint errors pre-date this work (admin/health, magic link, story, verify-email, DesktopNav, TabBar, socket). None were added.
+
+---
+
+## Production deploy runbook (findmyspare.com)
+
+Order matters: **the database first, then code.** The new API reads columns the live database doesn't have yet.
+
+1. **Migrate the database** (add-only; one transaction; existing orders are backfilled as `paid`):
+   ```bash
+   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f findmyspare-backend/drizzle/manual/0001_v2_marketplace_garage_passport.sql
+   ```
+2. **Seed the vehicle catalog.** Production-safe and idempotent; no demo users or products:
+   ```bash
+   cd findmyspare-backend && DATABASE_URL=… bun run src/scripts/seed-catalog.ts
+   ```
+3. **Merge to `main`.** Vercel builds the web app; Render rebuilds the API (trigger a manual deploy if auto-deploy is off).
+4. **Payments stay off** in production (`PAYMENTS_MODE` unset → `off`):
+   - Cart and quote acceptance show "launching soon".
+   - Garages still collect at the counter.
+   - Invoice links show a real UPI QR to the garage's UPI ID.
+   - Set `PAYMENTS_MODE=mock` only on a demo deployment. A real gateway replaces `completeMockPayment()`.
+5. **Smoke test:** `GET /config` → `{"payments":"off"}`; home, search, a product page, `/verify`, `/workshop` (sign in).

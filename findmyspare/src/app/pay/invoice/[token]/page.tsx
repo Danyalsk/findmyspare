@@ -7,15 +7,19 @@ import { PublicFrame } from "@/components/shop/PublicFrame";
 import { MockGateway, PAY_METHODS } from "@/components/shop/MockGateway";
 import { Skel, EmptyState } from "@/components/shop/ui";
 import { getErrorMessage } from "@/lib/errors";
+import { usePaymentsMode } from "@/lib/use-config";
+import { QR } from "@/components/shop/QR";
 
 export default function PayInvoicePage() {
   const { token } = useParams<{ token: string }>();
   const [inv, setInv] = useState<Invoice | null>(null);
+  const [upiId, setUpiId] = useState<string | null>(null);
+  const payments = usePaymentsMode();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [loadErr, setLoadErr] = useState("");
 
-  useEffect(() => { publicApi.invoiceForPay(token).then((r) => setInv(r.invoice)).catch((e) => setLoadErr(getErrorMessage(e, "Invoice not found"))); }, [token]);
+  useEffect(() => { publicApi.invoiceForPay(token).then((r) => { setInv(r.invoice); setUpiId(r.upiId); }).catch((e) => setLoadErr(getErrorMessage(e, "Invoice not found"))); }, [token]);
 
   async function pay(method: PayMethod, fail: boolean) {
     setBusy(true); setError("");
@@ -48,7 +52,21 @@ export default function PayInvoicePage() {
             <ul className="mt-4 divide-y divide-line text-[13.5px]">{inv.lines.map((l, i) => <li key={i} className="flex justify-between py-2"><span>{l.name}</span><b>{inr(l.total, { decimals: true })}</b></li>)}</ul>
             <div className="flex justify-between border-t border-dashed border-line-2 pt-3 text-[16px]"><span className="font-extrabold">Total</span><span className="price">{inr(inv.total, { decimals: true })}</span></div>
           </div>
-          <MockGateway amount={inv.total} onPay={pay} busy={busy} error={error} methods={PAY_METHODS.filter((m) => m.id !== "cod")} />
+          {payments === "mock" ? (
+            <MockGateway amount={inv.total} onPay={pay} busy={busy} error={error} methods={PAY_METHODS.filter((m) => m.id !== "cod")} />
+          ) : (
+            <div className="card p-6 text-center">
+              {upiId ? (
+                <>
+                  <div className="text-[16px] font-extrabold">Pay {inr(inv.total, { decimals: true })} by UPI</div>
+                  <div className="mx-auto mt-4 w-fit rounded-[14px] border border-line p-3"><QR value={`upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(inv.seller.name)}&am=${inv.total}&cu=INR&tn=${encodeURIComponent(inv.number)}`} size={168} /></div>
+                  <div className="mt-3 mono text-[14px] font-bold">{upiId}</div>
+                  <a href={`upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(inv.seller.name)}&am=${inv.total}&cu=INR&tn=${encodeURIComponent(inv.number)}`} className="mt-4 inline-flex h-12 px-6 items-center rounded-[14px] bg-[color:var(--accent)] text-white font-extrabold md:hidden">Open UPI app</a>
+                  <p className="mt-3 text-[12.5px] text-ink-3">Paid directly to the garage. They&apos;ll mark the invoice paid.</p>
+                </>
+              ) : <div className="text-[15px] font-bold">Please pay at the garage. Online payments are launching soon.</div>}
+            </div>
+          )}
         </div>
       )}
     </PublicFrame>

@@ -12,6 +12,7 @@ import type { Bid, Inquiry } from "@/lib/types";
 import { RatingPill, StatusChip, Skel, EmptyState } from "@/components/shop/ui";
 import { toast } from "@/lib/toast";
 import { getErrorMessage } from "@/lib/errors";
+import { usePaymentsMode, PAYMENTS_SOON } from "@/lib/use-config";
 
 const COND: Record<string, string> = { genuine: "Genuine OEM", oem: "Genuine OEM", oes: "OES", oem_equivalent: "OES", aftermarket: "Aftermarket", used: "Used · graded", refurbished: "Refurbished" };
 
@@ -24,6 +25,7 @@ export default function RequestQuotesPage() {
   const [sort, setSort] = useState<"price" | "rating" | "eta">("price");
   const [accepting, setAccepting] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const payments = usePaymentsMode();
 
   const load = useCallback(() => Promise.all([inquiriesApi.get(id), bidsApi.listForInquiry(id)])
     .then(([i, b]) => { setInquiry(i.inquiry); setBids(b.bids); })
@@ -116,7 +118,10 @@ export default function RequestQuotesPage() {
                   {b.warrantyMonths > 0 && <span className="chip !h-7 !text-[12px]">{b.warrantyMonths}-month warranty</span>}
                 </div>
                 {b.notes && <p className="mt-3 text-[13.5px] text-ink-2 bg-paper-2 rounded-[12px] p-3">“{b.notes}”</p>}
-                {inquiry.isActive && b.status === "pending" && (
+                {inquiry.isActive && b.status === "pending" && payments === "off" && (
+                  <div className="mt-4 rounded-[12px] bg-paper-2 text-[13px] font-bold text-ink-2 p-3 text-center">{PAYMENTS_SOON} You&apos;ll be able to accept this quote and pay safely here.</div>
+                )}
+                {inquiry.isActive && b.status === "pending" && payments === "mock" && (
                   <button disabled={!!accepting} onClick={() => accept(b)} className={clsx("mt-4 w-full h-12 rounded-[14px] font-extrabold fms-press disabled:opacity-50", isBest ? "bg-[color:var(--accent)] text-white" : "bg-paper border-2 border-ink text-ink")}>
                     {accepting === b.id ? "Creating order…" : `Accept & pay ${inr(b.price)}`}
                   </button>
