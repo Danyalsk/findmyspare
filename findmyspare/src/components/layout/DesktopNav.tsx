@@ -1,5 +1,6 @@
 "use client";
 
+import { Logo } from "@/components/brand/Logo";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
@@ -86,10 +87,7 @@ export function DesktopNav() {
       <div className="max-w-screen-xl mx-auto w-full px-6 lg:px-10 h-[68px] flex items-center gap-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0">
-          <div className="w-9 h-9 rounded-[10px] bg-[color:var(--accent)] flex items-center justify-center text-white font-extrabold text-lg">
-            f
-          </div>
-          <span className="display text-[17px] text-ink">FindMySpare</span>
+          <Logo size={26} />
         </Link>
 
         {/* Location pill — Swiggy hallmark */}

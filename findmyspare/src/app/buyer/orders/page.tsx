@@ -1,91 +1,55 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { TopBar } from "@/components/layout/TopBar";
-import { Card } from "@/components/ui/Card";
-import { OrderCard } from "@/components/features/OrderCard";
-import { FilterPills } from "@/components/features/FilterPills";
+import { format } from "date-fns";
 import { ordersApi } from "@/lib/api";
-import type { OrderListItem, OrderStatus } from "@/lib/types";
-import { statusMeta } from "@/lib/order-status";
-import { toast } from "@/lib/toast";
-import { getErrorMessage } from "@/lib/errors";
+import { inr } from "@/lib/api/v2";
+import type { OrderListItem } from "@/lib/types";
+import { StatusChip, EmptyState, Skel, PartThumb } from "@/components/shop/ui";
 
-const GROUPS: Record<string, OrderStatus[]> = {
-  Active: ["placed", "confirmed", "shipped", "in_transit", "delivered"],
-  Completed: ["completed"],
-  Cancelled: ["cancelled", "disputed"],
-};
-const FILTERS = ["All", "Active", "Completed", "Cancelled"] as const;
-type FilterLabel = (typeof FILTERS)[number];
+const TABS = ["All", "Active", "Completed", "Cancelled"] as const;
+const ACTIVE = ["placed", "confirmed", "shipped", "in_transit", "delivered"];
 
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+function chip(o: OrderListItem) {
+  if (o.paymentStatus === "pending") return <StatusChip tone="amber">Awaiting payment</StatusChip>;
+  switch (o.status) {
+    case "placed": return <StatusChip tone="brand">Placed</StatusChip>;
+    case "confirmed": return <StatusChip tone="brand">Packing</StatusChip>;
+    case "shipped": case "in_transit": return <StatusChip tone="blue">On the way</StatusChip>;
+    case "delivered": return <StatusChip tone="green">Delivered · confirm fit</StatusChip>;
+    case "completed": return <StatusChip tone="grey">Completed</StatusChip>;
+    case "disputed": return <StatusChip tone="red">Issue raised</StatusChip>;
+    default: return <StatusChip tone="grey">{o.status}</StatusChip>;
+  }
 }
 
-export default function BuyerOrdersPage() {
-  const [orders, setOrders] = useState<OrderListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<FilterLabel>("All");
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await ordersApi.list({ limit: 50 });
-        if (!cancelled) setOrders(res.orders);
-      } catch (e: unknown) {
-        if (!cancelled) toast.error(getErrorMessage(e, "Failed to load orders"));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const visible = useMemo(() => {
-    if (filter === "All") return orders;
-    const allowed = GROUPS[filter];
-    return orders.filter((o) => allowed.includes(o.status));
-  }, [orders, filter]);
+export default function OrdersPage() {
+  const [orders, setOrders] = useState<OrderListItem[] | null>(null);
+  const [tab, setTab] = useState<(typeof TABS)[number]>("All");
+  useEffect(() => { ordersApi.list({ limit: 50 }).then((r) => setOrders(r.orders)).catch(() => setOrders([])); }, []);
+  const list = useMemo(() => (orders ?? []).filter((o) =>
+    tab === "All" ? true : tab === "Active" ? ACTIVE.includes(o.status) : tab === "Completed" ? o.status === "completed" : ["cancelled", "disputed"].includes(o.status)
+  ), [orders, tab]);
 
   return (
-    <div className="flex-1 flex flex-col">
-      <TopBar title="My orders" backHref="/buyer" />
-      <div className="px-5 pb-8 space-y-4">
-        <FilterPills
-          filters={FILTERS.map((f) => ({ label: f, active: f === filter }))}
-          onToggle={(label) => setFilter(label as FilterLabel)}
-        />
-
-        {loading ? (
-          <div className="text-[13px] text-ink-3 text-center py-12">Loading…</div>
-        ) : visible.length === 0 ? (
-          <Card className="text-center !p-8">
-            <div className="text-[14px] font-medium mb-1">No orders here</div>
-            <div className="text-[12px] text-ink-3">When you place an order it shows up here.</div>
-          </Card>
-        ) : (
-          <div className="flex flex-col gap-2.5">
-            {visible.map((o) => {
-              const meta = statusMeta(o.status);
-              return (
-                <OrderCard
-                  key={o.id}
-                  orderId={`#${o.id.slice(0, 8)}`}
-                  name={o.primaryItemName || "Order"}
-                  status={meta.label}
-                  statusVariant={meta.variant}
-                  supplier={o.supplierName || "Supplier"}
-                  date={fmtDate(o.createdAt)}
-                  href={`/buyer/orders/${o.id}`}
-                />
-              );
-            })}
-          </div>
-        )}
+    <div className="max-w-[880px] mx-auto px-4 md:px-6 py-6 md:py-10">
+      <h1 className="text-[28px] font-extrabold tracking-tight">Your orders</h1>
+      <div className="mt-4 flex gap-2">{TABS.map((t) => <button key={t} className="chip" data-on={tab === t} onClick={() => setTab(t)}>{t}</button>)}</div>
+      <div className="mt-6 space-y-3">
+        {!orders ? Array.from({ length: 3 }).map((_, i) => <Skel key={i} className="h-24" />)
+          : !list.length ? <EmptyState title="No orders here yet" body="Your parts orders and quote orders show up here." action={<Link href="/search" className="font-extrabold text-[color:var(--accent)]">Browse parts →</Link>} />
+          : list.map((o) => (
+            <Link key={o.id} href={`/buyer/orders/${o.id}`} className="card p-4 flex items-center gap-4 hover:shadow-[var(--shadow-lifted)] transition-shadow">
+              <PartThumb size="sm" className="w-14 h-14 rounded-[12px] flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-[15px] font-extrabold truncate">{o.primaryItemName ?? (o.source === "quote" || o.source === "job" ? "Quoted part" : "Order")}</div>
+                <div className="text-[12.5px] text-ink-3 font-semibold">{o.supplierName} · {format(new Date(o.createdAt), "d MMM")} · #{o.id.slice(0, 6).toUpperCase()}</div>
+                <div className="mt-1.5">{chip(o)}</div>
+              </div>
+              <span className="price text-[15px]">{inr(o.totalAmount)}</span>
+            </Link>
+          ))}
       </div>
     </div>
   );

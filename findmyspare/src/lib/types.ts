@@ -55,12 +55,18 @@ export interface CartItem {
   bidId?: string;
   name: string;
   vehicle: string;
-  condition: PartCondition;
+  condition?: PartCondition;
   quantity: number;
   unitPrice: number;
   imageLabel?: string;
   supplierId: string;
   supplierName: string;
+  // v2 marketplace fields
+  brand?: string | null;
+  partType?: "genuine" | "oes" | "aftermarket" | "used" | "refurbished";
+  mrp?: number | null;
+  category?: string | null;
+  stock?: number;
 }
 
 export interface BackendPagination {
@@ -100,6 +106,9 @@ export interface Inquiry {
   updatedAt: string;
   bidCount?: number;
   buyerName?: string | null;
+  vehicleId?: string | null;
+  jobCardId?: string | null;
+  city?: string | null;
 }
 
 export type MessageAttachment = { url: string; type: "image" | "video" };
@@ -144,6 +153,11 @@ export interface Bid {
   supplierBusinessName?: string | null;
   supplierPhone?: string | null;
   completedOrders?: number;
+  brand?: string | null;
+  partNumber?: string | null;
+  supplierCity?: string | null;
+  supplierRating?: string | null;
+  supplierReviewCount?: number;
 }
 
 export type OrderStatus =
@@ -171,6 +185,10 @@ export interface OrderListItem {
   supplierName: string | null;
   primaryItemName?: string | null;
   primaryPartNumber?: string | null;
+  paymentStatus?: "pending" | "paid" | "refunded";
+  source?: "cart" | "quote" | "job";
+  checkoutId?: string | null;
+  jobCardId?: string | null;
 }
 
 export interface OrderEntity {
@@ -188,6 +206,10 @@ export interface OrderEntity {
   autoCloseAt: string | null;
   createdAt: string;
   updatedAt: string;
+  paymentStatus?: "pending" | "paid" | "refunded";
+  source?: "cart" | "quote" | "job";
+  checkoutId?: string | null;
+  deliveryFee?: string;
 }
 
 export interface OrderItem {

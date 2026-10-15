@@ -121,12 +121,12 @@ export default function SupplierOrderDetailPage() {
             <div>
               <label className={labelClass}>Courier</label>
               <input className={fieldClass} value={ship.courierService}
-                onChange={(e) => setShip({ ...ship, courierService: e.target.value })} placeholder="Delhivery, BlueDart…" />
+                onChange={(e) => setShip({ ...ship, courierService: e.target.value })} placeholder="Leave blank for FMS Express (mock)" />
             </div>
             <div>
               <label className={labelClass}>Tracking number</label>
               <input className={fieldClass} value={ship.trackingNumber}
-                onChange={(e) => setShip({ ...ship, trackingNumber: e.target.value })} />
+                onChange={(e) => setShip({ ...ship, trackingNumber: e.target.value })} placeholder="Leave blank to auto-assign (FMS Express, mock)" />
             </div>
             <div>
               <label className={labelClass}>Est. delivery</label>

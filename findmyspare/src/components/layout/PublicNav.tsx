@@ -1,5 +1,6 @@
 "use client";
 
+import { Logo } from "@/components/brand/Logo";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -67,12 +68,7 @@ export function PublicNav() {
             href="/"
             className="flex items-center gap-2.5 group flex-shrink-0"
           >
-            <div className="w-8 h-8 rounded-[6px] bg-ink flex items-center justify-center text-paper serif text-[18px] leading-none">
-              f
-            </div>
-            <span className="serif text-[18px] tracking-tight text-ink leading-none hidden sm:block">
-              FindMySpare
-            </span>
+            <Logo size={26} />
           </Link>
 
           {/* Vertical divider */}

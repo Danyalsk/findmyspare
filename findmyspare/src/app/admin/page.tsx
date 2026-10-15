@@ -8,6 +8,7 @@ import { ArrowRightIcon } from "@/lib/icons";
 import { adminApi } from "@/lib/api/admin";
 import type { AdminSupplierRow } from "@/lib/api/admin";
 import { Chip } from "@/components/ui/Chip";
+import { MarketplaceHealth } from "@/components/admin/MarketplaceHealth";
 
 type Range = "7d" | "30d" | "90d";
 type Series = Awaited<ReturnType<typeof adminApi.metrics>>["series"];
@@ -61,6 +62,7 @@ export default function AdminOverviewPage() {
     <div className="flex-1 flex flex-col">
       <TopBar title="Admin overview" />
       <div className="px-5 pb-12 max-w-6xl w-full mx-auto space-y-6">
+        <MarketplaceHealth />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <StatCard label="Pending suppliers" value={stats?.pendingSuppliers} href="/admin/suppliers?status=pending" highlight />
           <StatCard label="Total users" value={stats?.totalUsers} href="/admin/users" />

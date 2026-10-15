@@ -130,7 +130,7 @@ export function getPostLoginPath(user: User): string {
   // server blocks every protected route (403 PROFILE_INCOMPLETE), so send the
   // user there first regardless of role.
   if (!user.profileCompleted) return "/complete-profile";
-  if (user.role === "buyer") return "/buyer";
+  if (user.role === "buyer") return "/";
   switch (user.verificationStatus) {
     case "approved":
       return "/supplier";

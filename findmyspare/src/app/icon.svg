@@ -1,11 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-  <defs>
-    <linearGradient id="g" x1="0" x2="32" y1="0" y2="32" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#34d399"/>
-      <stop offset="1" stop-color="#10b981"/>
-    </linearGradient>
-  </defs>
-  <rect width="32" height="32" rx="7" fill="#000"/>
-  <circle cx="16" cy="16" r="11" fill="none" stroke="url(#g)" stroke-width="2"/>
-  <circle cx="16" cy="16" r="4.5" fill="url(#g)"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="FindMySpare">
+  <title>FindMySpare</title>
+  <rect width="512" height="512" rx="112.64" fill="#E5461B"/>
+  <g transform="translate(61.44 61.44) scale(6.08)">
+  <path d="M46.15 27.27Q47.23 31.32 44.26 34.29L34.29 44.26Q31.32 47.23 27.27 46.15L13.65 42.5Q9.59 41.41 8.5 37.35L4.85 23.73Q3.77 19.68 6.74 16.71L16.71 6.74Q19.68 3.77 23.73 4.85L37.35 8.5Q41.41 9.59 42.5 13.65ZM14.9 25.5a10.6 10.6 0 1 0 21.2 0a10.6 10.6 0 1 0 -21.2 0Z" fill="#FFFFFF" fill-rule="evenodd"/>
+  <path d="M31.92 40.98L50.32 59.37A6.4 6.4 0 0 0 59.37 50.32L40.98 31.92A6.4 6.4 0 0 0 31.92 40.98Z" fill="#FFFFFF"/>
+  </g>
 </svg>

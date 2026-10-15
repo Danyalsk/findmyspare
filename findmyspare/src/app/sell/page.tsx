@@ -1,5 +1,6 @@
 "use client";
 
+import { Logo } from "@/components/brand/Logo";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -79,8 +80,7 @@ export default function SellPage() {
       <div className="border-b border-[color:var(--line)] bg-paper">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 h-[60px] flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-[6px] bg-ink flex items-center justify-center text-paper font-bold text-[15px]">f</div>
-            <span className="text-[15px] font-semibold tracking-tight text-ink">FindMySpare</span>
+            <Logo size={26} />
           </Link>
           <Link href="/login" className="text-[13px] font-semibold text-ink-2 hover:text-ink">Buyer login</Link>
         </div>

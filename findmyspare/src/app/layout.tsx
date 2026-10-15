@@ -1,12 +1,21 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Noto_Sans_Devanagari, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { ToastContainer } from "@/components/ui/Toast";
 
-const inter = Inter({
+const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-jakarta",
+  display: "swap",
+});
+
+// Hindi fallback so Devanagari renders at matching weight (brand/GUIDELINES.md).
+const deva = Noto_Sans_Devanagari({
+  subsets: ["devanagari"],
+  weight: ["500", "700"],
+  variable: "--font-deva",
   display: "swap",
 });
 
@@ -23,7 +32,7 @@ export const metadata: Metadata = {
     template: `%s | FindMySpare`,
   },
   description:
-    "India's trusted auto-parts marketplace. Verified suppliers, live quotes, direct contact.",
+    "Find the right spare part for your car or bike from verified sellers. Compare quotes, get it delivered, and keep a verified service record.",
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL || "https://findmyspare.com"
   ),
@@ -54,22 +63,11 @@ export default function RootLayout({
       lang="en"
       data-theme="light"
       data-density="comfortable"
-      className={`${inter.variable} ${jetbrainsMono.variable}`}
+      className={`${jakarta.variable} ${deva.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
       <head>
-        {/* Instrument Serif — loaded externally since next/font/google
-            doesn't support italic-only fonts well */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap"
-          rel="stylesheet"
-        />
+        <meta name="theme-color" content="#E5461B" />
       </head>
       <body className="font-sans antialiased">
         <Providers>{children}</Providers>

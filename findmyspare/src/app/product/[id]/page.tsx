@@ -1,443 +1,165 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { PublicNav } from "@/components/layout/PublicNav";
-import { Card } from "@/components/ui/Card";
-import { Chip } from "@/components/ui/Chip";
-import { Button } from "@/components/ui/Button";
-import { Avatar } from "@/components/ui/Avatar";
-import {
-  CheckIcon,
-  ShieldIcon,
-  StarIcon,
-  ChatIcon,
-  PackageIcon,
-  TruckIcon,
-  BoltIcon,
-  ArrowRightIcon,
-} from "@/lib/icons";
-import { toast } from "@/lib/toast";
-import { productsApi } from "@/lib/api";
-import { useAuthStore } from "@/lib/store";
-import { useCartStore } from "@/lib/cart-store";
-import { buildWhatsAppLink, waTemplates } from "@/lib/whatsapp";
-import type { ProductDetail } from "@/lib/types";
-import { getErrorMessage } from "@/lib/errors";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { ShopShell } from "@/components/shop/AppShell";
+import { AddButton } from "@/components/shop/ProductTile";
+import { PartThumb, PartTypeBadge, RatingPill, FitBadge, VerifiedBadge, SectionTitle, Skel, EmptyState } from "@/components/shop/ui";
+import { VehiclePicker } from "@/components/shop/VehiclePicker";
+import { useVehicleStore, fitsVehicle, vehicleShortLabel } from "@/lib/vehicle-store";
+import { shopApi, inr, discountPct, type ProductDetailV2, type ShopProduct } from "@/lib/api/v2";
+import { formatDistanceToNowStrict } from "date-fns";
 
-export default function PublicProductDetail() {
+export default function ProductPage() {
   const { id } = useParams<{ id: string }>();
-  const buyer = useAuthStore((s) => s.user);
-  const router = useRouter();
-  const addItem = useCartStore((s) => s.addItem);
-  const cartItems = useCartStore((s) => s.items);
-
-  const [product, setProduct] = useState<ProductDetail | null>(null);
-  const [activeImg, setActiveImg] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const vehicle = useVehicleStore((s) => s.selected);
+  const [loaded, setD] = useState<ProductDetailV2 | null>(null);
+  // Ignore a previous product's data while the next one loads.
+  const d = loaded && loaded.product.id === id ? loaded : null;
+  const [offers, setOffers] = useState<ShopProduct[]>([]);
   const [error, setError] = useState("");
+  const [picker, setPicker] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const res = await productsApi.get(id);
-        if (!cancelled) setProduct(res.product);
-      } catch (e: unknown) {
-        if (!cancelled) setError(getErrorMessage(e, "Failed to load product"));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    shopApi.get(id).then(async (r) => {
+      setD(r);
+      // Other sellers offering the same part for the same vehicle → price comparison.
+      const fit = r.product.compatibleVehicles?.[0];
+      const alt = await shopApi.list({ search: r.product.name, make: fit?.make, model: fit?.model, limit: 12 }).catch(() => null);
+      setOffers((alt?.products ?? []).filter((p) => p.id !== r.product.id));
+    }).catch((e) => setError(e.message));
   }, [id]);
 
-  const specs = useMemo(() => Object.entries(product?.specifications || {}), [product]);
-  const price = parseFloat(product?.price || "0");
+  if (error) return <ShopShell><EmptyState title="Part not found" body={error} action={<Link href="/search" className="font-extrabold text-[color:var(--accent)]">Browse parts</Link>} /></ShopShell>;
+  if (!d) return <ShopShell><div className="max-w-[1200px] mx-auto px-4 md:px-6 py-8 grid md:grid-cols-2 gap-8"><Skel className="aspect-square" /><div><Skel className="h-8 w-3/4" /><Skel className="h-5 w-1/2 mt-3" /><Skel className="h-24 mt-6" /></div></div></ShopShell>;
 
-  function addToCart(goToCart = false) {
-    if (!product) return;
-    if (!buyer) {
-      router.push("/login");
-      return;
-    }
-    if (buyer.role !== "buyer") {
-      toast.error("Switch to a buyer account to purchase");
-      return;
-    }
-    // Backend allows one supplier per order (Phase 1) — enforce on the client too.
-    const existingSupplier = cartItems[0]?.supplierId;
-    if (existingSupplier && existingSupplier !== product.supplierId) {
-      toast.error("Your cart has items from another supplier. Clear it first.");
-      return;
-    }
-    const firstVeh = product.compatibleVehicles?.[0];
-    addItem({
-      id: product.id,
-      productId: product.id,
-      name: product.name,
-      vehicle: firstVeh ? `${firstVeh.make} ${firstVeh.model}${firstVeh.year ? " " + firstVeh.year : ""}` : "",
-      condition: "oem",
-      quantity: 1,
-      unitPrice: price,
-      supplierId: product.supplierId,
-      supplierName: product.supplierBusinessName || product.supplierName || "Supplier",
-    });
-    if (goToCart) router.push("/buyer/cart");
-    else toast.success("Added to cart");
-  }
-
-  function handleContact() {
-    if (!product) return;
-    if (!product.supplierPhone) {
-      toast.error("Supplier phone unavailable");
-      return;
-    }
-    const firstVeh = product.compatibleVehicles?.[0];
-    const vehicle = firstVeh
-      ? `${firstVeh.make} ${firstVeh.model}${firstVeh.year ? " " + firstVeh.year : ""}`
-      : null;
-    const msg = waTemplates.productEnquiry({
-      buyerName: buyer?.name || "a customer",
-      productName: product.name,
-      partNumber: product.partNumber,
-      vehicle,
-    });
-    const url = buildWhatsAppLink(product.supplierPhone, msg);
-    if (!url) {
-      toast.error("Supplier phone is invalid — try messaging instead");
-      return;
-    }
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-paper-3 flex flex-col">
-        <PublicNav />
-        <div className="max-w-7xl mx-auto w-full px-5 py-8 grid md:grid-cols-2 gap-8">
-          <div className="aspect-square rounded-[20px] fms-shimmer" />
-          <div className="space-y-3">
-            <div className="h-6 w-32 rounded fms-shimmer" />
-            <div className="h-10 w-3/4 rounded fms-shimmer" />
-            <div className="h-24 rounded-[14px] fms-shimmer" />
-            <div className="h-12 rounded-full fms-shimmer" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !product) {
-    return (
-      <div className="min-h-screen bg-paper-3 flex flex-col">
-        <PublicNav />
-        <div className="px-5 pt-16 text-center">
-          <div className="text-[13px] font-medium text-[color:var(--danger)] mb-4">
-            {error || "Product not found"}
-          </div>
-          <Link href="/search">
-            <Button variant="primary" size="md">Back to browse</Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const images = product.images && product.images.length > 0 ? product.images : [];
-  const inStock = product.stockQuantity > 0;
+  const p = d.product;
+  const fits = fitsVehicle(p.compatibleVehicles, vehicle, d.confirmedFits.filter((f) => vehicle && f.make_name === vehicle.make && f.model_name === vehicle.model).length);
+  const off = discountPct(p.price, p.mrp);
+  const specs = Object.entries(p.specifications ?? {});
 
   return (
-    <div className="min-h-screen bg-paper-3 flex flex-col pb-28 md:pb-0">
-      <PublicNav />
-
-      <div className="max-w-7xl mx-auto w-full px-5 py-6 grid md:grid-cols-2 gap-8">
-        {/* ── Gallery ─────────────────────────────────── */}
-        <div>
-          <div className="rounded-[20px] overflow-hidden aspect-square relative bg-paper shadow-[var(--shadow-card)]">
-            {images[activeImg] ? (
-              <Image
-                src={images[activeImg]}
-                alt={product.name}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                priority
-                className="object-cover"
-              />
-            ) : (
-              <div
-                className="w-full h-full flex items-center justify-center"
-                style={{
-                  background:
-                    "repeating-linear-gradient(135deg, var(--paper-2) 0 6px, var(--paper-3) 6px 12px)",
-                }}
-              >
-                <PackageIcon size={48} className="text-ink-3 opacity-40" />
-              </div>
-            )}
-            {/* Rating + stock overlays */}
-            <div className="absolute top-3 left-3 flex gap-2">
-              <Chip variant="rating" size="md">
-                <StarIcon size={11} className="fill-current" /> 4.5 (12)
-              </Chip>
-            </div>
-            <div className="absolute top-3 right-3">
-              <Chip variant={inStock ? "ok" : "danger"} size="md" dot>
-                {inStock ? "In stock" : "Out of stock"}
-              </Chip>
-            </div>
-          </div>
-          {images.length > 1 && (
-            <div className="grid grid-cols-5 gap-2 mt-3">
-              {images.slice(0, 5).map((url, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setActiveImg(i)}
-                  className={`relative aspect-square rounded-[10px] overflow-hidden transition-all ${
-                    i === activeImg
-                      ? "ring-2 ring-[color:var(--accent)]"
-                      : "opacity-70 hover:opacity-100"
-                  }`}
-                >
-                  <Image src={url} alt="" fill sizes="80px" className="object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* ── Details ─────────────────────────────────── */}
-        <div>
-          <div className="text-[11px] font-bold text-[color:var(--accent-ink)] tracking-wider uppercase">
-            {product.category || "PART"} {product.partNumber && `· ${product.partNumber}`}
-          </div>
-          <h1 className="display text-[32px] sm:text-[40px] leading-[1.05] mt-2 text-ink">
-            {product.name}
-          </h1>
-
-          {/* Trust chips row */}
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            <Chip variant="ok" size="md" dot>
-              <CheckIcon size={11} /> Genuine
-            </Chip>
-            {inStock && (
-              <Chip variant="default" size="md">
-                {product.stockQuantity} in stock
-              </Chip>
-            )}
-            {product.warrantyInfo && (
-              <Chip variant="accent" size="md">
-                <ShieldIcon size={11} /> {product.warrantyInfo.split(" ").slice(0, 2).join(" ")}
-              </Chip>
-            )}
-          </div>
-
-          {/* Price */}
-          <div className="mt-6 flex items-baseline gap-2">
-            <span className="display text-[42px] text-ink leading-none">
-              ₹{price.toLocaleString("en-IN")}
-            </span>
-            <span className="text-[12px] font-bold text-ink-3">incl. GST</span>
-          </div>
-
-          {/* Delivery / verification highlight */}
-          <Card variant="accent" className="!p-4 mt-5 !rounded-[16px]">
-            <div className="flex gap-3 items-start">
-              <div className="w-9 h-9 rounded-full bg-paper flex items-center justify-center text-[color:var(--accent-ink)] flex-shrink-0">
-                <ShieldIcon size={18} />
-              </div>
-              <div className="text-[13px] min-w-0">
-                <div className="font-bold text-ink">GST-verified supplier</div>
-                <div className="text-ink-2 leading-snug mt-0.5">
-                  Reviewed by FindMySpare admin · Direct WhatsApp contact · 7-day return
+    <ShopShell>
+      <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-6 md:py-10 pb-28 md:pb-10">
+        <nav className="text-[13px] font-semibold text-ink-3 mb-4">
+          <Link href="/search" className="hover:text-ink">Parts</Link> / {p.category && <Link href={`/search?category=${encodeURIComponent(p.category)}`} className="hover:text-ink">{p.category}</Link>}
+        </nav>
+        <div className="grid md:grid-cols-[1fr_1.1fr] gap-8 md:gap-12">
+          <div>
+            <PartThumb category={p.category} brand={p.brand} size="lg" className="aspect-square rounded-[24px]" />
+            {d.confirmedFits.length > 0 && (
+              <div className="mt-5 card-flat p-4">
+                <div className="text-[13px] font-extrabold text-[color:var(--success)] flex items-center gap-1.5">✓ Confirmed by buyers to fit</div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {d.confirmedFits.map((f) => <span key={f.make_name + f.model_name} className="chip !h-8 !text-[12.5px]">{f.make_name} {f.model_name} <b className="text-[color:var(--success)]">×{f.n}</b></span>)}
                 </div>
               </div>
-            </div>
-          </Card>
-
-          {/* Supplier row */}
-          <div className="mt-4 p-4 rounded-[16px] bg-paper shadow-[var(--shadow-card)] flex items-center gap-3">
-            <Avatar
-              initials={(product.supplierBusinessName || product.supplierName || "SP")
-                .slice(0, 2)
-                .toUpperCase()}
-              size="lg"
-            />
-            <div className="flex-1 min-w-0">
-              <div className="display text-[15px] text-ink truncate">
-                {product.supplierBusinessName || product.supplierName || "Supplier"}
-              </div>
-              <div className="text-[11px] text-ink-3 mt-0.5 flex items-center gap-1.5">
-                <Chip variant="rating" size="sm">
-                  <StarIcon size={9} className="fill-current" /> 4.7
-                </Chip>
-                <span>Verified supplier · 2yr on platform</span>
-              </div>
-            </div>
-            {buyer?.role === "buyer" && (
-              <button
-                onClick={() => router.push(`/messages/${product.supplierId}`)}
-                className="w-10 h-10 rounded-full bg-accent-wash text-[color:var(--accent-ink)] flex items-center justify-center fms-press"
-                aria-label="Message supplier"
-              >
-                <ChatIcon size={18} />
-              </button>
             )}
           </div>
 
-          {/* Description */}
-          {product.description && (
-            <div className="mt-6">
-              <div className="text-[11px] font-bold text-[color:var(--accent-ink)] tracking-wider uppercase">
-                About this part
-              </div>
-              <p className="text-[14px] mt-2 leading-relaxed text-ink-2 whitespace-pre-wrap">
-                {product.description}
-              </p>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <PartTypeBadge type={p.partType} />
+              {p.brand && <span className="text-[13px] font-extrabold text-ink-2">{p.brand}</span>}
+              {p.partNumber && <span className="mono text-[12px] text-ink-3">#{p.partNumber}</span>}
             </div>
-          )}
+            <h1 className="mt-2 text-[28px] md:text-[34px] font-extrabold tracking-[-0.025em] leading-tight">{p.name}</h1>
+            <div className="mt-2"><RatingPill rating={d.rating} count={d.reviewCount} /></div>
 
-          {/* Compatible vehicles */}
-          {product.compatibleVehicles && product.compatibleVehicles.length > 0 && (
-            <div className="mt-6">
-              <div className="text-[11px] font-bold text-[color:var(--accent-ink)] tracking-wider uppercase">
-                Compatible vehicles
-              </div>
-              <div className="flex flex-wrap gap-2 mt-3">
-                {product.compatibleVehicles.map((v, i) => (
-                  <Chip key={i} variant="default" size="md">
-                    {v.make} {v.model}
-                    {v.year ? ` · ${v.year}` : ""}
-                  </Chip>
-                ))}
-              </div>
+            <div className="mt-5 flex items-baseline gap-3">
+              <span className="price text-[30px]">{inr(p.price)}</span>
+              {off > 0 && <><span className="strike text-[17px]">MRP {inr(p.mrp)}</span><span className="text-[15px] font-extrabold text-[color:var(--success)]">{off}% off</span></>}
             </div>
-          )}
+            <div className="text-[12.5px] text-ink-3 font-semibold">Inclusive of GST · {p.stockQuantity > 0 ? `${p.stockQuantity} in stock` : "Out of stock"}</div>
 
-          {/* Specifications */}
-          {specs.length > 0 && (
-            <div className="mt-6">
-              <div className="text-[11px] font-bold text-[color:var(--accent-ink)] tracking-wider uppercase">
-                Specifications
+            {/* Fit check */}
+            <div className="mt-5 rounded-[16px] border-2 p-4 flex items-center justify-between gap-3" style={{ borderColor: fits ? "var(--success)" : fits === false ? "var(--amber)" : "var(--line)", background: fits ? "var(--success-wash)" : fits === false ? "var(--amber-wash)" : "var(--paper-2)" }}>
+              {vehicle ? <FitBadge fits={fits} label={`${vehicle.make} ${vehicleShortLabel(vehicle)}`} className="!text-[14px]" /> : <span className="text-[14px] font-bold text-ink-2">Check if it fits your vehicle</span>}
+              <button onClick={() => setPicker(true)} className="text-[13px] font-extrabold text-[color:var(--accent)] whitespace-nowrap">{vehicle ? "Change" : "Select vehicle"}</button>
+            </div>
+            <div className="mt-3 text-[13px] text-ink-3"><b className="text-ink-2">Listed for:</b> {(p.compatibleVehicles ?? []).map((v) => `${v.make} ${v.model}${v.year ? ` (${v.year})` : ""}`).join(" · ") || "No fitment listed. Ask the seller."}</div>
+
+            <div className="hidden md:flex mt-6 items-center gap-3">
+              <AddButton p={p} size="lg" className="!w-44" />
+              <Link href="/buyer/cart" className="h-12 px-6 inline-flex items-center rounded-[12px] bg-[color:var(--accent)] text-white text-[15px] font-extrabold fms-press">Go to cart</Link>
+            </div>
+
+            <div className="mt-6 grid grid-cols-3 gap-2 text-center">
+              {[["Fit or free return", "If it doesn't fit your selected vehicle"], ["Escrow protected", "Seller paid after delivery"], [p.warrantyInfo && p.warrantyInfo !== "—" ? `Warranty: ${p.warrantyInfo}` : "Seller warranty", "Tracked in your Passport"]].map(([t, s]) => (
+                <div key={t} className="rounded-[14px] bg-paper-2 p-3"><div className="text-[12.5px] font-extrabold">{t}</div><div className="text-[11.5px] text-ink-3 mt-0.5 leading-snug">{s}</div></div>
+              ))}
+            </div>
+
+            {/* Seller */}
+            <div className="mt-6 card-flat p-4 flex items-center gap-4">
+              <span className="w-12 h-12 rounded-[14px] bg-ink text-paper flex items-center justify-center text-[18px] font-extrabold">{(p.supplierBusinessName ?? "S").slice(0, 1)}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap"><span className="text-[15px] font-extrabold">{p.supplierBusinessName ?? p.supplierName}</span>{p.supplierVerified && <VerifiedBadge label="GST verified" />}</div>
+                <div className="text-[12.5px] text-ink-3 font-semibold mt-0.5">
+                  {p.supplierCity ?? "India"} · {d.supplierOrders} orders delivered · on FMS {formatDistanceToNowStrict(new Date(p.supplierSince))}
+                </div>
               </div>
-              <div className="mt-3 rounded-[16px] bg-paper shadow-[var(--shadow-card)] overflow-hidden">
-                {specs.map(([k, v], i) => (
-                  <div
-                    key={k}
-                    className={`flex justify-between items-center py-3 px-4 text-[13px] ${
-                      i < specs.length - 1 ? "border-b border-line" : ""
-                    }`}
-                  >
-                    <span className="text-ink-3 font-semibold">{k}</span>
-                    <span className="font-bold text-ink">{v as React.ReactNode}</span>
+              <RatingPill rating={d.supplierRating} count={d.supplierReviewCount} />
+            </div>
+          </div>
+        </div>
+
+        {offers.length > 0 && (
+          <section className="mt-12">
+            <SectionTitle title={`Compare ${offers.length} other offer${offers.length > 1 ? "s" : ""}`} sub="Same part from other verified sellers" />
+            <div className="card-flat divide-y divide-line">
+              {offers.map((o) => (
+                <Link key={o.id} href={`/product/${o.id}`} className="flex items-center gap-4 p-4 hover:bg-paper-2">
+                  <PartThumb category={o.category} size="sm" className="w-14 h-14 rounded-[12px] flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap"><span className="text-[14.5px] font-extrabold">{o.brand}</span><PartTypeBadge type={o.partType} /></div>
+                    <div className="text-[12.5px] text-ink-3 font-semibold">{o.supplierBusinessName} · {o.supplierCity}</div>
                   </div>
-                ))}
-              </div>
+                  <RatingPill rating={o.rating} />
+                  <span className="price text-[16px] w-24 text-right">{inr(o.price)}</span>
+                </Link>
+              ))}
             </div>
-          )}
+          </section>
+        )}
 
-          {/* Trust strip */}
-          <div className="mt-6 grid grid-cols-3 gap-2">
-            <MiniTrust icon={<ShieldIcon size={16} />} label="Verified" />
-            <MiniTrust icon={<TruckIcon size={16} />} label="Pan-India" />
-            <MiniTrust icon={<BoltIcon size={16} />} label="Fast support" />
-          </div>
-
-          {!buyer && (
-            <div className="mt-5 text-[12px] text-ink-3 text-center">
-              Want to track requests and quotes?{" "}
-              <Link href="/login" className="text-[color:var(--accent-ink)] font-bold hover:underline">
-                Sign in
-              </Link>
-            </div>
-          )}
-
-          {/* Inline (desktop) primary CTAs — sticky version below for mobile */}
-          <div className="mt-6 hidden md:flex flex-col gap-2.5">
-            {buyer?.role === "buyer" && inStock && (
-              <div className="flex gap-2.5">
-                <Button variant="accent" block size="lg" onClick={() => addToCart(true)} rightIcon={<ArrowRightIcon size={16} />}>
-                  Buy now
-                </Button>
-                <Button variant="ghost" size="lg" onClick={() => addToCart(false)}>
-                  Add to cart
-                </Button>
-              </div>
+        <section className="mt-12 grid md:grid-cols-2 gap-8">
+          <div>
+            <SectionTitle title="Details" />
+            {p.description && <p className="text-[15px] text-ink-2 leading-relaxed">{p.description}</p>}
+            {specs.length > 0 && (
+              <dl className="mt-4 card-flat divide-y divide-line">
+                {specs.map(([k, v]) => <div key={k} className="flex justify-between px-4 py-3 text-[14px]"><dt className="text-ink-3 font-semibold">{k}</dt><dd className="font-bold">{v}</dd></div>)}
+              </dl>
             )}
-            <div className="flex gap-2.5">
-              <Button
-                variant="primary"
-                block
-                size="lg"
-                onClick={handleContact}
-                disabled={!product.supplierPhone}
-                rightIcon={<ArrowRightIcon size={16} />}
-              >
-                Contact supplier on WhatsApp
-              </Button>
-              {buyer?.role === "buyer" && (
-                <Button
-                  variant="ghost"
-                  size="lg"
-                  onClick={() => router.push(`/messages/${product.supplierId}`)}
-                >
-                  Message
-                </Button>
-              )}
-            </div>
           </div>
-        </div>
+          <div>
+            <SectionTitle title="Reviews" sub={d.reviewCount ? `${d.reviewCount} from verified buyers` : undefined} />
+            {d.reviews.length ? (
+              <ul className="space-y-3">
+                {d.reviews.map((r, i) => (
+                  <li key={i} className="card-flat p-4">
+                    <div className="flex items-center justify-between gap-2"><RatingPill rating={r.rating} /><span className="text-[12px] text-ink-3">{formatDistanceToNowStrict(new Date(r.created_at))} ago</span></div>
+                    {r.comment && <p className="text-[14px] text-ink-2 mt-2">{r.comment}</p>}
+                    <div className="text-[12.5px] text-ink-3 font-semibold mt-2">
+                      {r.buyer_name ?? "Buyer"}{r.vehicle ? ` · ${r.vehicle.make} ${r.vehicle.model}` : ""}
+                      {r.fit_confirmed && <span className="text-[color:var(--success)] font-extrabold"> · ✓ Fitted perfectly</span>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="text-[14px] text-ink-3">No reviews yet. Buyers can review after delivery.</p>}
+          </div>
+        </section>
       </div>
 
-      {/* ── Sticky bottom CTA (mobile) — marketplace hallmark ── */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-paper/95 backdrop-blur-xl shadow-[var(--shadow-sticky)] pb-[max(env(safe-area-inset-bottom),12px)] pt-3 px-4">
-        <div className="flex items-center gap-3">
-          <div className="flex-shrink-0">
-            <div className="text-[10px] font-bold text-ink-3 uppercase tracking-wider">Price</div>
-            <div className="display text-[22px] text-ink leading-none">
-              ₹{price.toLocaleString("en-IN")}
-            </div>
-          </div>
-          {buyer?.role === "buyer" && inStock ? (
-            <Button
-              variant="accent"
-              size="lg"
-              className="flex-1"
-              onClick={() => addToCart(true)}
-              rightIcon={<ArrowRightIcon size={16} />}
-            >
-              Buy now
-            </Button>
-          ) : (
-            <Button
-              variant="primary"
-              size="lg"
-              className="flex-1"
-              onClick={handleContact}
-              disabled={!product.supplierPhone}
-              rightIcon={<ArrowRightIcon size={16} />}
-            >
-              Contact on WhatsApp
-            </Button>
-          )}
-        </div>
+      {/* Mobile sticky buy bar */}
+      <div className="md:hidden fixed inset-x-0 bottom-[62px] z-[96] bg-paper border-t border-line px-4 py-3 flex items-center justify-between shadow-[var(--shadow-sticky)]">
+        <div><div className="price text-[18px]">{inr(p.price)}</div>{off > 0 && <div className="text-[12px] font-bold text-[color:var(--success)]">{off}% off MRP</div>}</div>
+        <AddButton p={p} size="lg" />
       </div>
-    </div>
-  );
-}
-
-function MiniTrust({ icon, label }: { icon: React.ReactNode; label: string }) {
-  return (
-    <div className="flex flex-col items-center gap-1 py-2.5 rounded-[12px] bg-paper shadow-[var(--shadow-sm)]">
-      <span className="text-[color:var(--accent-ink)]">{icon}</span>
-      <span className="text-[11px] font-bold text-ink">{label}</span>
-    </div>
+      <VehiclePicker open={picker} onClose={() => setPicker(false)} />
+    </ShopShell>
   );
 }

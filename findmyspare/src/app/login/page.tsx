@@ -1,5 +1,6 @@
 "use client";
 
+import { Logo } from "@/components/brand/Logo";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -35,7 +36,10 @@ export default function LoginPage() {
     if (res.isNewUser || !res.user.profileCompleted) {
       router.push("/complete-profile");
     } else {
-      router.push(getPostLoginPath(res.user));
+      // Honour ?next= for same-site paths only (no open redirects).
+      const next = new URLSearchParams(window.location.search).get("next");
+      const safe = next && next.startsWith("/") && !next.startsWith("//") ? next : null;
+      router.push(safe && res.user.role === "buyer" ? safe : getPostLoginPath(res.user));
     }
   }
 
@@ -45,8 +49,7 @@ export default function LoginPage() {
       <div className="border-b border-[color:var(--line)] bg-paper">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 h-[60px] flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-[6px] bg-ink flex items-center justify-center text-paper font-bold text-[15px]">f</div>
-            <span className="text-[15px] font-semibold tracking-tight text-ink">FindMySpare</span>
+            <Logo size={26} />
           </Link>
           <Link href="/" className="text-[13px] font-semibold text-ink-2 hover:text-ink">Back to home</Link>
         </div>

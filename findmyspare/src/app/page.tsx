@@ -1,482 +1,202 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useState } from "react";
-import { PublicNav } from "@/components/layout/PublicNav";
-import { Button } from "@/components/ui/Button";
-import {
-  ArrowRightIcon,
-  StarIcon,
-  PackageIcon,
-} from "@/lib/icons";
-import {
-  EngineIcon,
-  BrakeIcon,
-  HeadlightIcon,
-  BodyIcon,
-  SuspensionIcon,
-  TransmissionIcon,
-  ElectricalIcon,
-  FilterIcon as FilterIconSvg,
-  TyreIcon,
-  AcIcon,
-  WiperIcon,
-  InteriorIcon,
-} from "@/lib/category-icons";
-import { productsApi } from "@/lib/api";
-import type { ProductSummary } from "@/lib/types";
-import { formatPrice } from "@/lib/constants";
+import { ShopShell } from "@/components/shop/AppShell";
+import { ProductTile } from "@/components/shop/ProductTile";
+import { CATEGORIES, SectionTitle, Skel } from "@/components/shop/ui";
+import { VehiclePicker } from "@/components/shop/VehiclePicker";
+import { LogoMark } from "@/components/brand/Logo";
 import { BrandLogo } from "@/lib/brand-logos";
-import { useAuthStore, getPostLoginPath } from "@/lib/store";
+import { useAuthStore } from "@/lib/store";
+import { useMounted } from "@/lib/use-mounted";
+import { useVehicleStore, vehicleShortLabel } from "@/lib/vehicle-store";
+import { shopApi, type ShopProduct } from "@/lib/api/v2";
 
-const CATEGORIES = [
-  { key: "engine",   label: "Engine",       Icon: EngineIcon,       q: "engine" },
-  { key: "brakes",   label: "Brakes",       Icon: BrakeIcon,        q: "brakes" },
-  { key: "lighting", label: "Lighting",     Icon: HeadlightIcon,    q: "headlight" },
-  { key: "body",     label: "Body",         Icon: BodyIcon,         q: "bumper" },
-  { key: "susp",     label: "Suspension",   Icon: SuspensionIcon,   q: "shock" },
-  { key: "tx",       label: "Transmission", Icon: TransmissionIcon, q: "clutch" },
-  { key: "elec",     label: "Electrical",   Icon: ElectricalIcon,   q: "battery" },
-  { key: "filters",  label: "Filters",      Icon: FilterIconSvg,    q: "filter" },
-  { key: "tyre",     label: "Tyres",        Icon: TyreIcon,         q: "tyre" },
-  { key: "aircon",   label: "AC",           Icon: AcIcon,           q: "ac" },
-  { key: "wipers",   label: "Wipers",       Icon: WiperIcon,        q: "wiper" },
-  { key: "interior", label: "Interior",     Icon: InteriorIcon,     q: "interior" },
-];
+const MAKES = ["Maruti Suzuki", "Hyundai", "Tata", "Mahindra", "Honda", "Toyota", "Hero", "Bajaj", "TVS", "Royal Enfield"];
 
-const VEHICLE_BRANDS = [
-  "Maruti Suzuki",
-  "Hyundai",
-  "Tata",
-  "Mahindra",
-  "Honda",
-  "Toyota",
-  "Kia",
-  "Renault",
-];
+function Rail({ title, sub, products, loading, href }: { title: string; sub?: string; products: ShopProduct[]; loading: boolean; href: string }) {
+  return (
+    <section className="max-w-[1200px] mx-auto px-4 md:px-6 mt-12">
+      <SectionTitle title={title} sub={sub} action={<Link href={href} className="text-[14px] font-extrabold text-[color:var(--accent)] whitespace-nowrap">See all →</Link>} />
+      <div className="flex gap-5 overflow-x-auto scroll-hidden pb-2 -mx-4 px-4 md:mx-0 md:px-0 snap-x">
+        {loading
+          ? Array.from({ length: 5 }).map((_, i) => <div key={i} className="w-[230px] flex-shrink-0"><Skel className="aspect-[4/3]" /><Skel className="h-4 mt-4 w-3/4" /><Skel className="h-4 mt-2 w-1/2" /></div>)
+          : products.map((p) => <div key={p.id} className="w-[230px] flex-shrink-0 snap-start"><ProductTile p={p} /></div>)}
+      </div>
+    </section>
+  );
+}
 
-const VALUES = [
-  {
-    title: "Verified supply",
-    body: "Every supplier is GST-verified and admin reviewed before going live. No fly-by-night listings.",
-  },
-  {
-    title: "Quotes in minutes",
-    body: "Post a request and verified suppliers compete on price, quality, and ETA — live.",
-  },
-  {
-    title: "Direct contact",
-    body: "Connect with the supplier directly over WhatsApp and chat. No middle layer slowing you down.",
-  },
-  {
-    title: "Pan-India reach",
-    body: "Suppliers across 6,500+ pincodes. Find the right part wherever you are.",
-  },
-];
-
-export default function PublicHome() {
-  const [products, setProducts] = useState<ProductSummary[]>([]);
-  const user = useAuthStore((s) => s.user);
-  const isHydrated = useAuthStore((s) => s.isHydrated);
-  const loggedIn = isHydrated && !!user;
-  const dashboardHref = user ? getPostLoginPath(user) : "/login";
+export default function HomePage() {
+  const mounted = useMounted();
+  const authUser = useAuthStore((s) => s.user);
+  const user = mounted ? authUser : null;
+  const vehicle = useVehicleStore((s) => s.selected);
+  const [picker, setPicker] = useState(false);
+  // Results are keyed by vehicle so "loading" is derived, not set in the effect.
+  const key = `${vehicle?.make ?? ""}|${vehicle?.model ?? ""}`;
+  const [rails, setRails] = useState<{ key: string; forVehicle: ShopProduct[]; genuine: ShopProduct[] } | null>(null);
+  const loading = rails?.key !== key;
+  const forVehicle = rails?.forVehicle ?? [];
+  const genuine = rails?.genuine ?? [];
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await productsApi.list({ limit: 8, sort: "newest" });
-        if (!cancelled) setProducts(res.products);
-      } catch {}
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    Promise.all([
+      shopApi.list({ make: vehicle?.make, model: vehicle?.model, sort: "popular", limit: 12 }),
+      shopApi.list({ partType: "genuine", limit: 12 }),
+    ])
+      .then(([a, b]) => setRails({ key, forVehicle: a.products, genuine: b.products }))
+      .catch(() => setRails({ key, forVehicle: [], genuine: [] }));
+  }, [key, vehicle?.make, vehicle?.model]);
 
-  const featured = products.slice(0, 8).map((p, i) => ({
-    ...p,
-    rating: [4.8, 4.7, 4.9, 4.6, 4.5, 4.7, 4.8, 4.6][i] || 4.5,
-  }));
+  const first = user?.name?.split(" ")[0];
 
   return (
-    <div className="min-h-screen bg-paper flex flex-col">
-      <PublicNav />
-
-      {/* ───── HERO ──────────────────────────────────── */}
-      <section className="border-b border-[color:var(--line)]">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 py-24 sm:py-32 lg:py-40">
-          <div className="max-w-4xl">
-            <div className="eyebrow mb-7">India · Auto parts marketplace</div>
-            <h1 className="h1 text-ink">
-              Every part. For every car.
-              <br />
-              <span className="text-ink-3">Delivered with care.</span>
-            </h1>
-            <p className="text-ink-2 text-[17px] mt-8 max-w-xl leading-relaxed">
-              A curated marketplace for the Indian aftermarket. Verified suppliers,
-              live quotes, direct contact.
-            </p>
-            <div className="mt-10 flex gap-3 flex-wrap">
-              <Link href="/search">
-                <Button variant="primary" size="lg" rightIcon={<ArrowRightIcon size={16} />}>
-                  Browse the marketplace
-                </Button>
-              </Link>
-              <Link href={loggedIn ? dashboardHref : "/login"}>
-                <Button variant="ghost" size="lg">
-                  {loggedIn ? "Go to dashboard" : "Sign in"}
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ───── HERO IMAGE ─────────────────────────────── */}
-      <section className="border-b border-[color:var(--line)] bg-paper-3">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 py-12">
-          <div className="relative aspect-[16/8] sm:aspect-[16/7] rounded-[14px] overflow-hidden bg-paper-2">
-            <Image
-              src="https://images.unsplash.com/photo-1486006920555-c77dcf18193c?w=2000&q=85"
-              alt="Curated parts catalogue"
-              fill
-              sizes="(max-width: 1280px) 100vw, 1216px"
-              priority
-              className="object-cover"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ───── CATEGORIES ─────────────────────────────── */}
-      <section className="border-b border-[color:var(--line)]">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 py-20 sm:py-24">
-          <SectionHead
-            title="Shop by category"
-            link={{ label: "All categories", href: "/search" }}
-          />
-          <div className="mt-12 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-px bg-[color:var(--line)] border border-[color:var(--line)] rounded-[10px] overflow-hidden">
-            {CATEGORIES.map(({ key, label, Icon, q }) => (
-              <Link
-                key={key}
-                href={`/search?q=${encodeURIComponent(q)}`}
-                className="group flex flex-col items-center justify-center gap-3 bg-paper hover:bg-paper-2 py-7 px-3 transition-colors"
-              >
-                <Icon size={22} className="text-ink-2 group-hover:text-ink transition-colors" />
-                <span className="text-[12px] font-semibold text-ink text-center tracking-tight">
-                  {label}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ───── FEATURED PRODUCTS ──────────────────────── */}
-      <section className="border-b border-[color:var(--line)]">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 py-20 sm:py-24">
-          <SectionHead
-            title="Curated selection"
-            subtitle="Hand-selected from verified suppliers nationwide"
-            link={{ label: "Browse all", href: "/search" }}
-          />
-
-          {featured.length === 0 ? (
-            <div className="mt-12 border border-dashed border-[color:var(--line-2)] rounded-[10px] p-16 text-center">
-              <div className="h3 mb-2">No products listed yet</div>
-              <div className="text-[14px] text-ink-3 mb-6">
-                No products listed yet. Check back soon.
-              </div>
-              <Link href={loggedIn ? dashboardHref : "/login"}>
-                <Button variant="primary" size="md">{loggedIn ? "Go to dashboard" : "Sign in"}</Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 lg:gap-6">
-              {featured.map((p) => (
-                <ProductTile key={p.id} product={p} rating={p.rating} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ───── BRANDS ──────────────────────────────────── */}
-      <section className="border-b border-[color:var(--line)]">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 py-20">
-          <SectionHead title="Shop by brand" />
-          <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-px bg-[color:var(--line)] border border-[color:var(--line)] rounded-[10px] overflow-hidden">
-            {VEHICLE_BRANDS.map((name) => (
-              <Link
-                key={name}
-                href={`/search?q=${encodeURIComponent(name)}`}
-                className="group flex flex-col items-center justify-center gap-2.5 bg-paper hover:bg-paper-2 py-8 px-3 transition-colors"
-              >
-                <BrandLogo name={name} size={52} />
-                <span className="text-[12px] font-semibold tracking-tight text-ink-2 text-center group-hover:text-ink transition-colors">
-                  {name}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ───── VALUES ──────────────────────────────────── */}
-      <section className="border-b border-[color:var(--line)] bg-paper-3">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 py-24">
-          <div className="max-w-2xl mb-16">
-            <div className="eyebrow mb-5">Why FindMySpare</div>
-            <h2 className="h2">
-              Built around the realities of the Indian aftermarket.
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[color:var(--line)] border border-[color:var(--line)] rounded-[10px] overflow-hidden">
-            {VALUES.map((v, i) => (
-              <div key={v.title} className="bg-paper p-8 lg:p-10">
-                <div className="text-[11px] font-semibold text-ink-3 tabular tracking-wider mb-4">
-                  0{i + 1}
-                </div>
-                <div className="h3 mb-3 text-ink">{v.title}</div>
-                <p className="text-[14px] text-ink-2 leading-relaxed">
-                  {v.body}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ───── HOW IT WORKS ────────────────────────────── */}
-      <section className="border-b border-[color:var(--line)]">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 py-24">
-          <div className="max-w-2xl mb-16">
-            <div className="eyebrow mb-5">How it works</div>
-            <h2 className="h2">Three steps from request to part.</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16">
-            {[
-              { step: "01", title: "Post a request", body: "Tell us the part name, make, model, and year. Add a photo if you can." },
-              { step: "02", title: "Receive quotes", body: "Verified suppliers compete on price, quality, and ETA — live." },
-              { step: "03", title: "Connect direct", body: "Pick the best quote and chat or WhatsApp the supplier directly to close the deal." },
-            ].map((s) => (
-              <div key={s.step} className="border-t border-ink pt-5">
-                <div className="text-[12px] font-semibold text-ink-3 tabular tracking-wider mb-6">
-                  {s.step}
-                </div>
-                <div className="h3 mb-3">{s.title}</div>
-                <p className="text-[14px] text-ink-2 leading-relaxed">{s.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ───── SUPPLIER CTA ────────────────────────────── */}
-      <section className="bg-ink text-paper">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 py-28 grid md:grid-cols-[1.4fr_1fr] gap-12 items-end">
+    <ShopShell>
+      {/* ── Hero ── */}
+      <section className="bg-[color:var(--accent-wash)] border-b border-[color:var(--line)]">
+        <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-10 md:py-14 grid md:grid-cols-[1.2fr_1fr] gap-8 items-center">
           <div>
-            <div className="eyebrow !text-paper opacity-60 mb-6">For suppliers</div>
-            <h3 className="h1 !text-paper">
-              Reach verified buyers
-              <br />
-              <span className="opacity-60">across India.</span>
-            </h3>
-            <p className="opacity-70 mt-7 text-[16px] max-w-lg leading-relaxed">
-              GST-verified onboarding, live inquiry feed, direct WhatsApp leads.
-              Zero listing fees to get started.
+            <div className="text-[14px] font-extrabold text-[color:var(--accent)]">{first ? `Namaste, ${first}` : "India’s spare-parts marketplace"}</div>
+            <h1 className="mt-2 text-[36px] md:text-[52px] leading-[1.04] font-extrabold tracking-[-0.035em] text-ink">
+              Sahi part.<br />Pakka record.
+            </h1>
+            <p className="mt-4 text-[16px] md:text-[17px] text-ink-2 max-w-[520px] leading-relaxed font-medium">
+              The right part for your car or bike from verified sellers. Guaranteed to fit, delivered fast, and saved to your vehicle’s service record.
             </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href="/search" className="h-12 px-6 inline-flex items-center rounded-[14px] bg-[color:var(--accent)] text-white text-[15px] font-extrabold hover:bg-[color:var(--accent-ink)] fms-press">Shop parts</Link>
+              <Link href="/buyer/requests/new" className="h-12 px-6 inline-flex items-center rounded-[14px] bg-paper border border-line-2 text-ink text-[15px] font-extrabold hover:border-ink fms-press">Can’t find it? Get quotes</Link>
+            </div>
           </div>
-          <div className="flex gap-3 md:justify-end flex-wrap">
-            <Link href="/sell">
-              <Button
-                variant="accent"
-                size="lg"
-                rightIcon={<ArrowRightIcon size={16} />}
-              >
-                Become a supplier
-              </Button>
-            </Link>
-            <Link href="/supplier-login">
-              <Button
-                variant="ghost"
-                size="lg"
-                className="!bg-transparent !border-paper/30 !text-paper hover:!bg-white/10"
-              >
-                Supplier login
-              </Button>
-            </Link>
+
+          {/* Vehicle card */}
+          <div className="card p-5 md:p-6">
+            {vehicle ? (
+              <>
+                <div className="text-[12px] font-extrabold uppercase tracking-wide text-ink-3">Shopping for</div>
+                <div className="mt-2 flex items-center gap-3">
+                  <BrandLogo name={vehicle.make} size={48} />
+                  <div className="min-w-0">
+                    <div className="text-[20px] font-extrabold tracking-tight truncate">{vehicle.make} {vehicleShortLabel(vehicle)}</div>
+                    {vehicle.regNoDisplay && <span className="reg-plate text-[12px] mt-1">{vehicle.regNoDisplay}</span>}
+                  </div>
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <button onClick={() => setPicker(true)} className="h-10 px-4 rounded-[12px] bg-paper-2 text-[13.5px] font-bold hover:bg-paper-3">Change vehicle</button>
+                  {vehicle.vehicleId && <Link href={`/vehicles/${vehicle.vehicleId}`} className="h-10 px-4 inline-flex items-center rounded-[12px] bg-paper-2 text-[13.5px] font-bold hover:bg-paper-3">Open Passport</Link>}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-[18px] font-extrabold tracking-tight">Which vehicle is it for?</div>
+                <p className="text-[14px] text-ink-3 mt-1">We’ll only show parts that fit.</p>
+                <button onClick={() => setPicker(true)} className="mt-4 w-full h-12 rounded-[14px] bg-ink text-paper text-[15px] font-extrabold fms-press">Select make & model</button>
+                <Link href={user ? "/vehicles" : "/login?next=/vehicles"} className="mt-2.5 w-full h-12 rounded-[14px] border-2 border-dashed border-line-2 text-ink-2 text-[14px] font-bold flex items-center justify-center gap-2 hover:border-[color:var(--accent)]">
+                  <span className="reg-plate text-[11px]">MH 12 AB 3456</span> Add by number plate
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>
 
-      {/* ───── FOOTER ──────────────────────────────────── */}
-      <footer className="border-t border-[color:var(--line)] bg-paper">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 py-16 grid grid-cols-2 md:grid-cols-5 gap-10">
-          <div className="col-span-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-[6px] bg-ink flex items-center justify-center text-paper font-bold text-[16px] leading-none">
-                f
-              </div>
-              <span className="text-[16px] font-semibold tracking-tight">FindMySpare</span>
-            </div>
-            <p className="text-[13px] text-ink-3 mt-5 max-w-xs leading-relaxed">
-              India&apos;s trusted parts marketplace. Verified suppliers, live quotes, direct contact across India.
-            </p>
-          </div>
-          <FooterCol
-            title="Buyers"
-            links={[
-              { label: "Browse parts", href: "/search" },
-              { label: "Post a request", href: "/login" },
-              { label: "Track orders", href: "/login" },
-              { label: "How it works", href: "/" },
-            ]}
-          />
-          <FooterCol
-            title="Suppliers"
-            links={[
-              { label: "Sell with us", href: "/sell" },
-              { label: "Supplier login", href: "/supplier-login" },
-              { label: "Onboarding", href: "/sell" },
-              { label: "Pricing", href: "#" },
-            ]}
-          />
-          <FooterCol
-            title="Company"
-            links={[
-              { label: "About", href: "#" },
-              { label: "Press", href: "#" },
-              { label: "Careers", href: "#" },
-              { label: "Contact", href: "#" },
-            ]}
-          />
-        </div>
-        <div className="border-t border-[color:var(--line)]">
-          <div className="max-w-7xl mx-auto px-6 sm:px-8 py-6 flex items-center justify-between flex-wrap gap-3 text-[11.5px] text-ink-3">
-            <span>© 2026 FindMySpare · Made in India</span>
-            <span>Privacy · Terms · Refund policy</span>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-}
-
-/* ─── Helpers ─────────────────────────────────────────── */
-
-function SectionHead({
-  title,
-  subtitle,
-  link,
-}: {
-  title: string;
-  subtitle?: string;
-  link?: { label: string; href: string };
-}) {
-  return (
-    <div className="flex items-end justify-between gap-6">
-      <div>
-        <h2 className="h2">{title}</h2>
-        {subtitle && <p className="text-[14px] text-ink-3 mt-2">{subtitle}</p>}
-      </div>
-      {link && (
-        <Link
-          href={link.href}
-          className="text-[13px] font-semibold text-ink hover:text-[color:var(--accent-ink)] tracking-tight flex items-center gap-1 whitespace-nowrap"
-        >
-          {link.label}
-          <ArrowRightIcon size={13} />
-        </Link>
-      )}
-    </div>
-  );
-}
-
-function FooterCol({
-  title,
-  links,
-}: {
-  title: string;
-  links: Array<{ label: string; href: string }>;
-}) {
-  return (
-    <div>
-      <div className="eyebrow mb-4">{title}</div>
-      <ul className="space-y-2.5">
-        {links.map((l) => (
-          <li key={l.label}>
-            <Link
-              href={l.href}
-              className="text-[13px] text-ink-2 hover:text-ink transition-colors tracking-tight"
-            >
-              {l.label}
-            </Link>
-          </li>
+      {/* ── Three doors (Swiggy-style service tiles) ── */}
+      <section className="max-w-[1200px] mx-auto px-4 md:px-6 -mt-0 md:mt-10 pt-8 md:pt-0 grid sm:grid-cols-3 gap-4">
+        {[
+          { href: "/search", t: "Shop parts", s: "OES, genuine & aftermarket from verified sellers", tag: "Delivery in 1–3 days", bg: "#FFF1EB", fg: "var(--accent)" },
+          { href: "/buyer/requests/new", t: "Get quotes", s: "Describe or snap any part. Sellers compete", tag: "First quote in minutes", bg: "#EAF0FD", fg: "#2457C5" },
+          { href: "/vehicles", t: "Vehicle Passport", s: "Every service, part and warranty in one place", tag: "Free", bg: "#E7F5EF", fg: "#0B7A53" },
+        ].map((d) => (
+          <Link key={d.t} href={d.href} className="group relative overflow-hidden rounded-[22px] p-5 min-h-[148px] fms-press" style={{ background: d.bg }}>
+            <div className="text-[22px] font-extrabold tracking-tight text-ink">{d.t}</div>
+            <div className="text-[13.5px] font-semibold text-ink-2 mt-1 max-w-[220px]">{d.s}</div>
+            <span className="inline-flex mt-3 h-7 px-3 rounded-full bg-white text-[12px] font-extrabold items-center" style={{ color: d.fg }}>{d.tag}</span>
+            <LogoMark size={110} color={d.fg} className="absolute -right-5 -bottom-6 opacity-15 group-hover:opacity-25 transition-opacity" />
+          </Link>
         ))}
-      </ul>
-    </div>
-  );
-}
+      </section>
 
-function ProductTile({
-  product: p,
-  rating,
-}: {
-  product: ProductSummary;
-  rating: number;
-}) {
-  const hasStock = p.stockQuantity > 0;
-  const priceNum = parseFloat(p.price);
-
-  return (
-    <Link href={`/product/${p.id}`} className="block group">
-      <div className="bg-paper rounded-[10px] overflow-hidden border border-[color:var(--line)] fms-press hover:border-[color:var(--line-2)] transition-colors">
-        <div className="relative aspect-[4/5] bg-paper-2 overflow-hidden">
-          {p.images?.[0] ? (
-            <Image
-              src={p.images[0]}
-              alt={p.name}
-              fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px"
-              className="object-cover group-hover:scale-[1.03] transition-transform duration-700"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <PackageIcon size={32} className="text-ink-3 opacity-30" />
-            </div>
-          )}
-          {!hasStock && (
-            <div className="absolute inset-0 bg-paper/80 backdrop-blur-[1px] flex items-center justify-center">
-              <span className="px-3 py-1 rounded-full bg-ink text-paper text-[10px] font-bold tracking-wider uppercase">
-                Out of stock
+      {/* ── Categories ── */}
+      <section className="max-w-[1200px] mx-auto px-4 md:px-6 mt-12">
+        <SectionTitle title={vehicle ? `Shop by category for your ${vehicle.model}` : "What are you looking for?"} />
+        <div className="grid grid-cols-4 sm:grid-cols-6 gap-x-3 gap-y-6">
+          {CATEGORIES.map((c) => (
+            <Link key={c.key} href={`/search?category=${encodeURIComponent(c.key)}`} className="flex flex-col items-center gap-2 group">
+              <span className="w-[72px] h-[72px] md:w-[88px] md:h-[88px] rounded-full flex items-center justify-center fms-press group-hover:scale-105" style={{ background: c.tint, color: c.ink }}>
+                <c.Icon size={34} />
               </span>
+              <span className="text-[12.5px] md:text-[13.5px] font-bold text-ink-2 text-center leading-tight">{c.label}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <Rail
+        title={vehicle ? `Top picks for your ${vehicleShortLabel(vehicle)}` : "Popular right now"}
+        sub={vehicle ? "Listed or buyer-confirmed to fit" : "Most viewed parts this week"}
+        products={forVehicle}
+        loading={loading}
+        href={vehicle ? `/search?make=${encodeURIComponent(vehicle.make)}&model=${encodeURIComponent(vehicle.model)}` : "/search"}
+      />
+
+      {/* ── Promise strip ── */}
+      <section className="max-w-[1200px] mx-auto px-4 md:px-6 mt-12">
+        <div className="rounded-[22px] bg-ink text-white p-6 md:p-8 grid md:grid-cols-4 gap-6">
+          <div className="md:col-span-1">
+            <div className="text-[13px] font-extrabold text-[color:var(--brand)] uppercase tracking-wider">FMS Promise</div>
+            <div className="text-[22px] font-extrabold tracking-tight mt-1 leading-tight">Buy like you’re at the counter, without the running around.</div>
+          </div>
+          {[
+            ["Verified sellers", "Every seller is GST-checked and reviewed before going live."],
+            ["Fit or free return", "If it doesn’t fit the vehicle you selected, we pick it up free."],
+            ["Money held safely", "Your payment is held in escrow and released only after delivery."],
+          ].map(([t, s]) => (
+            <div key={t} className="flex gap-3">
+              <span className="w-9 h-9 rounded-[12px] bg-white/10 flex items-center justify-center flex-shrink-0"><LogoMark size={20} color="#3DD39A" /></span>
+              <div><div className="text-[15px] font-extrabold">{t}</div><div className="text-[13.5px] text-white/65 mt-0.5 leading-snug">{s}</div></div>
             </div>
-          )}
+          ))}
         </div>
-        <div className="p-5 border-t border-[color:var(--line)]">
-          {p.category && (
-            <div className="eyebrow !text-[10px] mb-2 truncate">{p.category}</div>
-          )}
-          <h3 className="text-[15px] font-semibold leading-snug text-ink line-clamp-2 min-h-[38px] tracking-tight">
-            {p.name}
-          </h3>
-          <div className="text-[12px] text-ink-3 mt-1.5 truncate">
-            {p.supplierName || "Verified supplier"}
+      </section>
+
+      <Rail title="Genuine OEM parts" sub="Boxed with hologram, straight from authorised channels" products={genuine} loading={loading} href="/search?partType=genuine" />
+
+      {/* ── Shop by make ── */}
+      <section className="max-w-[1200px] mx-auto px-4 md:px-6 mt-12">
+        <SectionTitle title="Shop by vehicle make" />
+        <div className="flex gap-4 overflow-x-auto scroll-hidden pb-2">
+          {MAKES.map((m) => (
+            <Link key={m} href={`/search?make=${encodeURIComponent(m)}`} className="flex-shrink-0 w-[112px] flex flex-col items-center gap-2 p-3 rounded-[18px] border border-line hover:border-line-2 hover:shadow-[var(--shadow-card)] fms-press">
+              <BrandLogo name={m} size={52} />
+              <span className="text-[12.5px] font-bold text-center leading-tight">{m}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Garages band ── */}
+      <section className="max-w-[1200px] mx-auto px-4 md:px-6 mt-12">
+        <div className="rounded-[22px] p-6 md:p-10 grid md:grid-cols-[1.3fr_1fr] gap-8 items-center" style={{ background: "linear-gradient(135deg,#1B1E24 0%,#2B2F38 100%)" }}>
+          <div className="text-white">
+            <div className="text-[13px] font-extrabold text-[color:var(--brand)] uppercase tracking-wider">For garages · Free</div>
+            <div className="text-[28px] md:text-[34px] font-extrabold tracking-tight leading-tight mt-2">Run your whole workshop from your phone.</div>
+            <p className="text-white/70 text-[15px] mt-3 max-w-[480px]">Job cards, estimates customers approve on WhatsApp, GST invoices with a verification QR, UPI collection, and parts sourcing in one tap.</p>
+            <Link href="/workshop" className="mt-5 h-12 px-6 inline-flex items-center rounded-[14px] bg-[color:var(--brand)] text-white text-[15px] font-extrabold fms-press">Open Workshop</Link>
           </div>
-          <div className="mt-5 pt-4 border-t border-[color:var(--line)] flex items-center justify-between gap-2">
-            <span className="text-[16px] font-semibold text-ink tabular leading-none">
-              {formatPrice(priceNum)}
-            </span>
-            <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-ink tabular">
-              <StarIcon size={11} className="text-[color:var(--accent)] fill-current" />
-              {rating.toFixed(1)}
-            </span>
+          <div className="grid grid-cols-2 gap-3">
+            {[["Job cards", "Inspection, photos, odometer"], ["Estimates", "Owner approves line by line"], ["GST invoices", "QR-verifiable, tamper-evident"], ["Collect via UPI", "Payment link on every bill"]].map(([t, s]) => (
+              <div key={t} className="rounded-[16px] bg-white/[0.06] border border-white/10 p-4">
+                <div className="text-white text-[15px] font-extrabold">{t}</div>
+                <div className="text-white/60 text-[12.5px] mt-1">{s}</div>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
-    </Link>
+      </section>
+
+      <VehiclePicker open={picker} onClose={() => setPicker(false)} />
+    </ShopShell>
   );
 }

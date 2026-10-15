@@ -1,215 +1,132 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
-import { TopBar } from "@/components/layout/TopBar";
-import { Card } from "@/components/ui/Card";
-import { Chip } from "@/components/ui/Chip";
-import { Button } from "@/components/ui/Button";
-import { Avatar } from "@/components/ui/Avatar";
-import { StarIcon } from "@/lib/icons";
-import { toast } from "@/lib/toast";
-import { formatPrice } from "@/lib/constants";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { formatDistanceToNowStrict } from "date-fns";
+import { clsx } from "clsx";
 import { bidsApi, inquiriesApi } from "@/lib/api";
-import { useAuthStore } from "@/lib/store";
-import { buildWhatsAppLink, waTemplates } from "@/lib/whatsapp";
+import { useSocket } from "@/lib/socket";
+import { inr } from "@/lib/api/v2";
 import type { Bid, Inquiry } from "@/lib/types";
+import { RatingPill, StatusChip, Skel, EmptyState } from "@/components/shop/ui";
+import { toast } from "@/lib/toast";
 import { getErrorMessage } from "@/lib/errors";
 
-const conditionLabel: Record<string, string> = {
-  oem: "OEM Genuine",
-  oem_equivalent: "OEM Equivalent",
-  used: "Used / Refurb",
-};
+const COND: Record<string, string> = { genuine: "Genuine OEM", oem: "Genuine OEM", oes: "OES", oem_equivalent: "OES", aftermarket: "Aftermarket", used: "Used · graded", refurbished: "Refurbished" };
 
-const avatarColors = [
-  "oklch(0.55 0.10 30)",
-  "oklch(0.55 0.10 200)",
-  "oklch(0.55 0.10 140)",
-  "oklch(0.55 0.10 280)",
-];
-
-export default function RequestDetailPage() {
-  const params = useParams<{ id: string }>();
-  const inquiryId = params.id;
-  const buyer = useAuthStore((s) => s.user);
-
+export default function RequestQuotesPage() {
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const socket = useSocket();
   const [inquiry, setInquiry] = useState<Inquiry | null>(null);
-  const [bids, setBids] = useState<Bid[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [bids, setBids] = useState<Bid[] | null>(null);
+  const [sort, setSort] = useState<"price" | "rating" | "eta">("price");
+  const [accepting, setAccepting] = useState<string | null>(null);
   const [error, setError] = useState("");
 
+  const load = useCallback(() => Promise.all([inquiriesApi.get(id), bidsApi.listForInquiry(id)])
+    .then(([i, b]) => { setInquiry(i.inquiry); setBids(b.bids); })
+    .catch((e) => setError(getErrorMessage(e, "Couldn't load request"))), [id]);
+
+  useEffect(() => { load(); }, [load]);
+  // New quotes arrive as notifications; poll lightly while the request is open.
   useEffect(() => {
-    let cancelled = false;
+    if (!inquiry?.isActive) return;
+    const t = setInterval(load, 8000);
+    return () => clearInterval(t);
+  }, [inquiry?.isActive, load, socket]);
 
-    async function load() {
-      setLoading(true);
-      setError("");
-      try {
-        const [inquiryRes, bidsRes] = await Promise.all([
-          inquiriesApi.get(inquiryId),
-          bidsApi.listForInquiry(inquiryId),
-        ]);
+  const sorted = useMemo(() => [...(bids ?? [])].sort((a, b) =>
+    sort === "price" ? parseFloat(a.price) - parseFloat(b.price)
+    : sort === "eta" ? a.etaDays - b.etaDays
+    : parseFloat(b.supplierRating ?? "0") - parseFloat(a.supplierRating ?? "0")
+  ), [bids, sort]);
+  const best = useMemo(() => Math.min(...(bids ?? []).map((b) => parseFloat(b.price))), [bids]);
 
-        if (cancelled) return;
-        setInquiry(inquiryRes.inquiry);
-        setBids(bidsRes.bids);
-      } catch (err: unknown) {
-        if (!cancelled) setError(getErrorMessage(err, "Failed to load request"));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+  async function accept(b: Bid) {
+    setAccepting(b.id);
+    try {
+      const r = await bidsApi.accept(b.id);
+      router.push(`/pay/${r.checkoutId}`);
+    } catch (e) {
+      toast.error(getErrorMessage(e, "Couldn't accept this quote"));
+      setAccepting(null);
     }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [inquiryId]);
-
-  const sortedBids = useMemo(
-    () => [...bids].sort((a, b) => parseFloat(a.price) - parseFloat(b.price)),
-    [bids]
-  );
-
-  function contactBidder(bid: Bid) {
-    if (!inquiry) return;
-    if (!bid.supplierPhone) {
-      toast.error("Supplier phone unavailable");
-      return;
-    }
-    const msg = waTemplates.bidFollowUp({
-      buyerName: buyer?.name || "a buyer",
-      partName: inquiry.partName,
-      vehicle: `${inquiry.make} ${inquiry.model} ${inquiry.year}`,
-      bidPrice: bid.price,
-    });
-    const url = buildWhatsAppLink(bid.supplierPhone, msg);
-    if (!url) {
-      toast.error("Supplier phone is invalid — try messaging instead");
-      return;
-    }
-    window.open(url, "_blank", "noopener,noreferrer");
   }
 
-  if (loading) {
-    return <div className="px-5 pt-16 text-center text-[13px] text-ink-3">Loading request...</div>;
-  }
-
-  if (error || !inquiry) {
-    return <div className="px-5 pt-16 text-center text-[13px] text-danger">{error || "Request not found"}</div>;
-  }
+  if (error) return <EmptyState title="Request not found" body={error} />;
+  if (!inquiry || !bids) return <div className="max-w-[880px] mx-auto px-4 py-8 space-y-3"><Skel className="h-28" /><Skel className="h-36" /><Skel className="h-36" /></div>;
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden scroll-hidden">
-      <TopBar
-        title={inquiry.partName}
-        subtitle={`${inquiry.make} ${inquiry.model} · ${inquiry.year}`}
-        backHref="/buyer/requests"
-        rightAction={
-          <div className="bg-accent-wash text-accent-ink text-[11px] font-medium px-2.5 py-1 rounded-full">
-            {sortedBids.length} quotes
-          </div>
-        }
-      />
-
-      <div className="px-5 pb-8 flex flex-col gap-4">
-        <Card className="!p-4">
-          <div className="flex gap-3">
-            <div
-              className="w-14 h-14 rounded-[10px] flex-shrink-0"
-              style={{ background: "repeating-linear-gradient(135deg, var(--paper-2) 0 6px, var(--paper-3) 6px 12px)" }}
-            />
-            <div className="flex-1 min-w-0">
-              <div className="font-medium text-[14px]">{inquiry.partName}</div>
-              <div className="text-[11px] text-ink-3 mt-0.5">
-                {inquiry.make} {inquiry.model} · {inquiry.year}
-              </div>
-              {inquiry.description && (
-                <div className="text-[11px] text-ink-3 mt-1.5 leading-[1.4]">{inquiry.description}</div>
-              )}
+    <div className="bg-paper-3 min-h-full">
+      <div className="max-w-[880px] mx-auto px-4 md:px-6 py-6 md:py-10">
+        <Link href="/buyer/requests" className="text-[13px] font-bold text-ink-3">← My requests</Link>
+        <div className="card p-5 mt-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-[13px] font-bold text-ink-3">{inquiry.make} {inquiry.model} {inquiry.year}</div>
+              <h1 className="text-[24px] font-extrabold tracking-tight">{inquiry.partName}</h1>
+              {inquiry.description && <p className="text-[14px] text-ink-2 mt-1">{inquiry.description}</p>}
             </div>
+            {inquiry.isActive ? <StatusChip tone="green">● Live · {bids.length} quote{bids.length === 1 ? "" : "s"}</StatusChip> : <StatusChip tone="grey">Closed</StatusChip>}
           </div>
-        </Card>
+          <div className="text-[12.5px] text-ink-3 font-semibold mt-3">Posted {formatDistanceToNowStrict(new Date(inquiry.createdAt))} ago · sent to verified sellers who stock {inquiry.make}</div>
+        </div>
 
-        {inquiry.isActive && (
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-            <span className="text-xs text-ink-3">
-              {sortedBids.length} supplier{sortedBids.length !== 1 ? "s" : ""} quoting · sorted by price
-            </span>
-          </div>
-        )}
-
-        {sortedBids.length === 0 ? (
-          <div className="py-12 text-center">
-            <div className="text-[13px] text-ink-3">No quotes yet.</div>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {sortedBids.map((bid, idx) => {
-              const isBest = idx === 0;
-              return (
-                <Card
-                  key={bid.id}
-                  className={`!p-4 flex flex-col gap-3 ${isBest ? "border-[1.5px] !border-ink" : ""}`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={`w-8 h-8 rounded-[8px] flex items-center justify-center mono text-xs font-semibold flex-shrink-0 ${
-                        isBest ? "bg-ink text-paper" : "bg-paper-2 text-ink"
-                      }`}
-                    >
-                      {idx + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <Avatar
-                          initials={(bid.supplierName || "SP").slice(0, 2).toUpperCase()}
-                          size="sm"
-                          color={avatarColors[idx % 4]}
-                        />
-                        <div>
-                          <div className="text-[13px] font-medium leading-[1.2]">
-                            {bid.supplierBusinessName || bid.supplierName || "Supplier"}
-                          </div>
-                          <div className="text-[10px] text-ink-3 flex items-center gap-1">
-                            <StarIcon size={10} className="text-ink" />
-                            {(bid.completedOrders || 0).toLocaleString("en-IN")} orders
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                      <div className="mono text-[17px] font-semibold">{formatPrice(parseFloat(bid.price))}</div>
-                      {isBest && <Chip variant="ok">BEST PRICE</Chip>}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1.5">
-                    <Chip>{conditionLabel[bid.condition] ?? bid.condition}</Chip>
-                    {bid.warrantyMonths > 0 && <Chip>{bid.warrantyMonths}mo warranty</Chip>}
-                    <Chip>{bid.etaDays === 1 ? "Ships today" : `Ships in ${bid.etaDays} days`}</Chip>
-                  </div>
-
-                  {bid.notes && <div className="text-[11px] text-ink-3 leading-[1.4]">{bid.notes}</div>}
-
-                  {inquiry.isActive && bid.status === "pending" && (
-                    <Button
-                      variant={isBest ? "primary" : "default"}
-                      block
-                      className="!h-9 !text-[12px]"
-                      onClick={() => contactBidder(bid)}
-                      disabled={!bid.supplierPhone}
-                    >
-                      Contact supplier on WhatsApp
-                    </Button>
-                  )}
-                </Card>
-              );
-            })}
+        {bids.length > 1 && (
+          <div className="mt-5 flex items-center gap-2">
+            <span className="text-[13px] font-bold text-ink-3 mr-1">Sort</span>
+            {([["price", "Lowest price"], ["rating", "Best rated"], ["eta", "Fastest"]] as const).map(([k, l]) => <button key={k} className="chip" data-on={sort === k} onClick={() => setSort(k)}>{l}</button>)}
           </div>
         )}
+
+        <div className="mt-4 space-y-3">
+          {!bids.length && (
+            <div className="card p-8 text-center">
+              <div className="mx-auto w-12 h-12 rounded-full border-4 border-[color:var(--accent-wash)] border-t-[color:var(--accent)] animate-spin" />
+              <div className="mt-4 text-[17px] font-extrabold">Sellers are checking their shelves…</div>
+              <p className="text-[14px] text-ink-3 mt-1">Most requests get a first quote within minutes. We&apos;ll notify you.</p>
+            </div>
+          )}
+          {sorted.map((b) => {
+            const isBest = parseFloat(b.price) === best && bids.length > 1;
+            const accepted = b.status === "accepted";
+            return (
+              <div key={b.id} className={clsx("card p-5", isBest && "ring-2 ring-[color:var(--success)]")}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[16px] font-extrabold">{b.supplierBusinessName ?? b.supplierName}</span>
+                      {isBest && <StatusChip tone="green">Best price</StatusChip>}
+                      {accepted && <StatusChip tone="brand">Accepted</StatusChip>}
+                    </div>
+                    <div className="mt-1 flex items-center gap-3 flex-wrap text-[12.5px] font-semibold text-ink-3">
+                      <RatingPill rating={b.supplierRating} count={b.supplierReviewCount} />
+                      {b.supplierCity && <span>{b.supplierCity}</span>}
+                      <span>{b.completedOrders ?? 0} orders delivered</span>
+                    </div>
+                  </div>
+                  <div className="text-right"><div className="price text-[22px]">{inr(b.price)}</div><div className="text-[12px] text-ink-3 font-semibold">incl. GST & delivery</div></div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="chip !h-7 !text-[12px]">{COND[b.condition] ?? b.condition}</span>
+                  {b.brand && <span className="chip !h-7 !text-[12px]">{b.brand}{b.partNumber ? ` · #${b.partNumber}` : ""}</span>}
+                  <span className="chip !h-7 !text-[12px]">{b.etaDays <= 1 ? "Delivers tomorrow" : `Delivers in ${b.etaDays} days`}</span>
+                  {b.warrantyMonths > 0 && <span className="chip !h-7 !text-[12px]">{b.warrantyMonths}-month warranty</span>}
+                </div>
+                {b.notes && <p className="mt-3 text-[13.5px] text-ink-2 bg-paper-2 rounded-[12px] p-3">“{b.notes}”</p>}
+                {inquiry.isActive && b.status === "pending" && (
+                  <button disabled={!!accepting} onClick={() => accept(b)} className={clsx("mt-4 w-full h-12 rounded-[14px] font-extrabold fms-press disabled:opacity-50", isBest ? "bg-[color:var(--accent)] text-white" : "bg-paper border-2 border-ink text-ink")}>
+                    {accepting === b.id ? "Creating order…" : `Accept & pay ${inr(b.price)}`}
+                  </button>
+                )}
+                {accepted && b.orderId && <Link href={`/buyer/orders/${b.orderId}`} className="mt-4 block text-center text-[14px] font-extrabold text-[color:var(--accent)]">Track this order →</Link>}
+              </div>
+            );
+          })}
+        </div>
+        {bids.length > 0 && inquiry.isActive && <p className="mt-5 text-[12.5px] text-ink-3 text-center">Paying on FindMySpare keeps you covered: escrow, fit-or-free-return and a record in your Vehicle Passport.</p>}
       </div>
     </div>
   );

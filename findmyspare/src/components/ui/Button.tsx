@@ -2,9 +2,8 @@ import React from "react";
 import { clsx } from "clsx";
 
 /* ═══════════════════════════════════════════════════════
-   Button — Apple-quiet premium.
-   Default primary = solid ink (near-black). Accent variant
-   uses saffron sparingly. Tight type, single radius.
+   Button — v2 brand. Primary = Spark Vermilion (the ONE
+   loud action on a screen). Secondary = ink. Ghost = outline.
    ═══════════════════════════════════════════════════════ */
 
 export interface ButtonProps
@@ -41,27 +40,27 @@ export function Button({
       disabled={disabled || loading}
       className={clsx(
         "inline-flex items-center justify-center gap-2 select-none",
-        "font-semibold cursor-pointer fms-press",
+        "font-bold cursor-pointer fms-press",
         "border border-transparent tracking-tight",
-        "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[color:var(--ink)] focus-visible:ring-offset-2 focus-visible:ring-offset-paper",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-paper",
 
         size === "sm" && "h-9 px-4 text-[13px]",
-        size === "md" && "h-11 px-5 text-[14px]",
-        size === "lg" && "h-[52px] px-7 text-[15px]",
-        pill ? "rounded-full" : "rounded-[8px]",
+        size === "md" && "h-11 px-5 text-[14.5px]",
+        size === "lg" && "h-[52px] px-7 text-[16px]",
+        pill ? "rounded-full" : "rounded-[12px]",
 
-        // Default primary = ink (Apple-quiet)
-        (v === "primary" || v === "secondary") && [
+        // Secondary = ink
+        v === "secondary" && [
           "bg-ink text-paper",
           "hover:bg-[color:var(--ink-2)]",
         ],
-        // Accent reserved for special saffron CTA
-        v === "accent" && [
+        // Primary + accent = brand vermilion
+        (v === "primary" || v === "accent") && [
           "bg-[color:var(--accent)] text-white",
           "hover:bg-[color:var(--accent-ink)]",
         ],
         v === "ghost" && [
-          "bg-transparent text-ink border-[color:var(--line)]",
+          "bg-paper text-ink border-[color:var(--line-2)]",
           "hover:bg-paper-2 hover:border-[color:var(--line-2)]",
         ],
         v === "danger" && [

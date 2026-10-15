@@ -21,6 +21,7 @@ export const inquiriesApi = {
     year: string;
     description?: string;
     imageUrl?: string;
+    vehicleId?: string;
   }): Promise<{ inquiry: Inquiry }> =>
     fetchApi("/inquiries", {
       method: "POST",

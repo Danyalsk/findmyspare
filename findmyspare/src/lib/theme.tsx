@@ -23,30 +23,6 @@ interface ThemeContextValue {
   setAccent: (a: Accent) => void;
 }
 
-/* ── Accent color maps (from prototype app.js) ── */
-
-const accentMaps: Record<Accent, {
-  light: { accent: string; ink: string; wash: string };
-  dark: { accent: string; ink: string; wash: string };
-}> = {
-  emerald: {
-    light: { accent: "oklch(0.72 0.17 160)", ink: "oklch(0.32 0.11 160)", wash: "oklch(0.95 0.04 160)" },
-    dark:  { accent: "oklch(0.78 0.17 160)", ink: "oklch(0.90 0.14 160)", wash: "oklch(0.26 0.05 160)" },
-  },
-  blue: {
-    light: { accent: "oklch(0.68 0.18 245)", ink: "oklch(0.40 0.14 245)", wash: "oklch(0.95 0.04 245)" },
-    dark:  { accent: "oklch(0.68 0.18 245)", ink: "oklch(0.88 0.14 245)", wash: "oklch(0.28 0.06 245)" },
-  },
-  orange: {
-    light: { accent: "oklch(0.72 0.17 55)", ink: "oklch(0.42 0.14 55)", wash: "oklch(0.95 0.04 55)" },
-    dark:  { accent: "oklch(0.72 0.17 55)", ink: "oklch(0.88 0.14 55)", wash: "oklch(0.28 0.06 55)" },
-  },
-  ink: {
-    light: { accent: "oklch(0.22 0.01 240)", ink: "oklch(0.22 0.01 240)", wash: "oklch(0.93 0.008 85)" },
-    dark:  { accent: "oklch(0.22 0.01 240)", ink: "oklch(0.97 0.005 85)", wash: "oklch(0.26 0.01 240)" },
-  },
-};
-
 /* ── Context ── */
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -76,14 +52,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.setAttribute("data-density", d);
   }, []);
 
-  /* Apply accent colors as CSS custom properties */
-  const applyAccent = useCallback((a: Accent, t: Theme) => {
-    const mode = t === "dark" ? "dark" : "light";
-    const colors = accentMaps[a]?.[mode] ?? accentMaps.emerald[mode];
+  /* v2 brand: the accent is fixed (Spark Vermilion, see brand/GUIDELINES.md).
+     globals.css owns --accent*; clear any inline override a v1 accent
+     picker (stored in fms_accent) may have left behind. */
+  const applyAccent = useCallback((_a: Accent, _t: Theme) => {
     const root = document.documentElement;
-    root.style.setProperty("--accent", colors.accent);
-    root.style.setProperty("--accent-ink", colors.ink);
-    root.style.setProperty("--accent-wash", colors.wash);
+    root.style.removeProperty("--accent");
+    root.style.removeProperty("--accent-ink");
+    root.style.removeProperty("--accent-wash");
   }, []);
 
   /* Sync DOM whenever state changes */

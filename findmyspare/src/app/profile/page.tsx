@@ -22,6 +22,8 @@ import { Avatar } from "@/components/ui/Avatar";
 const buyerMenu = [
   { icon: UserIcon,    label: "Edit profile",    href: "/profile/edit" },
   { icon: PackageIcon, label: "My orders",       href: "/buyer/orders" },
+  { icon: PinIcon,     label: "My vehicles & Passport", href: "/vehicles" },
+  { icon: WalletIcon,  label: "Workshop (for garages)", href: "/workshop" },
   { icon: PinIcon,     label: "Saved addresses", href: "/profile/addresses" },
   { icon: ChatIcon,    label: "Messages",        href: "/messages" },
   { icon: BellIcon,    label: "Notifications",   href: "/profile/notifications" },

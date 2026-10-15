@@ -14,9 +14,11 @@ import type { Inquiry } from "@/lib/types";
 import { getErrorMessage } from "@/lib/errors";
 
 const conditions = [
-  { value: "oem", label: "OEM Genuine" },
-  { value: "oem_equivalent", label: "OEM Equivalent" },
-  { value: "used", label: "Used / Refurb" },
+  { value: "genuine", label: "Genuine OEM" },
+  { value: "oes", label: "OES" },
+  { value: "aftermarket", label: "Aftermarket" },
+  { value: "used", label: "Used · graded" },
+  { value: "refurbished", label: "Refurbished" },
 ];
 
 export default function LeadDetailPage() {
@@ -30,7 +32,9 @@ export default function LeadDetailPage() {
 
   const [loading, setLoading] = useState(false);
   const [price, setPrice] = useState("");
-  const [condition, setCondition] = useState("oem");
+  const [condition, setCondition] = useState("oes");
+  const [brand, setBrand] = useState("");
+  const [partNumber, setPartNumber] = useState("");
   const [warrantyMonths, setWarrantyMonths] = useState("6");
   const [etaDays, setEtaDays] = useState("1");
   const [notes, setNotes] = useState("");
@@ -73,6 +77,8 @@ export default function LeadDetailPage() {
         warrantyMonths: parseInt(warrantyMonths, 10),
         etaDays: parseInt(etaDays, 10),
         notes: notes.trim() || undefined,
+        brand: brand.trim() || undefined,
+        partNumber: partNumber.trim() || undefined,
       });
       setSubmitted(true);
       toast.success("Quote submitted.");
@@ -216,6 +222,17 @@ export default function LeadDetailPage() {
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[11px] text-ink-3 mb-1.5 block">Brand</label>
+              <input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Bosch, MGP…" className="w-full h-11 rounded-[10px] border border-line bg-paper-2 px-3 text-[13px] outline-none focus:border-ink" />
+            </div>
+            <div>
+              <label className="text-[11px] text-ink-3 mb-1.5 block">Part number</label>
+              <input value={partNumber} onChange={(e) => setPartNumber(e.target.value)} placeholder="Optional" className="w-full h-11 rounded-[10px] border border-line bg-paper-2 px-3 text-[13px] font-mono outline-none focus:border-ink" />
+            </div>
+          </div>
+
           <div>
             <label className="text-[11px] text-ink-3 mb-1.5 block">Notes (optional)</label>
             <textarea
@@ -232,7 +249,7 @@ export default function LeadDetailPage() {
               <ShieldIcon size={16} className="text-accent-ink flex-shrink-0 mt-0.5" />
               <div className="text-xs text-accent-ink leading-[1.4]">
                 <span className="font-semibold">Submit your best quote.</span>{" "}
-                The buyer reviews all quotes and connects with you directly.
+                The buyer compares all quotes and pays on FindMySpare. Payment is held in escrow and released to you after delivery.
               </div>
             </div>
           </Card>

@@ -25,6 +25,8 @@ export const bidsApi = {
       warrantyMonths?: number;
       etaDays?: number;
       notes?: string;
+      brand?: string;
+      partNumber?: string;
     }
   ): Promise<{ bid: Bid }> =>
     fetchApi(`/inquiries/${inquiryId}/bids`, {
@@ -37,7 +39,8 @@ export const bidsApi = {
 
   get: (id: string): Promise<{ bid: Bid }> => fetchApi(`/bids/${id}`),
 
-  // DEPRECATED v1: bid acceptance creates an order. Replaced by WhatsApp contact in UI.
-  accept: (bidId: string): Promise<{ order: { id: string }; orderId: string }> =>
+  // v2: accepting creates an unpaid order + checkout; pay at /pay/[checkoutId]
+  // (keeps the deal on-platform so escrow, returns and ratings apply).
+  accept: (bidId: string): Promise<{ order: { id: string }; orderId: string; checkoutId: string }> =>
     fetchApi(`/bids/${bidId}/accept`, { method: "POST" }),
 };

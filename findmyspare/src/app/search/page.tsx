@@ -1,279 +1,139 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { PublicNav } from "@/components/layout/PublicNav";
-import { Chip } from "@/components/ui/Chip";
-import { Button } from "@/components/ui/Button";
-import { ProductCard } from "@/components/features/ProductCard";
-import { SearchBar } from "@/components/features/SearchBar";
-import { FilterPills } from "@/components/features/FilterPills";
-import { productsApi } from "@/lib/api";
-import type { ProductSummary } from "@/lib/types";
-import { toast } from "@/lib/toast";
-import { getErrorMessage } from "@/lib/errors";
-import { formatPrice } from "@/lib/constants";
-import { ArrowRightIcon } from "@/lib/icons";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { clsx } from "clsx";
+import { ShopShell } from "@/components/shop/AppShell";
+import { ProductTile } from "@/components/shop/ProductTile";
+import { CATEGORIES, EmptyState, Skel } from "@/components/shop/ui";
+import { VehiclePicker } from "@/components/shop/VehiclePicker";
+import { useVehicleStore, vehicleShortLabel } from "@/lib/vehicle-store";
+import { shopApi, PART_TYPE_LABEL, type PartType, type ShopProduct } from "@/lib/api/v2";
 
-const QUICK_FILTERS = [
-  "Engine",
-  "Brakes",
-  "Lighting",
-  "Body",
-  "Suspension",
-  "Transmission",
-  "Electrical",
-  "Filters",
+const SORTS = [
+  { v: "popular", l: "Relevance" },
+  { v: "price_asc", l: "Price: low to high" },
+  { v: "price_desc", l: "Price: high to low" },
+  { v: "newest", l: "Newest" },
 ];
 
-function SearchContent() {
+function SearchInner() {
   const sp = useSearchParams();
-  const initialQ = sp.get("q") || "";
+  const router = useRouter();
+  const vehicle = useVehicleStore((s) => s.selected);
+  const select = useVehicleStore((s) => s.select);
+  const q = sp.get("q") ?? "";
+  const category = sp.get("category") ?? "";
+  const partType = sp.get("partType") ?? "";
+  const sort = sp.get("sort") ?? "popular";
+  // A make/model in the URL wins (shareable links); else the selected vehicle.
+  const make = sp.get("make") ?? vehicle?.make ?? "";
+  const model = sp.get("model") ?? (sp.get("make") ? "" : vehicle?.model ?? "");
 
-  const [query, setQuery] = useState(initialQ);
-  const [results, setResults] = useState<ProductSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
-  const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  const [sort, setSort] = useState<"newest" | "price_asc" | "price_desc">("newest");
-
-  async function load(search: string) {
-    setLoading(true);
-    try {
-      const res = await productsApi.list({
-        search: search || undefined,
-        limit: 30,
-        sort,
-      });
-      setResults(res.products);
-      setTotal(res.pagination?.total ?? res.products.length);
-    } catch (e: unknown) {
-      toast.error(getErrorMessage(e, "Failed to search"));
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [picker, setPicker] = useState(false);
+  const key = JSON.stringify([q, category, partType, make, model, sort]);
+  const [res, setRes] = useState<{ key: string; items: ShopProduct[]; total: number } | null>(null);
+  const loading = res?.key !== key;
+  const items = res?.items ?? [];
+  const total = res?.total ?? 0;
 
   useEffect(() => {
-    load(initialQ);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialQ, sort]);
+    const [q, category, partType, make, model, sort] = JSON.parse(key) as string[];
+    shopApi
+      .list({ search: q || undefined, category: category || undefined, partType: partType || undefined, make: make || undefined, model: model || undefined, sort, limit: 48 })
+      .then((r) => setRes({ key, items: r.products, total: r.pagination.total }))
+      .catch(() => setRes({ key, items: [], total: 0 }));
+  }, [key]);
 
-  function onSubmit() {
-    load(query.trim());
-  }
+  const setParam = (k: string, v: string | null) => {
+    const n = new URLSearchParams(sp.toString());
+    if (v) n.set(k, v); else n.delete(k);
+    router.push(`/search?${n.toString()}`);
+  };
+  const clearVehicle = () => {
+    const n = new URLSearchParams(sp.toString());
+    n.delete("make"); n.delete("model");
+    select(null);
+    router.push(`/search?${n.toString()}`);
+  };
 
-  function toggleFilter(label: string) {
-    setActiveFilters((prev) =>
-      prev.includes(label) ? prev.filter((f) => f !== label) : [...prev, label]
-    );
-  }
-
-  const filters = useMemo(
-    () =>
-      QUICK_FILTERS.map((label) => ({
-        label,
-        active: activeFilters.includes(label),
-      })),
-    [activeFilters]
-  );
-
-  // Client-side category filter on top of server results.
-  const displayed = useMemo(() => {
-    if (activeFilters.length === 0) return results;
-    const lower = activeFilters.map((f) => f.toLowerCase());
-    return results.filter((p) => {
-      const cat = (p.category || "").toLowerCase();
-      const name = (p.name || "").toLowerCase();
-      return lower.some((f) => cat.includes(f) || name.includes(f));
-    });
-  }, [results, activeFilters]);
-
-  const visibleCount = displayed.length;
+  const heading = q ? `Results for “${q}”` : category ? (CATEGORIES.find((c) => c.key === category)?.label ?? category) : partType ? PART_TYPE_LABEL[partType as PartType] : "All parts";
 
   return (
-    <div className="min-h-screen bg-paper-3 flex flex-col pb-12">
-      <PublicNav />
-
-      {/* Sticky search bar */}
-      <div className="sticky top-0 z-30 bg-paper-3 px-5 pt-4 pb-3 shadow-[var(--shadow-sm)]">
-        <div className="max-w-7xl mx-auto">
-          <SearchBar
-            value={query}
-            onChange={setQuery}
-            onSubmit={onSubmit}
-            placeholder="Search bumpers, headlights, brake pads…"
-            autoFocus
-          />
-          <div className="mt-3 -mx-1 px-1">
-            <FilterPills
-              filters={filters}
-              onToggle={toggleFilter}
-              onRemove={(label) =>
-                setActiveFilters((prev) => prev.filter((f) => f !== label))
-              }
-            />
-          </div>
+    <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-6 md:py-8">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-[26px] md:text-[30px] font-extrabold tracking-[-0.025em]">{heading}</h1>
+          <p className="text-[14px] text-ink-3 font-semibold mt-1">{loading ? "Searching…" : `${total} part${total === 1 ? "" : "s"} from verified sellers`}</p>
         </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto w-full px-5 pt-4">
-        {/* Result meta */}
-        <div className="flex items-end justify-between gap-3 mb-4">
-          <div>
-            <div className="display text-[20px] text-ink leading-tight">
-              {loading
-                ? "Searching…"
-                : `${visibleCount} ${visibleCount === 1 ? "result" : "results"}`}
-            </div>
-            {query.trim() && (
-              <div className="text-[12px] text-ink-3 mt-0.5">
-                for &ldquo;<span className="font-bold text-ink-2">{query}</span>&rdquo;
-              </div>
-            )}
-          </div>
-          <SortMenu sort={sort} onChange={setSort} />
-        </div>
-
-        {/* Active filters summary */}
-        {activeFilters.length > 0 && (
-          <div className="flex items-center gap-2 mb-4 flex-wrap">
-            <span className="text-[11px] font-bold text-ink-3 uppercase tracking-wider">
-              Filtered:
+        <div className="flex items-center gap-2">
+          {make ? (
+            <span className="inline-flex items-center gap-2 h-10 pl-4 pr-1.5 rounded-full bg-[color:var(--success-wash)] text-[color:var(--success)] text-[13.5px] font-extrabold">
+              Fits {model ? `${make} ${model}` : make}{vehicle && !sp.get("make") && vehicle.year ? ` ${vehicle.year}` : ""}
+              <button onClick={clearVehicle} aria-label="Clear vehicle filter" className="w-7 h-7 rounded-full bg-white/70 flex items-center justify-center">×</button>
             </span>
-            {activeFilters.map((f) => (
-              <Chip
-                key={f}
-                variant="accent"
-                size="sm"
-                onRemove={() =>
-                  setActiveFilters((prev) => prev.filter((x) => x !== f))
-                }
-              >
-                {f}
-              </Chip>
-            ))}
-            <button
-              onClick={() => setActiveFilters([])}
-              className="text-[11px] font-bold text-[color:var(--accent-ink)] hover:underline ml-1"
-            >
-              Clear all
-            </button>
-          </div>
-        )}
-
-        {/* Results grid */}
-        {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="aspect-[3/4] rounded-[16px] fms-shimmer" />
-            ))}
-          </div>
-        ) : displayed.length === 0 ? (
-          <EmptyState query={query} hasFilters={activeFilters.length > 0} />
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-            {displayed.map((p) => (
-              <ProductCard
-                key={p.id}
-                id={p.id}
-                name={p.name}
-                price={formatPrice(parseFloat(p.price))}
-                vehicle={p.supplierName || "Supplier"}
-                rating={4.5}
-                image={p.images?.[0]}
-                imageLabel={p.category || undefined}
-                inStock={p.stockQuantity > 0}
-                href={`/product/${p.id}`}
-              />
-            ))}
-          </div>
-        )}
+          ) : (
+            <button onClick={() => setPicker(true)} className="h-10 px-4 rounded-full border-2 border-dashed border-[color:var(--accent)] text-[color:var(--accent)] text-[13.5px] font-extrabold">+ Filter by your vehicle</button>
+          )}
+        </div>
       </div>
-    </div>
-  );
-}
 
-function SortMenu({
-  sort,
-  onChange,
-}: {
-  sort: "newest" | "price_asc" | "price_desc";
-  onChange: (s: "newest" | "price_asc" | "price_desc") => void;
-}) {
-  const label =
-    sort === "newest"
-      ? "Newest"
-      : sort === "price_asc"
-      ? "Price ↑"
-      : "Price ↓";
-
-  return (
-    <details className="relative">
-      <summary className="list-none cursor-pointer flex items-center gap-1.5 px-3 h-9 rounded-full bg-paper shadow-[var(--shadow-sm)] text-[12px] font-bold text-ink fms-press">
-        Sort: <span className="text-[color:var(--accent-ink)]">{label}</span>
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          className="text-ink-3"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
-      </summary>
-      <div className="absolute right-0 mt-2 w-44 bg-paper rounded-[14px] shadow-[var(--shadow-lifted)] overflow-hidden z-20">
-        {[
-          { key: "newest", label: "Newest" },
-          { key: "price_asc", label: "Price: low → high" },
-          { key: "price_desc", label: "Price: high → low" },
-        ].map((opt) => (
-          <button
-            key={opt.key}
-            onClick={() => onChange(opt.key as "newest" | "price_asc" | "price_desc")}
-            className={`w-full text-left px-4 py-2.5 text-[13px] font-semibold hover:bg-paper-2 ${
-              sort === opt.key ? "text-[color:var(--accent-ink)] bg-accent-wash" : "text-ink"
-            }`}
-          >
-            {opt.label}
+      {/* Filters */}
+      <div className="mt-5 flex gap-2 overflow-x-auto scroll-hidden pb-1 -mx-4 px-4 md:mx-0 md:px-0">
+        <select value={sort} onChange={(e) => setParam("sort", e.target.value)} className="chip pr-8 appearance-none cursor-pointer" aria-label="Sort">
+          {SORTS.map((s) => <option key={s.v} value={s.v}>{s.l}</option>)}
+        </select>
+        {(Object.keys(PART_TYPE_LABEL) as PartType[]).map((t) => (
+          <button key={t} className="chip" data-on={partType === t} onClick={() => setParam("partType", partType === t ? null : t)}>{PART_TYPE_LABEL[t]}</button>
+        ))}
+        <span className="w-px bg-line mx-1 flex-shrink-0" />
+        {CATEGORIES.map((c) => (
+          <button key={c.key} className="chip" data-on={category === c.key} onClick={() => setParam("category", category === c.key ? null : c.key)}>
+            <c.Icon size={15} /> {c.label}
           </button>
         ))}
       </div>
-    </details>
-  );
-}
 
-function EmptyState({ query, hasFilters }: { query: string; hasFilters: boolean }) {
-  return (
-    <div className="bg-paper rounded-[20px] shadow-[var(--shadow-card)] p-10 text-center">
-      <div className="display text-[18px] text-ink mb-1">No products found</div>
-      <div className="text-[13px] text-ink-3 mb-5">
-        {hasFilters
-          ? "Try removing filters, or post a request and verified suppliers will quote for you."
-          : query.trim()
-          ? `Nothing matches "${query}". Try a different keyword or post a request.`
-          : "Post a request and verified suppliers will quote for you."}
+      <div className="mt-8">
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-10">
+            {Array.from({ length: 8 }).map((_, i) => <div key={i}><Skel className="aspect-[4/3]" /><Skel className="h-4 mt-4 w-3/4" /><Skel className="h-4 mt-2 w-1/2" /></div>)}
+          </div>
+        ) : items.length ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 md:gap-x-5 gap-y-10">
+            {items.map((p) => <ProductTile key={p.id} p={p} />)}
+          </div>
+        ) : (
+          <EmptyState
+            title="Not listed yet, but we can find it"
+            body={`Post a request${model ? ` for your ${make} ${model}` : ""} and verified sellers will send you quotes, usually within minutes.`}
+            action={<Link href={`/buyer/requests/new?part=${encodeURIComponent(q)}`} className="h-12 px-6 inline-flex items-center rounded-[14px] bg-[color:var(--accent)] text-white font-extrabold">Get quotes for this part</Link>}
+          />
+        )}
       </div>
-      <Link href="/buyer/requests/new" className="inline-block">
-        <Button variant="primary" size="md" rightIcon={<ArrowRightIcon size={14} />}>
-          Post a request
-        </Button>
-      </Link>
+
+      {!loading && items.length > 0 && (
+        <div className="mt-14 rounded-[20px] bg-[color:var(--info-wash)] p-5 md:p-6 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <div className="text-[17px] font-extrabold">Didn’t find the exact part?</div>
+            <div className="text-[14px] text-ink-2 mt-0.5">Snap a photo or type the part. Sellers across India will quote.</div>
+          </div>
+          <Link href={`/buyer/requests/new?part=${encodeURIComponent(q)}`} className={clsx("h-11 px-5 inline-flex items-center rounded-[12px] bg-ink text-paper text-[14px] font-extrabold")}>Get quotes</Link>
+        </div>
+      )}
+      <VehiclePicker open={picker} onClose={() => setPicker(false)} />
+      {vehicle && !sp.get("make") && <span className="sr-only">Showing parts for {vehicleShortLabel(vehicle)}</span>}
     </div>
   );
 }
 
-export default function PublicSearchPage() {
+export default function SearchPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="px-5 pt-16 text-center text-[13px] text-ink-3">Loading…</div>
-      }
-    >
-      <SearchContent />
-    </Suspense>
+    <ShopShell>
+      <Suspense>
+        <SearchInner />
+      </Suspense>
+    </ShopShell>
   );
 }
