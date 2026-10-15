@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { LogoMark } from "@/components/brand/Logo";
 import { inr, type Invoice } from "@/lib/api/v2";
 import { QR } from "./QR";
+import { hasPlate } from "@/components/service/MachineId";
 
 type Doc = Pick<Invoice, "number" | "issuedAt" | "seller" | "customer" | "vehicle" | "lines" | "taxable" | "cgst" | "sgst" | "total" | "verifyCode" | "status" | "paidAt" | "paymentMethod"> & { contentHash?: string };
 
@@ -29,7 +30,7 @@ export function InvoiceDoc({ inv, origin }: { inv: Doc; origin: string }) {
 
         <div className="mt-6 grid sm:grid-cols-2 gap-4 text-[13.5px]">
           <div className="rounded-[12px] bg-[#F6F6F8] p-4"><div className="text-[11px] font-extrabold uppercase tracking-wider text-[#5B6170]">Billed to</div><div className="font-bold mt-1">{inv.customer.name ?? "Customer"}</div>{inv.customer.phone && <div className="text-[#5B6170]">{inv.customer.phone}</div>}</div>
-          <div className="rounded-[12px] bg-[#F6F6F8] p-4"><div className="text-[11px] font-extrabold uppercase tracking-wider text-[#5B6170]">Vehicle</div><div className="font-bold mt-1 font-mono">{inv.vehicle.regNo}</div><div className="text-[#5B6170]">{inv.vehicle.label}{inv.vehicle.odometerKm ? ` · ${inv.vehicle.odometerKm.toLocaleString("en-IN")} km` : ""}</div></div>
+          <div className="rounded-[12px] bg-[#F6F6F8] p-4"><div className="text-[11px] font-extrabold uppercase tracking-wider text-[#5B6170]">{hasPlate(inv.vehicle.regNo) ? "Vehicle" : "Machine"}</div>{inv.vehicle.regNo && inv.vehicle.regNo !== "Machine" && <div className="font-bold mt-1 font-mono">{inv.vehicle.regNo}</div>}<div className="text-[#5B6170]">{inv.vehicle.label}{inv.vehicle.odometerKm ? ` · ${inv.vehicle.odometerKm.toLocaleString("en-IN")} km` : ""}</div></div>
         </div>
 
         <div className="mt-6 overflow-x-auto">

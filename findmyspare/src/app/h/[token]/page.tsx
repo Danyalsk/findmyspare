@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { MachineId } from "@/components/service/MachineId";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { format } from "date-fns";
@@ -27,7 +28,7 @@ export default function SharedHistoryPage() {
         <LogoMark size={240} color="rgba(255,255,255,.05)" className="absolute -right-12 -bottom-20" />
         <div className="relative">
           <div className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-white/55">FindMySpare Verified History</div>
-          <span className="reg-plate text-[18px] mt-3">{d.vehicle.regNoDisplay}</span>
+          <MachineId display={d.vehicle.regNoDisplay} size={18} className="mt-3" />
           <div className="mt-3 text-[22px] font-extrabold capitalize">{d.vehicle.label}</div>
           <div className="mt-5 grid grid-cols-3 gap-3 max-w-[480px]">
             {[["Services", d.stats.services], ["Parts fitted", d.stats.partsFitted], ["Warranties", d.stats.activeWarranties]].map(([l, n]) => <div key={l as string} className="rounded-[14px] bg-white/[0.07] p-3"><div className="text-[22px] font-extrabold">{n}</div><div className="text-[12px] text-white/55 font-bold">{l}</div></div>)}

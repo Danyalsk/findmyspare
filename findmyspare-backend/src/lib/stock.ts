@@ -9,7 +9,9 @@ export type StockMovementReason =
   | "correction"
   | "returned"
   | "order"
-  | "order_cancelled";
+  | "order_cancelled"
+  | "sale"
+  | "purchase";
 
 interface ProductStockSnapshot {
   id: string;

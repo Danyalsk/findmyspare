@@ -135,7 +135,7 @@ export function getPostLoginPath(user: User): string {
   if (user.role === "buyer") return "/";
   switch (user.verificationStatus) {
     case "approved":
-      return "/supplier";
+      return "/biz";
     case "pending":
       return "/supplier/pending";
     case "rejected":

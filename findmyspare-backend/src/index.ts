@@ -26,6 +26,8 @@ import { checkoutRoutes } from "./routes/checkout";
 import { vehicleRoutes, vehicleCatalogRoutes } from "./routes/vehicles";
 import { garageRoutes } from "./routes/garage";
 import { publicGarageRoutes } from "./routes/public-garage";
+import { networkRoutes, storefrontRoutes } from "./routes/network";
+import { taxonomyRoutes, fixRoutes, adminNetworkRoutes } from "./routes/fix";
 import { db, closeConnection } from "./db";
 import { sql } from "drizzle-orm";
 import { initSocketServer, closeSocketServer } from "./lib/io";
@@ -96,6 +98,8 @@ const app = new Elysia()
           { name: "Payments", description: "Payments (mock gateway in the prototype)" },
           { name: "Vehicles", description: "My Garage + Vehicle Passport" },
           { name: "Garage", description: "Garage OS: job cards, estimates, invoices" },
+          { name: "Business", description: "Business OS: trade links, POs, khata, billing, radar" },
+          { name: "Fix", description: "Service requests for any machine" },
           { name: "Public", description: "Token-scoped public pages (estimate, verify, pay, share)" },
         ],
         components: {
@@ -163,6 +167,8 @@ const app = new Elysia()
   .use(publicProductRoutes)
   .use(vehicleCatalogRoutes)
   .use(publicGarageRoutes)
+  .use(taxonomyRoutes)
+  .use(storefrontRoutes)
   .use(bannerRoutes)
   .use(authRoutes)
   .use(productRoutes)
@@ -182,7 +188,10 @@ const app = new Elysia()
   .use(messageRoutes)
   .use(checkoutRoutes)
   .use(vehicleRoutes)
-  .use(garageRoutes);
+  .use(garageRoutes)
+  .use(networkRoutes)
+  .use(fixRoutes)
+  .use(adminNetworkRoutes);
 
 // ─── Shared HTTP Server (Elysia + Socket.io on same port) ───
 // Bun's node:http is fully compatible. Socket.io intercepts WebSocket

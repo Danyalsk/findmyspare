@@ -42,7 +42,7 @@ export default function PassportPage() {
   return (
     <div className="bg-paper-3 min-h-full">
       <div className="max-w-[1000px] mx-auto px-4 md:px-6 py-6 md:py-10">
-        <Link href="/vehicles" className="text-[13px] font-bold text-ink-3">← My vehicles</Link>
+        <Link href="/vehicles" className="text-[13px] font-bold text-ink-3">← My machines</Link>
 
         {/* Passport card */}
         <div className="mt-3 rounded-[24px] bg-ink text-white p-6 md:p-8 relative overflow-hidden">
@@ -50,8 +50,8 @@ export default function PassportPage() {
           <LogoMark size={300} color="rgba(255,255,255,.05)" className="absolute -right-16 -bottom-24" />
           <div className="relative flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <div className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-white/55">Vehicle Passport</div>
-              <span className="reg-plate text-[20px] mt-3">{v.regNoDisplay}</span>
+              <div className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-white/55">{v.regNo ? "Vehicle Passport" : "Machine Passport"}</div>
+              {v.regNo ? <span className="reg-plate text-[20px] mt-3">{v.regNoDisplay}</span> : <span className="inline-flex mt-3 h-8 px-3 items-center rounded-[10px] bg-white/10 mono text-[15px] font-bold">{v.regNoDisplay}</span>}
               <div className="mt-3 text-[24px] font-extrabold tracking-tight">{v.nickname || `${v.makeName} ${v.modelName}`}</div>
               <div className="text-white/70 font-semibold capitalize">{v.label}</div>
             </div>
@@ -112,7 +112,7 @@ export default function PassportPage() {
                 </li>
               ))}
             </ol>
-          ) : <EmptyState title="No services recorded yet" body="When an FMS garage services this vehicle (with your OK), it appears here automatically: parts, odometer, invoice and all." />)}
+          ) : <EmptyState title="No services recorded yet" body="When a workshop on FindMySpare services this (with your OK), it appears here automatically: parts, odometer, invoice and all." />)}
 
           {tab === "Parts & warranty" && (p.parts.length ? (
             <div className="grid md:grid-cols-2 gap-3">

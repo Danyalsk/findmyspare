@@ -57,7 +57,7 @@ export default function WorkshopInvoicePage() {
               </div>
             </>
           ) : (
-            <div className="card p-5 bg-[color:var(--success-wash)]"><div className="text-[16px] font-extrabold text-[color:var(--success)]">✓ Paid</div><div className="text-[13px] text-ink-2 mt-1">Recorded in the customer&apos;s Vehicle Passport with every part&apos;s warranty.</div></div>
+            <div className="card p-5 bg-[color:var(--success-wash)]"><div className="text-[16px] font-extrabold text-[color:var(--success)]">✓ Paid</div><div className="text-[13px] text-ink-2 mt-1">Recorded in the customer&apos;s service history with every part&apos;s warranty.</div></div>
           )}
           <Link href={`/verify/${inv.verifyCode}`} target="_blank" className="card p-4 flex items-center justify-between"><span className="text-[14px] font-extrabold">Check verification page</span><span className="mono text-[12px] text-ink-3">{inv.verifyCode}</span></Link>
         </aside>

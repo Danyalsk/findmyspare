@@ -22,6 +22,8 @@ export const stockMovementReasonEnum = pgEnum("stock_movement_reason", [
   "returned",
   "order",
   "order_cancelled",
+  "sale",
+  "purchase",
 ]);
 
 // ─── Stock Movements Table ───────────────────────────

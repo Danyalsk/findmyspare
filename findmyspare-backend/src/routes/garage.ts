@@ -24,6 +24,7 @@ import {
   invoiceHash,
   garageForUser,
   formatRegNo,
+  idDisplay,
   vehicleLabel,
 } from "../lib/garage";
 import { markInvoicePaid } from "../lib/commerce";
@@ -42,9 +43,60 @@ const itemBody = t.Object({
   warrantyMonths: t.Optional(t.Number({ minimum: 0, maximum: 120 })),
 });
 
-const DEFAULT_INSPECTION = [
-  "Engine oil", "Brakes", "Tyres", "Battery", "Lights", "Suspension", "Clutch", "AC / Cooling",
-].map((label) => ({ label, status: "ok" as const }));
+const INSPECTION: Record<string, string[]> = {
+  automotive: ["Engine oil", "Brakes", "Tyres", "Battery", "Lights", "Suspension", "Clutch", "AC / Cooling"],
+  pumps: ["Power supply", "Capacitor", "Winding", "Impeller", "Seal / leaks", "Bearings", "Pressure", "Noise"],
+  appliances: ["Power supply", "PCB", "Motor", "Gas / coolant", "Wiring", "Sensors", "Noise", "Safety"],
+  power: ["Battery", "Fuel / oil", "Alternator", "AVR", "Wiring", "Cooling", "Load test", "Noise"],
+  agriculture: ["Engine oil", "Hydraulics", "Tyres", "PTO", "Clutch", "Battery", "Filters", "Lights"],
+};
+const GENERIC_INSPECTION = ["Visual check", "Power / supply", "Moving parts", "Leaks", "Wiring", "Noise / vibration", "Safety"];
+export const inspectionFor = (industry: string | null | undefined) =>
+  (INSPECTION[industry ?? "automotive"] ?? GENERIC_INSPECTION).map((label) => ({ label, status: "ok" as const }));
+
+type Garage = NonNullable<Awaited<ReturnType<typeof garageForUser>>>;
+type Machine = typeof vehicles.$inferSelect;
+
+/** Open a job card on a machine, asking the owner's consent to write to its passport. */
+export async function openJob(
+  garage: Garage,
+  vehicle: Machine,
+  input: { customerName?: string | null; customerPhone?: string | null; odometerKm?: number | null; complaint?: string | null; preGranted?: boolean },
+) {
+  const [access] = await db
+    .insert(vehicleAccess)
+    .values({ vehicleId: vehicle.id, garageId: garage.id, token: token(), status: input.preGranted ? "granted" : "pending", decidedAt: input.preGranted ? new Date() : null })
+    .onConflictDoNothing()
+    .returning();
+  if (input.preGranted && !access) {
+    await db.update(vehicleAccess).set({ status: "granted", decidedAt: new Date() })
+      .where(and(eq(vehicleAccess.vehicleId, vehicle.id), eq(vehicleAccess.garageId, garage.id)));
+  }
+  if (access && !input.preGranted && vehicle.ownerId) {
+    await db.insert(notifications).values({
+      userId: vehicle.ownerId,
+      type: "vehicle_access",
+      title: `${garage.name} wants to add a service to ${idDisplay(vehicle)}`,
+      message: "Allow them to record service, parts and invoices in your passport.",
+      metadata: { vehicleId: vehicle.id, accessId: access.id },
+    });
+  }
+  const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(jobCards).where(eq(jobCards.garageId, garage.id));
+  const [job] = await db.insert(jobCards).values({
+    garageId: garage.id,
+    vehicleId: vehicle.id,
+    number: `JC-${String(n + 1).padStart(4, "0")}`,
+    customerName: input.customerName ?? null,
+    customerPhone: input.customerPhone ?? null,
+    odometerKm: input.odometerKm ?? null,
+    complaint: input.complaint ?? null,
+    inspection: inspectionFor(vehicle.industrySlug),
+  }).returning();
+  if (input.odometerKm && (!vehicle.odometerKm || input.odometerKm > vehicle.odometerKm)) {
+    await db.update(vehicles).set({ odometerKm: input.odometerKm, updatedAt: new Date() }).where(eq(vehicles.id, vehicle.id));
+  }
+  return job!;
+}
 
 /** Load a job and assert it belongs to the caller's garage. */
 async function loadJob(garageId: string, jobId: string) {
@@ -80,6 +132,7 @@ export const garageRoutes = new Elysia({ prefix: "/garage" })
         upiId: t.Optional(t.String({ maxLength: 100 })),
         invoicePrefix: t.Optional(t.String({ maxLength: 10 })),
         specialisations: t.Optional(t.Array(t.String())),
+        industrySlugs: t.Optional(t.Array(t.String({ maxLength: 40 }), { maxItems: 10 })),
       }),
       detail: { summary: "Create or update my garage", tags: ["Garage"] },
     }
@@ -123,6 +176,9 @@ export const garageRoutes = new Elysia({ prefix: "/garage" })
         .select({
           job: jobCards,
           regNo: vehicles.regNo,
+          serialNo: vehicles.serialNo,
+          nickname: vehicles.nickname,
+          industrySlug: vehicles.industrySlug,
           makeName: vehicles.makeName,
           modelName: vehicles.modelName,
           variantName: vehicles.variantName,
@@ -136,7 +192,7 @@ export const garageRoutes = new Elysia({ prefix: "/garage" })
         .orderBy(desc(jobCards.updatedAt))
         .limit(100);
       return {
-        jobs: rows.map((r) => ({ ...r.job, regNo: r.regNo, regNoDisplay: formatRegNo(r.regNo), vehicleLabel: vehicleLabel(r), estimateTotal: r.estimateTotal, itemCount: r.itemCount })),
+        jobs: rows.map((r) => ({ ...r.job, regNo: r.regNo, regNoDisplay: idDisplay(r!), vehicleLabel: vehicleLabel(r), estimateTotal: r.estimateTotal, itemCount: r.itemCount })),
       };
     },
     { query: t.Object({ status: t.Optional(t.String()) }), detail: { tags: ["Garage"] } }
@@ -145,64 +201,60 @@ export const garageRoutes = new Elysia({ prefix: "/garage" })
   .post(
     "/jobs",
     async ({ body, garage, set }) => {
-      const reg = normalizeRegNo(body.regNo);
-      if (!reg) { set.status = 400; return { error: "Enter a valid registration number" }; }
-      let [vehicle] = await db.select().from(vehicles).where(eq(vehicles.regNo, reg)).limit(1);
-      if (!vehicle) {
-        const rc = await lookupRegNo(reg);
-        [vehicle] = await db.insert(vehicles).values({
-          regNo: reg,
-          variantId: rc?.variantId ?? null,
-          makeName: rc?.makeName ?? "Unknown",
-          modelName: rc?.modelName ?? "Vehicle",
-          variantName: rc?.variantName ?? null,
-          fuel: rc?.fuel ?? null,
-          year: rc?.year ?? null,
-          segment: rc?.segment ?? "car",
-        }).returning();
+      let vehicle: Machine | undefined;
+      if (body.regNo) {
+        const reg = normalizeRegNo(body.regNo);
+        if (!reg) { set.status = 400; return { error: "Enter a valid registration number" }; }
+        [vehicle] = await db.select().from(vehicles).where(eq(vehicles.regNo, reg)).limit(1);
+        if (!vehicle) {
+          const rc = await lookupRegNo(reg);
+          [vehicle] = await db.insert(vehicles).values({
+            regNo: reg,
+            variantId: rc?.variantId ?? null,
+            makeName: rc?.makeName ?? "Unknown",
+            modelName: rc?.modelName ?? "Vehicle",
+            variantName: rc?.variantName ?? null,
+            fuel: rc?.fuel ?? null,
+            year: rc?.year ?? null,
+            segment: rc?.segment ?? "car",
+          }).returning();
+        }
+      } else {
+        // Any other machine: find by brand + serial if we've seen it, else create.
+        if (!body.makeName || !body.modelName) { set.status = 400; return { error: "Enter a registration number, or the machine's brand and model" }; }
+        const serial = body.serialNo?.trim() || null;
+        if (serial) {
+          [vehicle] = await db.select().from(vehicles)
+            .where(and(eq(vehicles.serialNo, serial), sql`lower(${vehicles.makeName}) = lower(${body.makeName})`)).limit(1);
+        }
+        if (!vehicle) {
+          [vehicle] = await db.insert(vehicles).values({
+            industrySlug: body.industrySlug ?? "automotive",
+            machineType: body.machineType ?? null,
+            serialNo: serial,
+            makeName: body.makeName,
+            modelName: body.modelName,
+          }).returning();
+        }
       }
-      // Consent: the owner must allow this garage to write to the passport.
-      // Unowned records stay pending until the owner claims the vehicle.
-      const [access] = await db
-        .insert(vehicleAccess)
-        .values({ vehicleId: vehicle.id, garageId: garage!.id, token: token(), status: "pending" })
-        .onConflictDoNothing()
-        .returning();
-      if (access && vehicle.ownerId) {
-        await db.insert(notifications).values({
-          userId: vehicle.ownerId,
-          type: "vehicle_access",
-          title: `${garage!.name} wants to add a service to ${formatRegNo(vehicle.regNo)}`,
-          message: "Allow them to record service, parts and invoices in your Vehicle Passport.",
-          metadata: { vehicleId: vehicle.id, accessId: access.id },
-        });
-      }
-      const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(jobCards).where(eq(jobCards.garageId, garage!.id));
-      const [job] = await db.insert(jobCards).values({
-        garageId: garage!.id,
-        vehicleId: vehicle.id,
-        number: `JC-${String(n + 1).padStart(4, "0")}`,
-        customerName: body.customerName ?? null,
-        customerPhone: body.customerPhone ?? null,
-        odometerKm: body.odometerKm ?? null,
-        complaint: body.complaint ?? null,
-        inspection: DEFAULT_INSPECTION,
-      }).returning();
-      if (body.odometerKm && (!vehicle.odometerKm || body.odometerKm > vehicle.odometerKm)) {
-        await db.update(vehicles).set({ odometerKm: body.odometerKm, updatedAt: new Date() }).where(eq(vehicles.id, vehicle.id));
-      }
+      const job = await openJob(garage!, vehicle!, body);
       set.status = 201;
-      return { job, vehicle: { ...vehicle, regNoDisplay: formatRegNo(vehicle.regNo), label: vehicleLabel(vehicle) } };
+      return { job, vehicle: { ...vehicle, regNoDisplay: idDisplay(vehicle!), label: vehicleLabel(vehicle) } };
     },
     {
       body: t.Object({
-        regNo: t.String(),
+        regNo: t.Optional(t.String()),
+        industrySlug: t.Optional(t.String({ maxLength: 40 })),
+        machineType: t.Optional(t.String({ maxLength: 80 })),
+        makeName: t.Optional(t.String({ maxLength: 80 })),
+        modelName: t.Optional(t.String({ maxLength: 80 })),
+        serialNo: t.Optional(t.String({ maxLength: 60 })),
         customerName: t.Optional(t.String({ maxLength: 160 })),
         customerPhone: t.Optional(t.String({ maxLength: 20 })),
         odometerKm: t.Optional(t.Number({ minimum: 0, maximum: 2_000_000 })),
         complaint: t.Optional(t.String({ maxLength: 2000 })),
       }),
-      detail: { summary: "Open a job card for a vehicle", tags: ["Garage"] },
+      detail: { summary: "Open a job card for a vehicle or any machine", tags: ["Garage"] },
     }
   )
 
@@ -227,7 +279,7 @@ export const garageRoutes = new Elysia({ prefix: "/garage" })
       const totals = computeInvoice(items.filter((i) => i.approved).map((i) => ({ ...i, gstRate: i.gstRate })));
       return {
         job,
-        vehicle: { ...vehicle, regNoDisplay: formatRegNo(vehicle!.regNo), label: vehicleLabel(vehicle!) },
+        vehicle: { ...vehicle, regNoDisplay: idDisplay(vehicle!), label: vehicleLabel(vehicle!) },
         access: access ? { status: access.status } : null,
         ownerLinked: !!vehicle?.ownerId,
         items: items.map((i) => ({
@@ -414,7 +466,7 @@ export const garageRoutes = new Elysia({ prefix: "/garage" })
         issuedAt,
         seller: { name: garage!.name, gstin: garage!.gstin, address: [garage!.addressLine, garage!.city, garage!.state, garage!.pincode].filter(Boolean).join(", "), phone: garage!.phone },
         customer: { name: job.customerName, phone: job.customerPhone },
-        vehicle: { regNo: formatRegNo(vehicle!.regNo), label: vehicleLabel(vehicle!), odometerKm: job.odometerKm },
+        vehicle: { regNo: idDisplay(vehicle!), label: vehicleLabel(vehicle!), odometerKm: job.odometerKm },
         lines: calc.lines,
         taxable: calc.taxable, cgst: calc.cgst, sgst: calc.sgst, total: calc.total,
       };
@@ -435,7 +487,7 @@ export const garageRoutes = new Elysia({ prefix: "/garage" })
       if (vehicle!.ownerId) {
         await db.insert(notifications).values({
           userId: vehicle!.ownerId, type: "invoice", title: `Invoice ${number} from ${garage!.name}`,
-          message: `₹${calc.total} for ${formatRegNo(vehicle!.regNo)}. Pay online or at the garage.`,
+          message: `₹${calc.total} for ${idDisplay(vehicle!)}. Pay online or at the garage.`,
           metadata: { invoiceId: inv.id, payToken: inv.payToken },
         });
       }
@@ -480,8 +532,8 @@ export const garageRoutes = new Elysia({ prefix: "/garage" })
   .get(
     "/customers",
     async ({ garage }) => {
-      const rows = await db.execute<{ vehicle_id: string; reg_no: string; make_name: string; model_name: string; customer_name: string | null; customer_phone: string | null; visits: number; last_visit: string; spent: string }>(sql`
-        SELECT v.id AS vehicle_id, v.reg_no, v.make_name, v.model_name,
+      const rows = await db.execute<{ vehicle_id: string; reg_no: string | null; serial_no: string | null; nickname: string | null; industry_slug: string; make_name: string; model_name: string; customer_name: string | null; customer_phone: string | null; visits: number; last_visit: string; spent: string }>(sql`
+        SELECT v.id AS vehicle_id, v.reg_no, v.serial_no, v.nickname, v.industry_slug, v.make_name, v.model_name,
                (array_agg(j.customer_name ORDER BY j.created_at DESC))[1] AS customer_name,
                (array_agg(j.customer_phone ORDER BY j.created_at DESC))[1] AS customer_phone,
                count(j.id)::int AS visits, max(j.created_at) AS last_visit,
@@ -489,7 +541,7 @@ export const garageRoutes = new Elysia({ prefix: "/garage" })
         FROM job_cards j JOIN vehicles v ON v.id = j.vehicle_id
         WHERE j.garage_id = ${garage!.id}
         GROUP BY v.id ORDER BY last_visit DESC LIMIT 200`);
-      return { customers: [...rows].map((r) => ({ ...r, reg_no_display: formatRegNo(r.reg_no) })) };
+      return { customers: [...rows].map((r) => ({ ...r, reg_no_display: idDisplay({ regNo: r.reg_no, serialNo: r.serial_no, nickname: r.nickname }) })) };
     },
     { detail: { tags: ["Garage"] } }
   );

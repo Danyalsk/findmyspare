@@ -55,7 +55,7 @@ function SearchBox({ compact }: { compact?: boolean }) {
         {Icon.search}
         <input
           className="flex-1 bg-transparent outline-none text-[14.5px] font-medium text-ink placeholder:text-ink-4"
-          placeholder="Search “brake pads”, “Swift clutch”, part no…"
+          placeholder="Search any part: pump capacitor, AC PCB, brake pads…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           aria-label="Search parts"
@@ -84,8 +84,9 @@ export function AppHeader() {
 
   const links = [
     { href: "/search", label: "Shop parts" },
+    { href: "/fix", label: "Fix it" },
     { href: "/buyer/requests", label: "Get quotes" },
-    { href: "/vehicles", label: "My vehicles" },
+    { href: "/vehicles", label: "My machines" },
     ...(garage ? [{ href: "/workshop", label: "Workshop" }] : []),
     { href: "/buyer/orders", label: "Orders" },
   ];
@@ -158,11 +159,11 @@ export function MobileNav() {
   const { garage } = useMyGarage();
   const items = [
     { href: "/", label: "Home", icon: Icon.home, active: path === "/" || path === "/buyer" },
-    { href: "/search", label: "Shop", icon: Icon.search, active: path.startsWith("/search") || path.startsWith("/product") },
-    { href: "/buyer/requests", label: "Quotes", icon: Icon.req, active: path.startsWith("/buyer/requests") },
+    { href: "/search", label: "Shop", icon: Icon.search, active: path.startsWith("/search") || path.startsWith("/product") || path.startsWith("/i/") },
+    { href: "/fix", label: "Fix it", icon: Icon.wrench, active: path.startsWith("/fix") },
     garage
-      ? { href: "/workshop", label: "Workshop", icon: Icon.wrench, active: path.startsWith("/workshop") }
-      : { href: "/vehicles", label: "Vehicles", icon: Icon.car, active: path.startsWith("/vehicles") },
+      ? { href: "/workshop", label: "Workshop", icon: Icon.req, active: path.startsWith("/workshop") }
+      : { href: "/vehicles", label: "Machines", icon: Icon.car, active: path.startsWith("/vehicles") },
     { href: user ? "/profile" : "/login", label: "Account", icon: Icon.user, active: path.startsWith("/profile") },
   ];
   return (
@@ -183,7 +184,7 @@ export function MobileNav() {
 export function CartBar() {
   const items = useCartStore((s) => s.items);
   const path = usePathname() ?? "";
-  if (!items.length || ["/buyer/cart", "/buyer/checkout", "/pay", "/workshop"].some((p) => path.startsWith(p))) return null;
+  if (!items.length || ["/buyer/cart", "/buyer/checkout", "/pay", "/workshop", "/fix", "/biz"].some((p) => path.startsWith(p))) return null;
   const n = items.reduce((s, i) => s + i.quantity, 0);
   const total = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
   return (
@@ -218,12 +219,12 @@ export function SiteFooter() {
       <div className="max-w-[1200px] mx-auto px-6 py-12 grid grid-cols-4 gap-8">
         <div>
           <Logo size={26} tone="light" />
-          <p className="text-[13px] text-white/60 mt-3 leading-relaxed">Sahi part. Pakka record.<br />India&apos;s parts marketplace and garage network.</p>
+          <p className="text-[13px] text-white/60 mt-3 leading-relaxed">Every spare part. For every machine.<br />India&apos;s spare-parts network.</p>
         </div>
         {[
-          ["Shop", [["Browse parts", "/search"], ["Get quotes", "/buyer/requests/new"], ["My vehicles", "/vehicles"], ["Verify an invoice", "/verify"]]],
-          ["For garages", [["Workshop (free)", "/workshop"], ["Verified Garage", "/workshop"], ["Invoices & payments", "/workshop/invoices"]]],
-          ["For sellers", [["Sell on FindMySpare", "/sell"], ["Seller login", "/supplier-login"]]],
+          ["Shop", [["Browse parts", "/search"], ["Fix it", "/fix"], ["Get quotes", "/buyer/requests/new"], ["My machines", "/vehicles"], ["Verify an invoice", "/verify"]]],
+          ["For workshops", [["Workshop (free)", "/workshop"], ["Jobs near you", "/workshop"], ["Invoices & payments", "/workshop/invoices"]]],
+          ["For businesses", [["Sell on FindMySpare", "/sell"], ["Business OS", "/biz"], ["Seller login", "/supplier-login"]]],
         ].map(([h, ls]) => (
           <div key={h as string}>
             <div className="text-[12px] font-extrabold uppercase tracking-wider text-white/50 mb-3">{h as string}</div>

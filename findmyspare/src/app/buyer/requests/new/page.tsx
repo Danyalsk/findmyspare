@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { MachineId } from "@/components/service/MachineId";
 import { useRouter, useSearchParams } from "next/navigation";
 import { inquiriesApi } from "@/lib/api";
 import { vehiclesApi, type Vehicle } from "@/lib/api/v2";
@@ -63,7 +64,7 @@ function NewRequest() {
             <div className="flex gap-2 flex-wrap mb-4">
               {mine.map((v) => (
                 <button key={v.id} onClick={() => pickVehicle(v)} className="chip !h-auto py-2" data-on={vehicleId === v.id}>
-                  <span className="reg-plate !text-[11px] !py-0">{v.regNoDisplay}</span>{v.modelName}
+                  <MachineId display={v.regNoDisplay} regNo={v.regNo} size={11} />{v.modelName}
                 </button>
               ))}
               <button className="chip" data-on={!vehicleId} onClick={() => setVehicleId(null)}>Other vehicle</button>

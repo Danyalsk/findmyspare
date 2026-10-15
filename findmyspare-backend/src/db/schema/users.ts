@@ -78,6 +78,9 @@ export const users = pgTable("users", {
   // Buyer location captured at one-time profile step.
   city: varchar("city", { length: 100 }),
   pincode: varchar("pincode", { length: 10 }),
+  // v3 network: one business can hold many supply-chain roles across industries.
+  businessRoles: jsonb("business_roles").$type<string[]>().default([]),
+  industries: jsonb("industries").$type<string[]>().default([]),
   // Admin / lifecycle
   isActive: boolean("is_active").default(true).notNull(),
   banReason: text("ban_reason"),

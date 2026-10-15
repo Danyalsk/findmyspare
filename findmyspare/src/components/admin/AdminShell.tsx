@@ -14,6 +14,9 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { href: "/admin", label: "Dashboard" },
+  { href: "/admin/network", label: "Network" },
+  { href: "/admin/network/businesses", label: "Businesses" },
+  { href: "/admin/network/taxonomy", label: "Taxonomy" },
   { href: "/admin/suppliers", label: "Suppliers" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/inquiries", label: "Inquiries" },
@@ -26,6 +29,8 @@ const NAV: NavItem[] = [
   { href: "/admin/runbook", label: "Runbook", superOnly: true },
 ];
 
+const EXACT = new Set(["/admin", "/admin/network"]);
+
 export function AdminShell({
   user,
   children,
@@ -35,6 +40,9 @@ export function AdminShell({
 }) {
   const pathname = usePathname();
   const isSuper = user.role === "super_admin";
+  // "/admin" and "/admin/network" have child pages with their own nav entries.
+  const isActive = (href: string) => pathname === href || (!EXACT.has(href) && pathname.startsWith(href + "/"));
+  const items = NAV.filter((i) => !i.superOnly || isSuper);
 
   return (
     <div className="min-h-screen bg-paper-3 flex">
@@ -54,7 +62,7 @@ export function AdminShell({
 
         <nav className="flex flex-col gap-1">
           {NAV.filter((i) => !i.superOnly || isSuper).map((item) => {
-            const active = pathname === item.href || pathname.startsWith(item.href + "/");
+            const active = isActive(item.href);
             return (
               <Link
                 key={item.href}
@@ -94,8 +102,22 @@ export function AdminShell({
           </span>
         </div>
 
-        {/* Mobile bottom nav */}
-        <main className="flex-1 px-5 py-6 md:px-8 md:py-8">{children}</main>
+        {/* Mobile nav: scrolls sideways inside its own strip */}
+        <nav aria-label="Admin sections" className="md:hidden flex gap-1.5 overflow-x-auto scroll-hidden px-4 py-2 border-b border-line bg-paper">
+          {items.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={clsx(
+                "flex-shrink-0 h-8 px-3 inline-flex items-center rounded-full text-[12.5px] font-semibold whitespace-nowrap",
+                isActive(item.href) ? "bg-accent-wash text-accent-ink" : "bg-paper-2 text-ink-2"
+              )}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+        <main className="flex-1 min-w-0 px-4 py-6 md:px-8 md:py-8">{children}</main>
       </div>
     </div>
   );

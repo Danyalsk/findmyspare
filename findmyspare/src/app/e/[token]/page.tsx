@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { MachineId } from "@/components/service/MachineId";
 import { useParams } from "next/navigation";
 import { clsx } from "clsx";
 import { publicApi, inr, type PublicEstimate } from "@/lib/api/v2";
@@ -40,7 +41,7 @@ export default function EstimateApprovalPage() {
       <div className="card p-5 md:p-6">
         <div className="flex items-center gap-2 flex-wrap"><span className="text-[13px] font-bold text-ink-3">Estimate from</span>{d.garage.verified && <VerifiedBadge label="Verified Garage" />}</div>
         <h1 className="text-[24px] md:text-[28px] font-extrabold tracking-tight mt-1">{d.garage.name}{d.garage.city ? `, ${d.garage.city}` : ""}</h1>
-        <div className="mt-2 flex items-center gap-3 flex-wrap"><span className="reg-plate text-[14px]">{d.vehicle.regNoDisplay}</span><span className="text-[14px] font-bold text-ink-2">{d.vehicle.label}</span></div>
+        <div className="mt-2 flex items-center gap-3 flex-wrap"><MachineId display={d.vehicle.regNoDisplay} size={14} /><span className="text-[14px] font-bold text-ink-2">{d.vehicle.label}</span></div>
         {d.job.complaint && <p className="mt-3 text-[14px] text-ink-2"><b>You reported:</b> {d.job.complaint}</p>}
         {flagged.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">{flagged.map((p) => <span key={p.label} className={clsx("chip !h-8", p.status === "urgent" ? "!text-[color:var(--danger)] !border-[color:var(--danger)]" : "!text-[color:var(--amber)] !border-[color:var(--amber)]")}>{p.status === "urgent" ? "Needs attention now" : "Check soon"}: {p.label}</span>)}</div>

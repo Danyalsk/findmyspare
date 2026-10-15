@@ -9,12 +9,15 @@ import { JOB_STATUS } from "@/lib/job-status";
 import { Sheet, Skel, StatusChip, Field, inputCls, EmptyState } from "@/components/shop/ui";
 import { toast } from "@/lib/toast";
 import { getErrorMessage } from "@/lib/errors";
+import { MachineId } from "@/components/service/MachineId";
 
 type Job = Awaited<ReturnType<typeof garageApi.job>>;
 const STEPS = ["open", "estimate_sent", "approved", "in_progress", "ready", "invoiced", "paid"] as const;
 const STEP_LABEL = ["Checked in", "Estimate sent", "Approved", "Working", "Ready", "Invoiced", "Paid"];
 const CYCLE: InspectionPoint["status"][] = ["ok", "attention", "urgent"];
 const blankLine = { kind: "part" as "part" | "labour", name: "", brand: "", partNumber: "", unitPrice: "", quantity: "1", gstRate: "28", warrantyMonths: "0" };
+
+const hasPlateLabel = (regNo: string | null | undefined) => !!regNo;
 
 export default function JobCardPage() {
   const { id } = useParams<{ id: string }>();
@@ -77,7 +80,7 @@ export default function JobCardPage() {
         <div className="card p-5 mt-3">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <div className="flex items-center gap-3 flex-wrap"><span className="reg-plate text-[16px]">{vehicle.regNoDisplay}</span><StatusChip tone={JOB_STATUS[job.status]!.tone}>{JOB_STATUS[job.status]!.label}</StatusChip></div>
+              <div className="flex items-center gap-3 flex-wrap"><MachineId display={vehicle.regNoDisplay} regNo={vehicle.regNo ?? null} size={16} /><StatusChip tone={JOB_STATUS[job.status]!.tone}>{JOB_STATUS[job.status]!.label}</StatusChip></div>
               <div className="mt-2 text-[20px] font-extrabold tracking-tight">{vehicle.label}</div>
               <div className="text-[13px] text-ink-3 font-semibold">Job {job.number} · {job.customerName ?? "Walk-in"}{job.customerPhone ? ` · ${job.customerPhone}` : ""}{job.odometerKm ? ` · ${job.odometerKm.toLocaleString("en-IN")} km` : ""}</div>
             </div>
@@ -94,7 +97,7 @@ export default function JobCardPage() {
           </div>
           {/* Consent */}
           <div className={clsx("mt-4 rounded-[12px] p-3 text-[13px] font-bold", access?.status === "granted" ? "bg-[color:var(--success-wash)] text-[color:var(--success)]" : "bg-[color:var(--amber-wash)] text-[color:var(--amber)]")}>
-            {access?.status === "granted" ? "✓ Owner allowed this service to go into their Vehicle Passport." : ownerLinked ? "Waiting for the owner to allow Passport updates. They got a request in the app." : "Vehicle isn't linked to an owner yet. History will attach when the owner adds this plate."}
+            {access?.status === "granted" ? "✓ Owner allowed this service to go into their service history (Passport)." : ownerLinked ? "Waiting for the owner to allow Passport updates. They got a request in the app." : hasPlateLabel(vehicle.regNo) ? "Vehicle isn't linked to an owner yet. History will attach when the owner adds this plate." : "Machine isn't linked to an owner yet. History stays with this serial no. on your workshop record."}
           </div>
         </div>
 
@@ -175,10 +178,11 @@ export default function JobCardPage() {
             {/* Inspection */}
             <div className="card p-5">
               <div className="flex items-center justify-between"><div className="text-[16px] font-extrabold">Inspection</div><span className="text-[12px] text-ink-3 font-semibold">Tap to change</span></div>
+              {!job.inspection.length && <p className="mt-2 text-[13px] text-ink-3">No checklist for this job.</p>}
               <div className="mt-3 grid grid-cols-2 gap-2">
                 {job.inspection.map((p, i) => (
-                  <button key={p.label} onClick={() => cycleInspection(i)} className={clsx("h-11 px-3 rounded-[12px] text-left text-[13px] font-bold flex items-center justify-between", p.status === "ok" ? "bg-[color:var(--success-wash)] text-[color:var(--success)]" : p.status === "attention" ? "bg-[color:var(--amber-wash)] text-[color:var(--amber)]" : "bg-[color:var(--danger-wash)] text-[color:var(--danger)]")}>
-                    {p.label}<span className="text-[11px] uppercase">{p.status === "ok" ? "OK" : p.status === "attention" ? "Soon" : "Now"}</span>
+                  <button key={p.label} onClick={() => cycleInspection(i)} className={clsx("min-h-11 py-1.5 px-3 rounded-[12px] text-left text-[13px] font-bold flex items-center justify-between gap-2", p.status === "ok" ? "bg-[color:var(--success-wash)] text-[color:var(--success)]" : p.status === "attention" ? "bg-[color:var(--amber-wash)] text-[color:var(--amber)]" : "bg-[color:var(--danger-wash)] text-[color:var(--danger)]")}>
+                    <span className="min-w-0 break-words">{p.label}</span><span className="text-[11px] uppercase flex-shrink-0">{p.status === "ok" ? "OK" : p.status === "attention" ? "Soon" : "Now"}</span>
                   </button>
                 ))}
               </div>
@@ -208,7 +212,7 @@ export default function JobCardPage() {
         <p className="text-[14px] text-ink-2">The owner can approve or decline each line from their phone, with no app or login needed.</p>
         <div className="mt-4 rounded-[14px] bg-paper-2 p-3 mono text-[12.5px] break-all">{estimateUrl}</div>
         <div className="mt-4 grid grid-cols-3 gap-2">
-          <a href={`https://wa.me/${(job.customerPhone ?? "").replace(/\D/g, "")}?text=${encodeURIComponent(`Namaste ${job.customerName ?? ""}, your estimate for ${vehicle.regNoDisplay} is ready: ${estimateUrl}`)}`} target="_blank" rel="noopener noreferrer" className="h-11 rounded-[12px] bg-[#25D366] text-white text-[13.5px] font-extrabold flex items-center justify-center">WhatsApp</a>
+          <a href={`https://wa.me/${(job.customerPhone ?? "").replace(/\D/g, "")}?text=${encodeURIComponent(`Namaste ${job.customerName ?? ""}, your estimate for ${hasPlateLabel(vehicle.regNo) ? vehicle.regNoDisplay : vehicle.label} is ready: ${estimateUrl}`)}`} target="_blank" rel="noopener noreferrer" className="h-11 rounded-[12px] bg-[#25D366] text-white text-[13.5px] font-extrabold flex items-center justify-center">WhatsApp</a>
           <button onClick={() => { navigator.clipboard?.writeText(estimateUrl); toast.success("Link copied"); }} className="h-11 rounded-[12px] border border-line-2 text-[13.5px] font-extrabold">Copy link</button>
           <Link href={`/e/${job.estimateToken}`} target="_blank" className="h-11 rounded-[12px] border border-line-2 text-[13.5px] font-extrabold flex items-center justify-center">Preview</Link>
         </div>
