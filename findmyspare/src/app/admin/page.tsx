@@ -62,6 +62,13 @@ export default function AdminOverviewPage() {
     <div className="flex-1 flex flex-col">
       <TopBar title="Admin overview" />
       <div className="px-5 pb-12 max-w-6xl w-full mx-auto space-y-6">
+        <Link href="/admin/network" className="card p-4 flex items-center justify-between gap-3 hover:shadow-[var(--shadow-lifted)] transition-shadow">
+          <div className="min-w-0">
+            <div className="text-[15px] font-extrabold tracking-tight">Network console</div>
+            <div className="text-[12.5px] text-ink-3 font-semibold">Businesses by role, industry supply vs demand, trade flows and search gaps</div>
+          </div>
+          <ArrowRightIcon size={16} className="text-ink-3 flex-shrink-0" />
+        </Link>
         <MarketplaceHealth />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <StatCard label="Pending suppliers" value={stats?.pendingSuppliers} href="/admin/suppliers?status=pending" highlight />

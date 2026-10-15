@@ -25,7 +25,7 @@ export default function InvoicesPage() {
       <div className="mt-4 card divide-y divide-line">
         {!list ? <div className="p-5"><Skel className="h-12" /></div> : !shown.length ? <EmptyState title="No invoices yet" body="Generate one from any approved job card." /> : shown.map((i) => (
           <Link key={i.id} href={`/workshop/invoices/${i.id}`} className="flex items-center gap-4 px-5 py-4 hover:bg-paper-2">
-            <div className="flex-1 min-w-0"><div className="text-[14.5px] font-extrabold mono">{i.number}</div><div className="text-[12.5px] text-ink-3 font-semibold">{i.vehicle.regNo} · {i.customer.name ?? "Customer"} · {format(new Date(i.issuedAt), "d MMM")}</div></div>
+            <div className="flex-1 min-w-0"><div className="text-[14.5px] font-extrabold mono">{i.number}</div><div className="text-[12.5px] text-ink-3 font-semibold">{i.vehicle.regNo || i.vehicle.label} · {i.customer.name ?? "Customer"} · {format(new Date(i.issuedAt), "d MMM")}</div></div>
             <StatusChip tone={i.status === "paid" ? "green" : "amber"}>{i.status}</StatusChip>
             <span className="price w-24 text-right">{inr(i.total)}</span>
           </Link>

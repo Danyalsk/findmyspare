@@ -32,7 +32,7 @@ const buyerTabs: Tab[] = [
 ];
 
 const supplierTabs: Tab[] = [
-  { key: "home",      icon: HomeIcon,    label: "Dash",      href: "/supplier" },
+  { key: "home",      icon: HomeIcon,    label: "Business",  href: "/biz" },
   { key: "inventory", icon: PackageIcon, label: "Inventory", href: "/supplier/inventory" },
   { key: "leads",     icon: PlusIcon,    label: "Leads",     href: "/supplier/leads", center: true },
   { key: "messages", icon: ChatIcon,    label: "Inbox",    href: "/messages" },
@@ -71,7 +71,7 @@ export function TabBar({ role }: TabBarProps) {
   }, [socket, refresh]);
 
   const isActive = (tab: Tab) => {
-    if (tab.href === "/buyer" || tab.href === "/supplier") {
+    if (tab.href === "/buyer" || tab.href === "/biz") {
       return pathname === tab.href;
     }
     return pathname.startsWith(tab.href);

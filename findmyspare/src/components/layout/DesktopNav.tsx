@@ -31,7 +31,7 @@ const buyerLinks: NavLink[] = [
 ];
 
 const supplierLinks: NavLink[] = [
-  { href: "/supplier",          label: "Dashboard" },
+  { href: "/biz",               label: "Business" },
   { href: "/supplier/leads",     label: "Leads",     icon: PlusIcon },
   { href: "/supplier/inventory", label: "Inventory", icon: PackageIcon },
   { href: "/supplier/orders",    label: "Orders",    icon: TruckIcon },
