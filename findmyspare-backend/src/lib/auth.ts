@@ -39,10 +39,12 @@ const DEMO_LOGINS: Record<string, string> = {
 };
 const DEMO_ENABLED = process.env.DEMO_LOGIN === "1";
 function demoOtpFor(email: string): string | undefined {
-  if (!DEMO_ENABLED || NODE_ENV === "production") return undefined;
+  if (!DEMO_ENABLED) return undefined;
   const e = email.toLowerCase();
-  // Seeded prototype accounts (seed.ts / seed-v2.ts) all use @findmyspare.test.
-  if (e.endsWith("@findmyspare.test")) return "123456";
+  // Local prototype accounts (seed.ts / seed-v2.ts, @findmyspare.test) never
+  // work in production. The two named demo accounts keep their original
+  // behaviour: available wherever DEMO_LOGIN=1 is set.
+  if (NODE_ENV !== "production" && e.endsWith("@findmyspare.test")) return "123456";
   return DEMO_LOGINS[e];
 }
 
