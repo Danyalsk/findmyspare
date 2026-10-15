@@ -81,7 +81,7 @@ export default function BizHome() {
             {tasks.map((x) => {
               const Icon = BI[x.icon];
               return (
-                <Link key={x.title} href={x.href} className="card p-4 flex items-center gap-3.5 fms-press hover:shadow-[var(--shadow-lifted)] transition-shadow">
+                <Link key={x.title} href={x.href} className="card p-4 flex items-center gap-3.5 min-w-0 fms-press hover:shadow-[var(--shadow-lifted)] transition-shadow">
                   <span className={clsx("w-11 h-11 rounded-[14px] flex items-center justify-center flex-shrink-0", toneCls[x.tone])}><Icon size={22} /></span>
                   <span className="flex-1 min-w-0">
                     <span className="block text-[15px] font-extrabold tracking-tight">{x.title}</span>
@@ -142,7 +142,7 @@ export default function BizHome() {
 
       {/* Network + demand */}
       <section className="grid md:grid-cols-2 gap-2.5">
-        <Link href="/biz/network" className="card-flat p-4 flex items-center gap-3.5 hover:bg-paper-2">
+        <Link href="/biz/network" className="card-flat p-4 flex items-center gap-3.5 min-w-0 hover:bg-paper-2">
           <span className="w-11 h-11 rounded-[14px] bg-paper-2 flex items-center justify-center text-ink-2"><BI.users size={22} /></span>
           <span className="flex-1 min-w-0">
             <span className="block text-[15px] font-extrabold">Trade network</span>
@@ -155,7 +155,7 @@ export default function BizHome() {
           <BI.chev size={18} className="text-ink-4" />
         </Link>
         {isSeller && (
-          <Link href="/biz/radar" className="card-flat p-4 flex items-center gap-3.5 hover:bg-paper-2">
+          <Link href="/biz/radar" className="card-flat p-4 flex items-center gap-3.5 min-w-0 hover:bg-paper-2">
             <span className="w-11 h-11 rounded-[14px] bg-paper-2 flex items-center justify-center text-ink-2"><BI.radar size={22} /></span>
             <span className="flex-1 min-w-0">
               <span className="block text-[15px] font-extrabold">What buyers want</span>

@@ -92,7 +92,7 @@ describe("distribution chain: retailer orders from distributor", () => {
     expect(r.data.terms.priceList).toBe("Retailers");
     const cap = r.data.products.find((p: any) => p.partNumber === "KEL-36-440");
     expect(Number(cap.yourPrice)).toBeCloseTo(Number(cap.listPrice) * 0.95, 1);
-    expect(cap.tier).toEqual({ price: "235.00", minQty: 20 });
+    expect(cap.tier).toEqual({ price: "225.00", minQty: 20 });
     productId = cap.id;
     sellerStockBefore = cap.stockQuantity;
   });
@@ -102,8 +102,8 @@ describe("distribution chain: retailer orders from distributor", () => {
     expect(low.status).toBe(400);
     const r = await patil("POST", "/biz/pos", { sellerId: ids.ganesh, lines: [{ productId, quantity: 20 }], paymentTerms: "credit" });
     expect(r.status).toBe(201);
-    expect(r.data.po.lines[0].unitPrice).toBe("235.00");
-    expect(r.data.po.total).toBe((20 * 235 * 1.18).toFixed(2));
+    expect(r.data.po.lines[0].unitPrice).toBe("225.00");
+    expect(r.data.po.total).toBe((20 * 225 * 1.18).toFixed(2));
     poId = r.data.po.id;
   });
 
@@ -126,6 +126,22 @@ describe("distribution chain: retailer orders from distributor", () => {
     expect(r.status).toBe(200);
     const [after] = await db.select().from(products).where(eq(products.id, before!.id));
     expect(after!.stockQuantity).toBe(before!.stockQuantity + 20);
+  });
+});
+
+describe("radar + directory", () => {
+  test("demand radar lists searches with my matching listings", async () => {
+    const r = await patil("GET", "/biz/radar");
+    expect(r.status).toBe(200);
+    const cap = r.data.searches.find((x: any) => x.term === "submersible capacitor");
+    expect(cap.searches).toBeGreaterThan(0);
+  });
+
+  test("directory reports listings and my connection status", async () => {
+    const r = await patil("GET", "/biz/directory?role=distributor");
+    const g = r.data.businesses.find((b: any) => b.id === ids.ganesh);
+    expect(g.listings).toBeGreaterThan(0);
+    expect(g.linkAsBuyer).toBe("active");
   });
 });
 

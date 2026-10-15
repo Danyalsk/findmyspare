@@ -15,10 +15,11 @@ import { BI, ErrorCard, PO_STATUS, Page, PageHead, Segmented, btnGhost, btnPrima
 const TYPE_LABEL: Record<LedgerEntry["type"], string> = { invoice: "Udhaar / invoice", payment: "Payment received", credit_note: "Credit note", opening: "Opening balance" };
 const METHODS = [{ value: "cash", label: "Cash" }, { value: "upi", label: "UPI" }, { value: "bank", label: "Bank" }, { value: "cheque", label: "Cheque" }];
 
-/** What a supplier says I owe them (I can't see their ledger lines, only the balance and my POs). */
+/** What I owe a supplier: their ledger lines about me (read-only) and my POs with them. */
 function SupplierParty({ supplierId }: { supplierId: string }) {
   const k = useApi("khata", () => bizApi.khata());
   const pos = useApi("pos:out", () => bizApi.pos("out"));
+  const lines = useApi(`payable:${supplierId}`, () => bizApi.khataEntries({ supplierId }));
   const row = k.data?.payable.find((r) => r.owner_id === supplierId);
   const mine = (pos.data?.pos ?? []).filter((p) => p.sellerId === supplierId);
   const name = row?.name ?? mine[0]?.sellerName ?? "Supplier";
@@ -33,6 +34,22 @@ function SupplierParty({ supplierId }: { supplierId: string }) {
           <p className="text-[13px] text-ink-3 font-semibold mt-1">{name} records your payments in their khata. Pay them by UPI or bank and ask them to mark it received.</p>
           <Link href={`/biz/order/${supplierId}`} className={clsx(btnGhost, "mt-3 h-11")}><BI.cart size={18} /> Order again</Link>
         </div>
+      )}
+      {!!lines.data?.entries.length && (
+        <>
+          <h2 className="text-[16px] font-extrabold mb-2">Their khata for you</h2>
+          <ul className="card-flat divide-y divide-line overflow-hidden mb-5">
+            {lines.data.entries.map((x) => (
+              <li key={x.id} className="flex items-center gap-3 px-4 py-3">
+                <span className="flex-1 min-w-0">
+                  <span className="block text-[14px] font-extrabold">{x.type === "payment" ? "You paid" : x.type === "credit_note" ? "Credit note" : "Bill"}{x.method ? ` · ${x.method.toUpperCase()}` : ""}</span>
+                  <span className="block text-[12.5px] text-ink-3 font-semibold truncate">{dateTime(x.createdAt)}{x.note ? ` · ${x.note}` : ""}</span>
+                </span>
+                <span className={clsx("text-[14.5px] font-extrabold tabular-nums", num(x.amount) < 0 && "text-[color:var(--success)]")}>{num(x.amount) < 0 ? "−" : "+"}{inr(Math.abs(num(x.amount)), { decimals: true })}</span>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
       <h2 className="text-[16px] font-extrabold mb-2">Your orders with {name}</h2>
       {pos.error ? <ErrorCard message={pos.error} onRetry={pos.reload} /> : !pos.data ? <Skel className="h-32" /> : !mine.length ? (
@@ -132,7 +149,7 @@ function CustomerParty({ who }: { who: { counterpartyId?: string; phone?: string
                 </span>
                 <span className="text-right flex-shrink-0">
                   <span className={clsx("block text-[14.5px] font-extrabold tabular-nums", amt > 0 ? "text-[color:var(--amber)]" : "text-[color:var(--success)]")}>{amt > 0 ? "+" : "−"}{inr(Math.abs(amt), { decimals: true })}</span>
-                  <span className="block text-[11.5px] text-ink-4 font-bold tabular-nums">Bal {inr(running[i], { decimals: true })}</span>
+                  <span className="block text-[11.5px] text-ink-4 font-bold tabular-nums">Bal {running[i]! < 0 ? "−" : ""}{inr(Math.abs(running[i]!), { decimals: true })}</span>
                 </span>
               </>
             );

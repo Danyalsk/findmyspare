@@ -250,9 +250,9 @@ export const adminNetworkRoutes = new Elysia({ prefix: "/admin/network" })
         .select({
           id: users.id, name: users.name, businessName: users.businessName, city: users.city, role: users.role,
           businessRoles: users.businessRoles, industries: users.industries, verificationStatus: users.verificationStatus, createdAt: users.createdAt,
-          listings: sql<number>`(SELECT count(*)::int FROM products p WHERE p.supplier_id = ${users.id} AND p.status <> 'deleted')`,
-          buyers: sql<number>`(SELECT count(*)::int FROM trade_links l WHERE l.supplier_id = ${users.id} AND l.status = 'active')`,
-          suppliers: sql<number>`(SELECT count(*)::int FROM trade_links l WHERE l.buyer_id = ${users.id} AND l.status = 'active')`,
+          listings: sql<number>`(SELECT count(*)::int FROM products p WHERE p.supplier_id = "users"."id" AND p.status <> 'deleted')`,
+          buyers: sql<number>`(SELECT count(*)::int FROM trade_links l WHERE l.supplier_id = "users"."id" AND l.status = 'active')`,
+          suppliers: sql<number>`(SELECT count(*)::int FROM trade_links l WHERE l.buyer_id = "users"."id" AND l.status = 'active')`,
         })
         .from(users).where(and(...conds)).orderBy(desc(users.createdAt)).limit(200);
       return { businesses: rows };

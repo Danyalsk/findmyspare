@@ -173,7 +173,8 @@ async function main() {
   const deccanDist = await priceList(id.deccan!, "Distributors", 8);
   const ganeshRetail = await priceList(id.ganesh!, "Retailers", 5);
   const sahyadriStockist = await priceList(id.sahyadri!, "Super stockists", 12);
-  await db.insert(priceListItems).values({ priceListId: ganeshRetail, productId: pid["ganesh:KEL-36-440"]!, price: "235.00", minQty: 20 }).onConflictDoNothing();
+  await db.insert(priceListItems).values({ priceListId: ganeshRetail, productId: pid["ganesh:KEL-36-440"]!, price: "225.00", minQty: 20 })
+    .onConflictDoUpdate({ target: [priceListItems.priceListId, priceListItems.productId], set: { price: "225.00", minQty: 20 } });
 
   const link = async (supplier: string, buyer: string, opts: { status?: "active" | "pending"; creditLimit?: number; creditDays?: number; priceListId?: string }) => {
     await db.insert(tradeLinks).values({

@@ -44,7 +44,10 @@ function OrdersInner() {
   const params = useSearchParams();
   const router = useRouter();
   const path = usePathname();
-  const tab: Tab = !isSeller ? "out" : params.get("tab") === "out" ? "out" : "in";
+  const want = params.get("tab");
+  // No tab asked for: open where the work is.
+  const auto: Tab = today.pos_to_accept + today.pos_to_ship === 0 && today.pos_to_receive + today.pos_waiting > 0 ? "out" : "in";
+  const tab: Tab = !isSeller ? "out" : want === "out" || want === "in" ? want : auto;
   const r = useApi(`pos:${tab}`, () => bizApi.pos(tab));
   const setTab = (t: Tab) => router.replace(`${path}?tab=${t}`, { scroll: false });
   const pos = r.data?.pos ?? [];

@@ -36,10 +36,10 @@ export default function BillView() {
         back="/biz/bills"
       />
 
-      <div className="flex flex-wrap gap-2 mb-4 no-print">
-        <a href={waLink(bill.customerPhone, text)} target="_blank" rel="noopener noreferrer" className={clsx(btnPrimary, "flex-1 sm:flex-none")}><BI.wa size={18} /> Share on WhatsApp</a>
-        <button onClick={() => window.print()} className={clsx(btnGhost, "flex-1 sm:flex-none")}><BI.print size={18} /> Print</button>
-        <Link href="/biz/bill" className={clsx(btnGhost, "flex-1 sm:flex-none")}><BI.plus size={18} /> New bill</Link>
+      <div className="grid grid-cols-3 sm:flex gap-2 mb-4 no-print">
+        <a href={waLink(bill.customerPhone, text)} target="_blank" rel="noopener noreferrer" className={clsx(btnPrimary, "px-3 whitespace-nowrap sm:px-6")}><BI.wa size={18} /> <span className="sm:hidden">WhatsApp</span><span className="hidden sm:inline">Share on WhatsApp</span></a>
+        <button onClick={() => window.print()} className={clsx(btnGhost, "px-3 whitespace-nowrap")}><BI.print size={18} /> Print</button>
+        <Link href="/biz/bill" className={clsx(btnGhost, "px-3 whitespace-nowrap")}><BI.plus size={18} /> New bill</Link>
       </div>
 
       {/* The printable bill */}

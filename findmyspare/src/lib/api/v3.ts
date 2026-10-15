@@ -103,7 +103,7 @@ export const bizApi = {
   poAction: (id: string, action: "accept" | "reject" | "ship" | "receive" | "cancel", extra: { note?: string; tracking?: string } = {}) =>
     fetchApi<{ po: PurchaseOrder }>(`/biz/pos/${id}/action`, json({ action, ...extra })),
   khata: () => fetchApi<{ receivable: KhataRow[]; payable: { owner_id: string; name: string | null; balance: string }[] }>("/biz/khata"),
-  khataEntries: (p: { counterpartyId?: string; phone?: string; name?: string }) => fetchApi<{ entries: LedgerEntry[] }>(`/biz/khata/entries${qs(p)}`),
+  khataEntries: (p: { counterpartyId?: string; supplierId?: string; phone?: string; name?: string }) => fetchApi<{ entries: LedgerEntry[] }>(`/biz/khata/entries${qs(p)}`),
   addEntry: (p: { counterpartyId?: string; name?: string; phone?: string; type: "invoice" | "payment" | "credit_note"; amount: number; note?: string; method?: string }) => fetchApi("/biz/khata/entries", json(p)),
   createBill: (p: { customerName?: string; customerPhone?: string; paymentMode: SalesBill["paymentMode"]; lines: { productId?: string; name: string; quantity: number; unitPrice: number; gstRate: number }[] }) =>
     fetchApi<{ bill: SalesBill }>("/biz/bills", json(p)),

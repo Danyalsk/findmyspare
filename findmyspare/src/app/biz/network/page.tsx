@@ -95,7 +95,7 @@ function LinkRow({ l, myId, onDecide, onTerms, busy }: { l: TradeLink; myId: str
   );
 }
 
-function Directory({ isSeller, onChanged }: { isSeller: boolean; onChanged: () => void }) {
+function Directory({ isSeller, links, onChanged }: { isSeller: boolean; links: TradeLink[]; onChanged: () => void }) {
   const [q, setQ] = useState("");
   const [role, setRole] = useState("");
   const [industry, setIndustry] = useState("");
@@ -144,20 +144,23 @@ function Directory({ isSeller, onChanged }: { isSeller: boolean; onChanged: () =
       ) : (
         <ul className="card-flat divide-y divide-line overflow-hidden">
           {dir.data.businesses.map((b) => {
-            const asBuyer = status(b.linkAsBuyer);
-            const asSupplier = status(b.linkAsSupplier);
+            // Trust my own links over the directory's per-row status.
+            const lb = links.find((l) => l.direction === "supplier" && l.other_id === b.id)?.status ?? b.linkAsBuyer;
+            const ls = links.find((l) => l.direction === "buyer" && l.other_id === b.id)?.status ?? b.linkAsSupplier;
+            const asBuyer = status(lb);
+            const asSupplier = status(ls);
             return (
               <li key={b.id} className="px-4 py-3.5 flex items-center gap-3 flex-wrap sm:flex-nowrap">
                 <Initial name={b.businessName ?? b.name} />
                 <div className="flex-1 min-w-0">
                   <Link href={`/s/${b.id}`} className="text-[14.5px] font-extrabold truncate block hover:text-[color:var(--accent)]">{b.businessName ?? b.name}</Link>
-                  <div className="text-[12.5px] text-ink-3 font-semibold truncate">{[b.city, roleLine(b.businessRoles), `${b.listings} listing${b.listings === 1 ? "" : "s"}`].filter(Boolean).join(" · ")}</div>
+                  <div className="text-[12.5px] text-ink-3 font-semibold truncate">{[b.city, roleLine(b.businessRoles), b.listings > 0 ? `${b.listings} listing${b.listings === 1 ? "" : "s"}` : null].filter(Boolean).join(" · ")}</div>
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0 ml-14 sm:ml-0">
-                  {asBuyer ? <StatusChip tone={b.linkAsBuyer === "active" ? "green" : "grey"}>{b.linkAsBuyer === "active" ? "Your supplier" : `Supplier · ${asBuyer}`}</StatusChip> : (
+                  {asBuyer ? <StatusChip tone={lb === "active" ? "green" : "grey"}>{lb === "active" ? "Your supplier" : `Supplier · ${asBuyer}`}</StatusChip> : (
                     <button disabled={busyId === b.id + "supplier"} onClick={() => connect(b, "supplier")} className={clsx(btnSmall, "bg-[color:var(--accent)] text-white")}>Buy from them</button>
                   )}
-                  {isSeller && (asSupplier ? <StatusChip tone={b.linkAsSupplier === "active" ? "green" : "grey"}>{b.linkAsSupplier === "active" ? "Your buyer" : `Buyer · ${asSupplier}`}</StatusChip> : (
+                  {isSeller && (asSupplier ? <StatusChip tone={ls === "active" ? "green" : "grey"}>{ls === "active" ? "Your buyer" : `Buyer · ${asSupplier}`}</StatusChip> : (
                     <button disabled={busyId === b.id + "buyer"} onClick={() => connect(b, "buyer")} className={clsx(btnSmall, "bg-paper-2 text-ink")}>Add as buyer</button>
                   ))}
                 </div>
@@ -216,7 +219,7 @@ function NetworkInner() {
         ]}
       />
       {tab === "find" ? (
-        <Directory isSeller={isSeller} onChanged={links.reload} />
+        <Directory isSeller={isSeller} links={all} onChanged={links.reload} />
       ) : links.error ? <ErrorCard message={links.error} onRetry={links.reload} /> : !links.data ? (
         <div className="space-y-2">{Array.from({ length: 4 }, (_, i) => <Skel key={i} className="h-16" />)}</div>
       ) : !list.length ? (

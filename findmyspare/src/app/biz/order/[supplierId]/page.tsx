@@ -93,7 +93,7 @@ export default function OrderStock() {
                   <div className="mt-1 flex items-baseline gap-2 flex-wrap">
                     <span className="text-[16px] font-extrabold text-[color:var(--accent)] tabular-nums">{inr(unit, { decimals: unit % 1 !== 0 })}</span>
                     {off && <span className="strike text-[12.5px] tabular-nums">{inr(p.listPrice)}</span>}
-                    {p.tier && p.tier.minQty > 1 && (
+                    {p.tier && p.tier.minQty > 1 && num(p.tier.price) < num(p.yourPrice) && (
                       <span className={clsx("text-[12px] font-bold px-2 h-[22px] inline-flex items-center rounded-full", qty >= p.tier.minQty ? "bg-[color:var(--success-wash)] text-[color:var(--success)]" : "bg-[color:var(--amber-wash)] text-[color:var(--amber)]")}>
                         {inr(p.tier.price)} at {p.tier.minQty}+
                       </span>

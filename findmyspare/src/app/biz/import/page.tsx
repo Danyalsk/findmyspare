@@ -65,7 +65,8 @@ export default function ImportPage() {
   }, [tax.data]);
 
   const rows: ImportRow[] = body.map((r) => {
-    const o: Record<string, string> = {};
+    // name and price are required by the API schema, so always send them (blank rows get reported back).
+    const o: Record<string, string> = { name: "", price: "" };
     for (const f of FIELDS) {
       const idx = mapping[f.key];
       const v = idx >= 0 ? (r[idx] ?? "").trim() : "";

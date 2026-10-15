@@ -50,7 +50,8 @@ async function priceFor(supplierId: string, buyerId: string, productIds: string[
     // Tier price applies once the quantity reaches the price-list item's minimum.
     price: (p: { id: string; price: string }, qty = 1) => {
       const o = overrides.find((x) => x.productId === p.id);
-      return o && qty >= o.minQty ? parseFloat(o.price) : r2(parseFloat(p.price) * (1 - disc / 100));
+      const normal = r2(parseFloat(p.price) * (1 - disc / 100));
+      return o && qty >= o.minQty ? Math.min(parseFloat(o.price), normal) : normal;
     },
     tier: (p: { id: string }) => {
       const o = overrides.find((x) => x.productId === p.id);
@@ -123,9 +124,10 @@ export const networkRoutes = new Elysia({ prefix: "/biz" })
       const rows = await db.select({
         id: users.id, businessName: users.businessName, name: users.name, city: users.city,
         businessRoles: users.businessRoles, industries: users.industries,
-        listings: sql<number>`(SELECT count(*)::int FROM products p WHERE p.supplier_id = ${users.id} AND p.status IN ('active','out_of_stock'))`,
-        linkAsBuyer: sql<string | null>`(SELECT status::text FROM trade_links l WHERE l.supplier_id = ${users.id} AND l.buyer_id = ${user.id})`,
-        linkAsSupplier: sql<string | null>`(SELECT status::text FROM trade_links l WHERE l.supplier_id = ${user.id} AND l.buyer_id = ${users.id})`,
+        // Outer-row id spelled out: drizzle prints bare "id" in single-table selects, which the subquery would resolve to its own table.
+        listings: sql<number>`(SELECT count(*)::int FROM products p WHERE p.supplier_id = "users"."id" AND p.status IN ('active','out_of_stock'))`,
+        linkAsBuyer: sql<string | null>`(SELECT status::text FROM trade_links l WHERE l.supplier_id = "users"."id" AND l.buyer_id = ${user.id})`,
+        linkAsSupplier: sql<string | null>`(SELECT status::text FROM trade_links l WHERE l.supplier_id = ${user.id} AND l.buyer_id = "users"."id")`,
       }).from(users).where(and(...conds)).orderBy(users.businessName).limit(100);
       return { businesses: rows };
     },
@@ -400,7 +402,7 @@ export const networkRoutes = new Elysia({ prefix: "/biz" })
                e.counterparty_id, coalesce(max(u.business_name), max(u.name), max(e.counterparty_name)) AS name,
                coalesce(max(u.phone), max(e.counterparty_phone)) AS phone,
                sum(e.amount)::numeric(14,2)::text AS balance, max(e.created_at) AS last_at,
-               coalesce((SELECT sum(p.total) FROM purchase_orders p WHERE p.seller_id = ${user.id} AND p.buyer_id = e.counterparty_id AND p.due_date < now() AND p.status IN ('shipped','received')), 0)::numeric(14,2)::text AS overdue
+               greatest(0, least(sum(e.amount), coalesce((SELECT sum(p.total) FROM purchase_orders p WHERE p.seller_id = ${user.id} AND p.buyer_id = e.counterparty_id AND p.due_date < now() AND p.status IN ('shipped','received')), 0)))::numeric(14,2)::text AS overdue
         FROM ledger_entries e LEFT JOIN users u ON u.id = e.counterparty_id
         WHERE e.owner_id = ${user.id}
         GROUP BY 1, 2 ORDER BY sum(e.amount) DESC`);
@@ -415,12 +417,17 @@ export const networkRoutes = new Elysia({ prefix: "/biz" })
   .get(
     "/khata/entries",
     async ({ query, user }) => {
+      if (query.supplierId) {
+        // Payable side: the supplier's book, rows about me only (read-only).
+        const rows = await db.select().from(ledgerEntries).where(and(eq(ledgerEntries.ownerId, query.supplierId), eq(ledgerEntries.counterpartyId, user.id))).orderBy(desc(ledgerEntries.createdAt)).limit(200);
+        return { entries: rows };
+      }
       const who = query.counterpartyId ? eq(ledgerEntries.counterpartyId, query.counterpartyId)
         : query.phone ? eq(ledgerEntries.counterpartyPhone, query.phone) : eq(ledgerEntries.counterpartyName, query.name ?? "");
       const rows = await db.select().from(ledgerEntries).where(and(eq(ledgerEntries.ownerId, user.id), who)).orderBy(desc(ledgerEntries.createdAt)).limit(200);
       return { entries: rows };
     },
-    { query: t.Object({ counterpartyId: t.Optional(t.String()), phone: t.Optional(t.String()), name: t.Optional(t.String()) }), detail: { tags: ["Business"] } }
+    { query: t.Object({ counterpartyId: t.Optional(t.String()), supplierId: t.Optional(t.String()), phone: t.Optional(t.String()), name: t.Optional(t.String()) }), detail: { tags: ["Business"] } }
   )
   .post(
     "/khata/entries",
@@ -508,14 +515,20 @@ export const networkRoutes = new Elysia({ prefix: "/biz" })
       const [me] = await db.select({ industries: users.industries, city: users.city }).from(users).where(eq(users.id, user.id)).limit(1);
       const inds = me?.industries?.length ? me.industries : null;
       const searches = await db.execute<{ term: string; searches: number; zero_result: number; my_listings: number }>(sql`
-        SELECT lower(coalesce(nullif(s.query, ''), s.category)) AS term, count(*)::int AS searches,
-               count(*) FILTER (WHERE s.result_count = 0)::int AS zero_result,
-               (SELECT count(*)::int FROM products p WHERE p.supplier_id = ${user.id} AND p.status IN ('active','out_of_stock','draft')
-                  AND (p.name ILIKE '%' || lower(coalesce(nullif(s.query, ''), s.category)) || '%' OR p.category ILIKE lower(coalesce(nullif(s.query, ''), s.category)))) AS my_listings
-        FROM search_events s
-        WHERE s.created_at > now() - interval '30 days' AND coalesce(nullif(s.query, ''), s.category) IS NOT NULL
-          ${inds ? sql`AND (s.industry_slug IS NULL OR s.industry_slug IN (${sql.join(inds.map((i) => sql`${i}`), sql`, `)}))` : sql``}
-        GROUP BY 1 ORDER BY searches DESC LIMIT 15`);
+        WITH s AS (
+          SELECT lower(coalesce(nullif(query, ''), category)) AS term, result_count
+          FROM search_events
+          WHERE created_at > now() - interval '30 days' AND coalesce(nullif(query, ''), category) IS NOT NULL
+            ${inds ? sql`AND (industry_slug IS NULL OR industry_slug IN (${sql.join(inds.map((i) => sql`${i}`), sql`, `)}))` : sql``}
+        ), t AS (
+          SELECT term, count(*)::int AS searches, count(*) FILTER (WHERE result_count = 0)::int AS zero_result
+          FROM s GROUP BY term ORDER BY searches DESC LIMIT 15
+        )
+        SELECT t.*, (SELECT count(*)::int FROM products p WHERE p.supplier_id = ${user.id} AND p.status IN ('active','out_of_stock','draft')
+                       -- every word of the search appears in the listing (name, category, brand, machine type)
+                       AND NOT EXISTS (SELECT 1 FROM regexp_split_to_table(t.term, '[[:space:]]+') w
+                                       WHERE w <> '' AND concat_ws(' ', p.name, p.category, p.brand, p.machine_type, p.part_number) NOT ILIKE '%' || w || '%')) AS my_listings
+        FROM t ORDER BY t.searches DESC`);
       const requests = await db.select({ id: inquiries.id, partName: inquiries.partName, make: inquiries.make, model: inquiries.model, city: inquiries.city, createdAt: inquiries.createdAt })
         .from(inquiries).where(eq(inquiries.isActive, true)).orderBy(desc(inquiries.createdAt)).limit(10);
       return { searches: [...searches], requests, city: me?.city ?? null };
@@ -564,6 +577,7 @@ export const networkRoutes = new Elysia({ prefix: "/biz" })
 export const storefrontRoutes = new Elysia({ prefix: "/public" }).get(
   "/store/:sellerId",
   async ({ params, set }) => {
+    if (!/^[0-9a-f-]{36}$/i.test(params.sellerId)) { set.status = 404; return { error: "Store not found" }; }
     const [s] = await db.select({ id: users.id, businessName: users.businessName, name: users.name, city: users.city, businessRoles: users.businessRoles, industries: users.industries, since: users.createdAt, verified: sql<boolean>`${users.verificationStatus} = 'approved'` })
       .from(users).where(and(eq(users.id, params.sellerId), eq(users.role, "supplier"))).limit(1);
     if (!s) { set.status = 404; return { error: "Store not found" }; }
