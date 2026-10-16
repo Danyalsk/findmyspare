@@ -1,6 +1,8 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer, emailOTP } from "better-auth/plugins";
+import { createAuthMiddleware } from "better-auth/api";
+import { and, eq, not, like } from "drizzle-orm";
 import { db } from "../db";
 import { users, authSessions, authAccounts, authVerifications } from "../db/schema";
 import { sendOtpEmail, sendPasswordResetEmail } from "./email";
@@ -49,6 +51,22 @@ function demoOtpFor(email: string): string | undefined {
 }
 
 export const auth = betterAuth({
+  hooks: {
+    // resendStrategy "reuse" keeps an earlier code alive on every send. If a demo
+    // account ever got a random code (e.g. sent while DEMO_LOGIN was off), its
+    // fixed code would be rejected until that one expired. Drop it first.
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/email-otp/send-verification-otp") return;
+      const body = ctx.body as { email?: string; type?: string } | undefined;
+      const email = body?.email?.toLowerCase();
+      const code = email ? demoOtpFor(email) : undefined;
+      if (!email || !code || !body?.type) return;
+      await db.delete(authVerifications).where(and(
+        eq(authVerifications.identifier, `${body.type}-otp-${email}`),
+        not(like(authVerifications.value, `${code}:%`)),
+      ));
+    }),
+  },
   secret: SECRET || "dev-only-secret-change-me",
   baseURL: BACKEND_URL,
   basePath: "/api/auth",
